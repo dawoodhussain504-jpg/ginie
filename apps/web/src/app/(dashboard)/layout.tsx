@@ -28,6 +28,10 @@ import {
   FileTextOutlined,
   FormOutlined,
   BarChartOutlined,
+  ThunderboltOutlined,
+  CreditCardOutlined,
+  HistoryOutlined,
+  SafetyCertificateOutlined,
 } from '@ant-design/icons';
 import { useApp } from '@/context/AppContext';
 import { usePathname, useRouter } from 'next/navigation';
@@ -103,6 +107,34 @@ export default function DashboardLayout({
       icon: <BarChartOutlined />,
       label: <Link href="/reports">{t.nav.reports}</Link>,
     },
+    {
+      key: '/automations',
+      icon: <ThunderboltOutlined />,
+      label: <Link href="/automations">{t.nav.automations}</Link>,
+    },
+    {
+      key: '/subscriptions',
+      icon: <CreditCardOutlined />,
+      label: <Link href="/subscriptions">{t.nav.subscriptions}</Link>,
+    },
+    {
+      key: '/audit-logs',
+      icon: <HistoryOutlined />,
+      label: <Link href="/audit-logs">{t.nav.auditLogs}</Link>,
+    },
+    ...(user?.isSuperAdmin
+      ? [
+          {
+            key: '/admin',
+            icon: <SafetyCertificateOutlined />,
+            label: (
+              <Link href="/admin">
+                <span style={{ color: '#faad14', fontWeight: 600 }}>{t.nav.admin}</span>
+              </Link>
+            ),
+          },
+        ]
+      : []),
     {
       key: '/people',
       icon: <TeamOutlined />,

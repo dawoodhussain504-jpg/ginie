@@ -15,6 +15,10 @@
     "billing": "Quotes & Invoices",
     "forms": "Forms & Extra details",
     "reports": "Reports & Insights",
+    "automations": "Auto Actions",
+    "subscriptions": "Plans & Billing",
+    "auditLogs": "Activity History",
+    "admin": "Owner Control",
     "settings": "Settings",
     "logout": "Sign out"
   },
@@ -172,6 +176,60 @@
     "teamAccess": "Team access & roles",
     "salesSteps": "Sales steps configuration",
     "extraDetails": "Extra details (Custom fields)"
+  },
+  "automations": {
+    "title": "Auto Actions",
+    "subtitle": "Set up automatic steps when new customers arrive or deals advance.",
+    "addAction": "Create new auto action",
+    "triggerLabel": "When this happens",
+    "conditionLabel": "Only if",
+    "actionLabel": "Then do this",
+    "status": "Active status",
+    "runHistory": "Action execution history",
+    "noRuns": "No automatic actions have run yet."
+  },
+  "ai": {
+    "title": "Smart Assistant",
+    "interestLevel": "Customer interest level",
+    "hot": "High Interest (Hot)",
+    "warm": "Moderate Interest (Warm)",
+    "cold": "Low Interest (Cold)",
+    "draftReply": "Smart reply generator",
+    "draftTone": "Tone of voice",
+    "summarizeCall": "Summarize call notes",
+    "keyTakeaways": "Key discussion takeaways",
+    "nextStep": "Recommended next step"
+  },
+  "subscriptions": {
+    "title": "Plans & Billing",
+    "subtitle": "Manage your company subscription and usage limits.",
+    "currentPlan": "Your current plan",
+    "upgradePlan": "Change or upgrade plan",
+    "quotaUsage": "Monthly usage & remaining limits",
+    "starterPlan": "Starter Plan",
+    "proPlan": "Pro Growth Plan",
+    "enterprisePlan": "Enterprise Plan",
+    "payButton": "Proceed with payment"
+  },
+  "admin": {
+    "title": "Owner Control Panel",
+    "subtitle": "Platform-wide company management and usage metrics.",
+    "metricsOverview": "Platform metrics",
+    "totalCompanies": "Total companies",
+    "activeUsers": "Active team members",
+    "searchesConducted": "Total searches run",
+    "companyStatus": "Company status",
+    "activate": "Activate account",
+    "suspend": "Pause account",
+    "changePlan": "Change plan"
+  },
+  "audit": {
+    "title": "Activity History",
+    "subtitle": "Track important changes, updates, and actions across your company.",
+    "action": "Action taken",
+    "item": "Affected item",
+    "who": "Team member",
+    "timestamp": "Time"
   },
   "common": {
     "save": "Save",

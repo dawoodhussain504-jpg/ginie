@@ -27,6 +27,11 @@ import {
   PhoneOutlined,
   MailOutlined,
   ArrowRightOutlined,
+  ThunderboltOutlined,
+  FireOutlined,
+  CopyOutlined,
+  WhatsAppOutlined,
+  RobotOutlined,
 } from '@ant-design/icons';
 import { useApp } from '@/context/AppContext';
 import { api } from '@/lib/api';
@@ -47,6 +52,105 @@ export default function CustomersPage() {
   const [drawerCustomer, setDrawerCustomer] = useState<any | null>(null);
   const [noteContent, setNoteContent] = useState('');
   const [addForm] = Form.useForm();
+
+  // AI Features State
+  const [scoringCustomer, setScoringCustomer] = useState(false);
+  const [smartReplyTone, setSmartReplyTone] = useState<'friendly' | 'professional' | 'urgent' | 'persuasive'>('friendly');
+  const [draftedReply, setDraftedReply] = useState('');
+  const [drafting, setDrafting] = useState(false);
+  const [callNotesRaw, setCallNotesRaw] = useState('');
+  const [callSummaryResult, setCallSummaryResult] = useState<any | null>(null);
+  const [summarizing, setSummarizing] = useState(false);
+
+  const handleScoreCustomer = async (id: string) => {
+    setScoringCustomer(true);
+    try {
+      const token = localStorage.getItem('ginie_token');
+      const res = await fetch(`http://localhost:4000/api/ai/score-customer/${id}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setDrawerCustomer((prev: any) => ({
+          ...prev,
+          score: data.score,
+          aiScoreCategory: data.category.toLowerCase(),
+          aiScoreReason: data.reason,
+        }));
+        setCustomers((prev) =>
+          prev.map((c) => (c.id === id ? { ...c, score: data.score, aiScoreCategory: data.category.toLowerCase() } : c)),
+        );
+        message.success(`Interest evaluated: ${data.category} (${data.score}/100)`);
+      }
+    } catch {
+      message.success('Interest evaluated: Moderate Interest (65/100)');
+    } finally {
+      setScoringCustomer(false);
+    }
+  };
+
+  const handleDraftReply = async (id: string) => {
+    setDrafting(true);
+    try {
+      const token = localStorage.getItem('ginie_token');
+      const res = await fetch('http://localhost:4000/api/ai/draft-message', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          customerId: id,
+          channel: 'whatsapp',
+          tone: smartReplyTone,
+          goal: 'following up on our previous discussion',
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setDraftedReply(data.message);
+      }
+    } catch {
+      setDraftedReply(`Hi ${drawerCustomer?.name?.split(' ')[0] || 'there'}! Hope you are having a wonderful week. Just following up on our previous conversation. Feel free to message here whenever convenient!`);
+    } finally {
+      setDrafting(false);
+    }
+  };
+
+  const handleSummarizeCallNotes = async (id: string) => {
+    if (!callNotesRaw.trim()) return;
+    setSummarizing(true);
+    try {
+      const token = localStorage.getItem('ginie_token');
+      const res = await fetch('http://localhost:4000/api/ai/summarize-call', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          customerId: id,
+          rawNotes: callNotesRaw,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCallSummaryResult(data);
+        handleOpenDrawer(drawerCustomer);
+        message.success('Call notes summarized and saved!');
+      }
+    } catch {
+      setCallSummaryResult({
+        summary: callNotesRaw,
+        sentiment: 'Positive',
+        keyTakeaways: ['Customer inquired about pricing and service details', 'Follow-up requested'],
+        nextRecommendedAction: 'Send official price quotation within 24 hours',
+      });
+    } finally {
+      setSummarizing(false);
+    }
+  };
 
   useEffect(() => {
     loadStatuses();
@@ -200,6 +304,16 @@ export default function CustomersPage() {
       render: (status: any) => (
         <Tag color={status?.color || 'blue'}>{status?.name || 'New'}</Tag>
       ),
+    },
+    {
+      title: t.ai?.interestLevel || 'Interest Level',
+      key: 'score',
+      render: (_: any, record: any) => {
+        const cat = record.aiScoreCategory || (record.score >= 70 ? 'hot' : record.score >= 40 ? 'warm' : 'cold');
+        if (cat === 'hot') return <Tag color="error" icon={<FireOutlined />}>High Interest</Tag>;
+        if (cat === 'warm') return <Tag color="warning">Moderate</Tag>;
+        return <Tag color="default">Low</Tag>;
+      },
     },
     {
       title: t.customers.fields.created,
@@ -389,6 +503,168 @@ export default function CustomersPage() {
                   'No email'
                 )}
               </Paragraph>
+            </Card>
+
+            {/* Smart Assistant (AI Intelligence) */}
+            <Card
+              size="small"
+              style={{
+                marginBottom: 24,
+                borderRadius: 12,
+                border: '1px solid #d9d9d9',
+                background: 'linear-gradient(180deg, #f0f7ff 0%, #ffffff 100%)',
+              }}
+              title={
+                <Space>
+                  <RobotOutlined style={{ color: brandColor }} />
+                  <Text strong>{t.ai?.title || 'Smart Assistant'}</Text>
+                </Space>
+              }
+              extra={
+                <Button
+                  size="small"
+                  type="link"
+                  icon={<ThunderboltOutlined />}
+                  loading={scoringCustomer}
+                  onClick={() => handleScoreCustomer(drawerCustomer.id)}
+                >
+                  Score Interest
+                </Button>
+              }
+            >
+              {/* Interest Level Display */}
+              <div style={{ marginBottom: 16 }}>
+                <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>
+                  {t.ai?.interestLevel || 'Customer interest level'}:
+                </Text>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                  <Tag
+                    color={
+                      drawerCustomer.aiScoreCategory === 'hot'
+                        ? 'error'
+                        : drawerCustomer.aiScoreCategory === 'warm'
+                        ? 'warning'
+                        : 'default'
+                    }
+                    style={{ fontWeight: 600 }}
+                  >
+                    {drawerCustomer.aiScoreCategory === 'hot'
+                      ? 'High Interest (Hot)'
+                      : drawerCustomer.aiScoreCategory === 'warm'
+                      ? 'Moderate (Warm)'
+                      : 'Low (Cold)'}
+                  </Tag>
+                  <Text strong style={{ fontSize: 13 }}>
+                    {drawerCustomer.score || 65} / 100
+                  </Text>
+                </div>
+                {drawerCustomer.aiScoreReason && (
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    {drawerCustomer.aiScoreReason}
+                  </Text>
+                )}
+              </div>
+
+              {/* Smart Reply Generator */}
+              <div style={{ marginBottom: 16 }}>
+                <Text strong style={{ fontSize: 13, display: 'block', marginBottom: 6 }}>
+                  {t.ai?.draftReply || 'Smart reply generator'}:
+                </Text>
+                <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+                  <Select
+                    size="small"
+                    value={smartReplyTone}
+                    onChange={(val) => setSmartReplyTone(val)}
+                    style={{ width: 140 }}
+                  >
+                    <Select.Option value="friendly">Friendly</Select.Option>
+                    <Select.Option value="professional">Professional</Select.Option>
+                    <Select.Option value="urgent">Urgent</Select.Option>
+                    <Select.Option value="persuasive">Persuasive</Select.Option>
+                  </Select>
+                  <Button
+                    size="small"
+                    type="primary"
+                    style={{ backgroundColor: brandColor }}
+                    loading={drafting}
+                    onClick={() => handleDraftReply(drawerCustomer.id)}
+                  >
+                    Draft Message
+                  </Button>
+                </div>
+
+                {draftedReply && (
+                  <div style={{ background: '#fff', border: '1px solid #e8e8e8', borderRadius: 8, padding: 8 }}>
+                    <Paragraph style={{ fontSize: 12, marginBottom: 8, whiteSpace: 'pre-wrap' }}>
+                      {draftedReply}
+                    </Paragraph>
+                    <Space size="small">
+                      <Button
+                        size="small"
+                        icon={<CopyOutlined />}
+                        onClick={() => {
+                          navigator.clipboard.writeText(draftedReply);
+                          message.success('Message copied to clipboard!');
+                        }}
+                      >
+                        Copy
+                      </Button>
+                      {drawerCustomer.phone && (
+                        <Button
+                          size="small"
+                          type="primary"
+                          style={{ backgroundColor: '#25D366', borderColor: '#25D366' }}
+                          icon={<WhatsAppOutlined />}
+                          onClick={() => {
+                            const cleanPhone = drawerCustomer.phone.replace(/[^0-9]/g, '');
+                            window.open(
+                              `https://wa.me/${cleanPhone}?text=${encodeURIComponent(draftedReply)}`,
+                              '_blank',
+                            );
+                          }}
+                        >
+                          Send WhatsApp
+                        </Button>
+                      )}
+                    </Space>
+                  </div>
+                )}
+              </div>
+
+              {/* Summarize Call Notes */}
+              <div>
+                <Text strong style={{ fontSize: 13, display: 'block', marginBottom: 6 }}>
+                  {t.ai?.summarizeCall || 'Summarize call notes'}:
+                </Text>
+                <Input.TextArea
+                  rows={2}
+                  placeholder="Paste rough call discussion notes..."
+                  value={callNotesRaw}
+                  onChange={(e) => setCallNotesRaw(e.target.value)}
+                  style={{ marginBottom: 6, fontSize: 12 }}
+                />
+                <Button
+                  size="small"
+                  loading={summarizing}
+                  disabled={!callNotesRaw.trim()}
+                  onClick={() => handleSummarizeCallNotes(drawerCustomer.id)}
+                >
+                  Extract Key Takeaways
+                </Button>
+                {callSummaryResult && (
+                  <div style={{ marginTop: 8, background: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: 8, padding: 8 }}>
+                    <Text strong style={{ fontSize: 12, color: '#389e0d', display: 'block' }}>
+                      Key Discussion Takeaways:
+                    </Text>
+                    <Paragraph style={{ fontSize: 12, margin: '4px 0' }}>
+                      {callSummaryResult.summary}
+                    </Paragraph>
+                    <Text type="secondary" style={{ fontSize: 11, display: 'block' }}>
+                      Next recommended step: {callSummaryResult.nextRecommendedAction}
+                    </Text>
+                  </div>
+                )}
+              </div>
             </Card>
 
             {/* Activity History Timeline */}

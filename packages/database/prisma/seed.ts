@@ -35,6 +35,20 @@ async function main() {
     },
   });
 
+  const enterprisePlan = await prisma.plan.upsert({
+    where: { name: 'Enterprise' },
+    update: {},
+    create: {
+      name: 'Enterprise',
+      monthlyPrice: 4999,
+      limits: {
+        maxUsers: 50,
+        maxLeads: 50000,
+        monthlyDiscoverySearches: 2000,
+      },
+    },
+  });
+
   // 2. Create Demo Tenant (Company)
   const tenant = await prisma.tenant.upsert({
     where: { slug: 'acme' },
@@ -100,7 +114,7 @@ async function main() {
     },
   });
 
-  // 4. Create Owner User
+  // 4. Create Owner User (Super Admin for the platform)
   const passwordHash = await bcrypt.hash('Admin@123', 10);
   const adminUser = await prisma.user.upsert({
     where: {
@@ -109,7 +123,7 @@ async function main() {
         email: 'admin@ginie.space',
       },
     },
-    update: {},
+    update: { isSuperAdmin: true },
     create: {
       tenantId: tenant.id,
       roleId: ownerRole.id,
@@ -117,11 +131,12 @@ async function main() {
       email: 'admin@ginie.space',
       phone: '+91 9820123456',
       passwordHash,
+      isSuperAdmin: true,
       status: 'active',
       language: 'en',
     },
   });
-  console.log(`✓ Owner Admin created: ${adminUser.email} / Admin@123`);
+  console.log(`✓ Owner Admin created: ${adminUser.email} / Admin@123 (Super Admin: true)`);
 
   // 5. Create Default Lead Statuses
   const statuses = [
