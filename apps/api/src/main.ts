@@ -1,8 +1,13 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Logger } from '@nestjs/common';
+import * as path from 'path';
 import * as dotenv from 'dotenv';
-dotenv.config();
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
+if (!process.env.DATABASE_URL) {
+  process.env.DATABASE_URL = 'postgresql://postgres:postgres@localhost:5432/ginie?schema=public';
+}
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
