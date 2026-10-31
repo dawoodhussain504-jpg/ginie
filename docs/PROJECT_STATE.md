@@ -20,7 +20,8 @@
     - **Milestone 3.5 — Activity History & Audit Logs:** Dedicated `audit_logs` tracking sensitive changes (customers, deals, invoices, settings), and activity history viewer with before/after state diff inspection drawer.
     - **Milestone 3.6 — Monorepo Build & Tests:** All 7 workspace packages and all 21 Next.js App Router routes compile, prerender, and build with 0 errors. Multi-tenant isolation unit tests pass 100%.
   - **Single-Admin Mode (CP-004):** Converted system to private single-admin owner cockpit. Public registration disabled, search limits uncapped to unlimited, and subscription paywall replaced with sovereign lifetime access.
-- **Active Branch:** `feat/phase-3-automation-ai-billing`
+  - **Dynamic UPI QR Invoicing, WhatsApp Outreach & Gemini AI (CP-005):** Added real-time UPI QR code modal with deep links & WhatsApp invoice dispatch, instant 1-click WhatsApp pitch outreach on Customer Directory & Google Maps Lead Discovery, and native Google Gemini 1.5 Flash Copilot integration for scoring & reply drafting.
+- **Active Branch:** `main`
 - **Blockers:** None.
 
 ---

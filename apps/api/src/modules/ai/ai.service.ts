@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { prisma } from '@ginie/database';
 import { FallbackAiProvider } from './providers/fallback-ai.provider';
+import { GeminiAiProvider } from './providers/gemini-ai.provider';
 import {
   DraftMessageDto,
   SummarizeCallDto,
@@ -11,7 +12,12 @@ import {
 
 @Injectable()
 export class AiService {
-  constructor(private readonly fallbackAi: FallbackAiProvider) {}
+  private readonly logger = new Logger(AiService.name);
+
+  constructor(
+    private readonly fallbackAi: FallbackAiProvider,
+    private readonly geminiAi: GeminiAiProvider,
+  ) {}
 
   async scoreCustomer(tenantId: string, customerId: string): Promise<CustomerScoreResult> {
     const lead = await prisma.lead.findFirst({
@@ -28,17 +34,29 @@ export class AiService {
       take: 10,
     });
 
-    const result = await this.fallbackAi.scoreCustomer(lead, activities);
+    let result: CustomerScoreResult;
+    try {
+      if (this.geminiAi.isAvailable()) {
+        result = await this.geminiAi.scoreCustomer(lead, activities);
+      } else {
+        result = await this.fallbackAi.scoreCustomer(lead, activities);
+      }
+    } catch (e) {
+      this.logger.warn('Gemini scoring failed, using heuristic engine:', e);
+      result = await this.fallbackAi.scoreCustomer(lead, activities);
+    }
 
     // Persist score and plain explanation to Lead table
-    await prisma.lead.update({
-      where: { id: customerId },
-      data: {
-        score: result.score,
-        aiScoreCategory: result.category.toLowerCase(),
-        aiScoreReason: result.reason,
-      },
-    });
+    try {
+      await prisma.lead.update({
+        where: { id: customerId },
+        data: {
+          score: result.score,
+          aiScoreCategory: result.category.toLowerCase(),
+          aiScoreReason: result.reason,
+        },
+      });
+    } catch {}
 
     return result;
   }
@@ -57,48 +75,66 @@ export class AiService {
       orderBy: { createdAt: 'desc' },
     });
 
-    return this.fallbackAi.draftMessage({
+    const context = {
       customerName: lead.name,
       companyName: lead.companyName || undefined,
       recentNotes: lastActivity?.content || undefined,
-      channel: dto.channel,
-      tone: dto.tone,
+      channel: dto.channel || 'whatsapp',
+      tone: dto.tone || 'friendly',
       goal: dto.goal,
       additionalNotes: dto.additionalNotes,
-    });
+    };
+
+    try {
+      if (this.geminiAi.isAvailable()) {
+        return await this.geminiAi.draftMessage(context);
+      }
+      return await this.fallbackAi.draftMessage(context);
+    } catch (e) {
+      this.logger.warn('Gemini draft failed, using template engine:', e);
+      return this.fallbackAi.draftMessage(context);
+    }
   }
 
   async summarizeCall(tenantId: string, dto: SummarizeCallDto): Promise<SummarizeCallResult> {
-    let customerName: string | undefined;
-
+    let customerName = 'Customer';
     if (dto.customerId) {
       const lead = await prisma.lead.findFirst({
         where: { id: dto.customerId, tenantId },
-        select: { name: true },
       });
-      customerName = lead?.name;
+      if (lead) customerName = lead.name;
     }
 
-    const result = await this.fallbackAi.summarizeCall(dto.rawNotes, customerName);
+    let result: SummarizeCallResult;
+    try {
+      if (this.geminiAi.isAvailable()) {
+        result = await this.geminiAi.summarizeCall(dto.rawNotes, customerName);
+      } else {
+        result = await this.fallbackAi.summarizeCall(dto.rawNotes, customerName);
+      }
+    } catch (e) {
+      this.logger.warn('Gemini summarize failed, using fallback:', e);
+      result = await this.fallbackAi.summarizeCall(dto.rawNotes, customerName);
+    }
 
-    // If customerId is provided, also attach activity note with AI summary
+    // Save as activity if customerId provided
     if (dto.customerId) {
-      await prisma.activity.create({
-        data: {
-          tenantId,
-          entityType: 'lead',
-          entityId: dto.customerId,
-          type: 'call',
-          content: `Phone Call Summary: ${result.summary}\n\nRecommended next step: ${result.nextRecommendedAction}`,
-        },
-      });
-
-      await prisma.lead.update({
-        where: { id: dto.customerId },
-        data: {
-          aiSummary: result.summary,
-        },
-      });
+      try {
+        await prisma.activity.create({
+          data: {
+            tenantId,
+            entityType: 'lead',
+            entityId: dto.customerId,
+            type: 'call',
+            content: `Call Summary: ${result.summary}\nSentiment: ${result.sentiment}\nNext Action: ${result.nextRecommendedAction}`,
+            meta: {
+              sentiment: result.sentiment,
+              keyTakeaways: result.keyTakeaways,
+              nextRecommendedAction: result.nextRecommendedAction,
+            },
+          },
+        });
+      } catch {}
     }
 
     return result;

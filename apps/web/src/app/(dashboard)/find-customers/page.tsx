@@ -13,6 +13,7 @@ import {
   Modal,
   Select,
   message,
+  Divider,
 } from 'antd';
 import {
   CompassOutlined,
@@ -24,6 +25,9 @@ import {
   GlobalOutlined,
   PhoneOutlined,
   SafetyCertificateOutlined,
+  WhatsAppOutlined,
+  CopyOutlined,
+  SendOutlined,
 } from '@ant-design/icons';
 import { useApp } from '@/context/AppContext';
 import { api } from '@/lib/api';
@@ -42,6 +46,12 @@ export default function FindCustomersPage() {
   const [importing, setImporting] = useState(false);
   const [statuses, setStatuses] = useState<any[]>([]);
   const [mapModalPlace, setMapModalPlace] = useState<any | null>(null);
+
+  // WhatsApp Outreach Modal State
+  const [waModalVisible, setWaModalVisible] = useState(false);
+  const [waRecipient, setWaRecipient] = useState<any | null>(null);
+  const [waMessageText, setWaMessageText] = useState('');
+  const [sendingWa, setSendingWa] = useState(false);
 
   useEffect(() => {
     loadUsage();
@@ -126,6 +136,53 @@ export default function FindCustomersPage() {
     document.body.removeChild(link);
   };
 
+  const handleOpenWhatsAppModal = (record: any) => {
+    setWaRecipient(record);
+    const businessName = record.name || 'Sir/Ma\'am';
+    setWaMessageText(
+      `Namaste! I came across ${businessName} on Google Maps and wanted to reach out regarding our operational software and business solutions. Would you be open to a quick 2-minute overview?`
+    );
+    setWaModalVisible(true);
+  };
+
+  const handleTemplateChange = (templateKey: string) => {
+    if (!waRecipient) return;
+    const businessName = waRecipient.name || 'Sir/Ma\'am';
+    if (templateKey === 'intro') {
+      setWaMessageText(`Namaste! I came across ${businessName} on Google Maps and wanted to reach out regarding our operational software and business solutions. Would you be open to a quick 2-minute overview?`);
+    } else if (templateKey === 'offer') {
+      setWaMessageText(`Hello ${businessName}, we are currently offering an exclusive free consultation and 15% discount for local businesses in your area. Can I share our service details with you?`);
+    } else if (templateKey === 'quick') {
+      setWaMessageText(`Hi there! Wanted to check if ${businessName} is currently looking for tools to automate daily billing, customer management, and WhatsApp marketing? Happy to share a quick demo!`);
+    }
+  };
+
+  const handleLaunchWhatsApp = () => {
+    if (!waRecipient?.phone) return;
+    let cleanPhone = waRecipient.phone.replace(/[^0-9]/g, '');
+    if (cleanPhone.length === 10) cleanPhone = '91' + cleanPhone;
+    window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(waMessageText)}`, '_blank');
+  };
+
+  const handleSendViaBridge = async () => {
+    if (!waRecipient?.phone || !waMessageText.trim()) return;
+    setSendingWa(true);
+    let cleanPhone = waRecipient.phone.replace(/[^0-9]/g, '');
+    if (cleanPhone.length === 10) cleanPhone = '91' + cleanPhone;
+    try {
+      await api.post('/api/whatsapp/messages', {
+        phone: cleanPhone,
+        message: waMessageText,
+      });
+      message.success('Message queued and dispatched via WhatsApp Bridge!');
+      setWaModalVisible(false);
+    } catch {
+      handleLaunchWhatsApp();
+    } finally {
+      setSendingWa(false);
+    }
+  };
+
   const columns = [
     {
       title: t.discovery.table.name,
@@ -199,6 +256,24 @@ export default function FindCustomersPage() {
           </Space>
         ) : (
           <Text type="secondary">-</Text>
+        ),
+    },
+    {
+      title: 'Outreach',
+      key: 'outreach',
+      render: (_: any, record: any) =>
+        record.phone ? (
+          <Button
+            size="small"
+            type="primary"
+            icon={<WhatsAppOutlined />}
+            style={{ backgroundColor: '#25D366', borderColor: '#25D366', fontWeight: 600 }}
+            onClick={() => handleOpenWhatsAppModal(record)}
+          >
+            WhatsApp Pitch
+          </Button>
+        ) : (
+          <Text type="secondary" style={{ fontSize: 12 }}>No Phone</Text>
         ),
     },
     {
@@ -353,6 +428,92 @@ export default function FindCustomersPage() {
           pagination={{ pageSize: 10 }}
         />
       </Card>
+
+      {/* Direct WhatsApp Outreach Modal */}
+      <Modal
+        title={
+          <Space>
+            <WhatsAppOutlined style={{ color: '#25D366', fontSize: 20 }} />
+            <span>Direct WhatsApp Pitch Outreach</span>
+          </Space>
+        }
+        open={waModalVisible}
+        onCancel={() => setWaModalVisible(false)}
+        footer={null}
+        destroyOnClose
+        width={500}
+      >
+        {waRecipient && (
+          <div>
+            <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', padding: 12, borderRadius: 8, marginBottom: 16 }}>
+              <Text strong>{waRecipient.name}</Text>
+              <br />
+              <Text type="secondary" style={{ fontSize: 13 }}>
+                Phone: <strong style={{ color: '#15803d' }}>{waRecipient.phone}</strong>
+              </Text>
+            </div>
+
+            <div style={{ marginBottom: 12 }}>
+              <Text strong style={{ fontSize: 13, display: 'block', marginBottom: 4 }}>
+                Choose Outreach Pitch Template:
+              </Text>
+              <Select
+                defaultValue="intro"
+                onChange={handleTemplateChange}
+                style={{ width: '100%' }}
+                options={[
+                  { value: 'intro', label: '1. Introduction & Software Overview' },
+                  { value: 'offer', label: '2. Exclusive Local Business Offer / Discount' },
+                  { value: 'quick', label: '3. Quick Inquiry on Billing / Operations' },
+                ]}
+              />
+            </div>
+
+            <div style={{ marginBottom: 16 }}>
+              <Text strong style={{ fontSize: 13, display: 'block', marginBottom: 4 }}>
+                Message Text (Personalized):
+              </Text>
+              <Input.TextArea
+                rows={4}
+                value={waMessageText}
+                onChange={(e) => setWaMessageText(e.target.value)}
+              />
+            </div>
+
+            <Divider style={{ margin: '12px 0' }} />
+
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <Button
+                type="primary"
+                icon={<WhatsAppOutlined />}
+                onClick={handleLaunchWhatsApp}
+                block
+                style={{ height: 42, background: '#25D366', borderColor: '#25D366', fontWeight: 600 }}
+              >
+                Launch WhatsApp (Web / App)
+              </Button>
+              <Button
+                icon={<SendOutlined />}
+                loading={sendingWa}
+                onClick={handleSendViaBridge}
+                block
+              >
+                Send via System Bridge (Human-Like Delay)
+              </Button>
+              <Button
+                icon={<CopyOutlined />}
+                onClick={() => {
+                  navigator.clipboard.writeText(waMessageText);
+                  message.success('Pitch copied to clipboard!');
+                }}
+                block
+              >
+                Copy Message Text
+              </Button>
+            </Space>
+          </div>
+        )}
+      </Modal>
 
       {/* Import to Potential Customers Modal */}
       <Modal

@@ -62,6 +62,61 @@ export default function CustomersPage() {
   const [callSummaryResult, setCallSummaryResult] = useState<any | null>(null);
   const [summarizing, setSummarizing] = useState(false);
 
+  // WhatsApp Outreach State
+  const [waModalVisible, setWaModalVisible] = useState(false);
+  const [waRecipient, setWaRecipient] = useState<any | null>(null);
+  const [waMessageText, setWaMessageText] = useState('');
+  const [sendingWa, setSendingWa] = useState(false);
+
+  const handleOpenWhatsAppModal = (customer: any) => {
+    setWaRecipient(customer);
+    const firstName = customer.name?.split(' ')[0] || 'there';
+    const comp = customer.companyName || 'your business';
+    const defaultPitch = `Namaste ${firstName} ji, hope you are having a wonderful day! I came across ${comp} and wanted to reach out regarding our operational software and business solutions. Would you be open to a quick 2-minute overview?`;
+    setWaMessageText(defaultPitch);
+    setWaModalVisible(true);
+  };
+
+  const handleTemplateChange = (templateKey: string) => {
+    if (!waRecipient) return;
+    const firstName = waRecipient.name?.split(' ')[0] || 'there';
+    const comp = waRecipient.companyName || 'your business';
+    if (templateKey === 'intro') {
+      setWaMessageText(`Namaste ${firstName} ji, hope you are having a wonderful day! I came across ${comp} and wanted to reach out regarding our operational software and business solutions. Would you be open to a quick 2-minute overview?`);
+    } else if (templateKey === 'offer') {
+      setWaMessageText(`Hello ${firstName}, we are running a special 15% discount this week on our digital solutions for ${comp}. Can I send across a quick sample quote for your review?`);
+    } else if (templateKey === 'followup') {
+      setWaMessageText(`Hi ${firstName}, hope you are doing well! Following up on our previous discussion regarding ${comp}. Please let me know if you would like to proceed or have any questions.`);
+    }
+  };
+
+  const handleLaunchWhatsApp = () => {
+    if (!waRecipient?.phone) return;
+    let cleanPhone = waRecipient.phone.replace(/[^0-9]/g, '');
+    if (cleanPhone.length === 10) cleanPhone = '91' + cleanPhone;
+    window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(waMessageText)}`, '_blank');
+  };
+
+  const handleSendViaBridge = async () => {
+    if (!waRecipient?.phone || !waMessageText.trim()) return;
+    setSendingWa(true);
+    let cleanPhone = waRecipient.phone.replace(/[^0-9]/g, '');
+    if (cleanPhone.length === 10) cleanPhone = '91' + cleanPhone;
+    try {
+      await api.post('/api/whatsapp/messages', {
+        phone: cleanPhone,
+        message: waMessageText,
+        contactId: waRecipient.id,
+      });
+      message.success('Message queued and dispatched via WhatsApp Bridge!');
+      setWaModalVisible(false);
+    } catch {
+      handleLaunchWhatsApp();
+    } finally {
+      setSendingWa(false);
+    }
+  };
+
   const handleScoreCustomer = async (id: string) => {
     setScoringCustomer(true);
     try {

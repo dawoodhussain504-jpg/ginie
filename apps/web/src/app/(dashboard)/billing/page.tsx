@@ -15,17 +15,21 @@ import {
   InputNumber,
   Select,
   message,
+  Divider,
 } from 'antd';
 import {
   PlusOutlined,
   FileTextOutlined,
   ShoppingOutlined,
   CheckCircleOutlined,
-  ArrowRightOutlined,
+  QrcodeOutlined,
+  WhatsAppOutlined,
+  CopyOutlined,
 } from '@ant-design/icons';
 import { useApp } from '@/context/AppContext';
 import { api } from '@/lib/api';
 import { formatIndianCurrency, formatDateIndian } from '@ginie/i18n';
+import { buildUpiUri, buildUpiQrCodeUrl } from '@/lib/upi';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -37,11 +41,16 @@ export default function BillingPage() {
   const [invoices, setInvoices] = useState<any[]>([]);
   const [productModalVisible, setProductModalVisible] = useState(false);
   const [quoteModalVisible, setQuoteModalVisible] = useState(false);
+  const [upiModalVisible, setUpiModalVisible] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState<any | null>(null);
+  const [adminUpiVpa, setAdminUpiVpa] = useState('merchant@upi');
   const [productForm] = Form.useForm();
   const [quoteForm] = Form.useForm();
 
   useEffect(() => {
     loadBillingData();
+    const savedVpa = localStorage.getItem('ginie_admin_upi_vpa');
+    if (savedVpa) setAdminUpiVpa(savedVpa);
   }, []);
 
   const loadBillingData = async () => {
@@ -119,6 +128,41 @@ export default function BillingPage() {
     } catch (err: any) {
       message.error(err.message || t.common.error);
     }
+  };
+
+  const handleOpenUpiModal = (invoice: any) => {
+    setSelectedInvoice(invoice);
+    setUpiModalVisible(true);
+  };
+
+  const handleSaveUpiVpa = (vpa: string) => {
+    const clean = vpa.trim();
+    if (clean) {
+      setAdminUpiVpa(clean);
+      localStorage.setItem('ginie_admin_upi_vpa', clean);
+      message.success('UPI ID updated & saved.');
+    }
+  };
+
+  const handleSendInvoiceWhatsApp = () => {
+    if (!selectedInvoice) return;
+    const upiUri = buildUpiUri({
+      vpa: adminUpiVpa,
+      payeeName: 'Ginie Space',
+      amount: Number(selectedInvoice.total || 0),
+      transactionNote: `Invoice ${selectedInvoice.invoiceNumber}`,
+    });
+
+    const text =
+      `*INVOICE: ${selectedInvoice.invoiceNumber}*\n` +
+      `Amount Due: ₹${Number(selectedInvoice.total || 0).toLocaleString('en-IN')}\n` +
+      `Due Date: ${selectedInvoice.dueDate ? formatDateIndian(selectedInvoice.dueDate) : 'Immediate'}\n\n` +
+      `👉 *Pay instantly via GooglePay / PhonePe / Paytm:*\n` +
+      `${upiUri}\n\n` +
+      `Thank you for your business!`;
+
+    const waUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    window.open(waUrl, '_blank');
   };
 
   const productColumns = [
@@ -227,7 +271,7 @@ export default function BillingPage() {
       dataIndex: 'total',
       key: 'total',
       render: (val: any) => (
-        <Text strong style={{ color: '#52c41a' }}>
+        <Text strong style={{ color: '#52c41a', fontSize: 15 }}>
           {formatIndianCurrency(Number(val))}
         </Text>
       ),
@@ -249,22 +293,62 @@ export default function BillingPage() {
     {
       title: 'Actions',
       key: 'actions',
-      render: (_: any, record: any) =>
-        record.status !== 'paid' ? (
+      render: (_: any, record: any) => (
+        <Space size="small">
           <Button
             size="small"
-            icon={<CheckCircleOutlined />}
-            onClick={() => handleMarkPaid(record.id)}
+            icon={<QrcodeOutlined />}
+            onClick={() => handleOpenUpiModal(record)}
+            style={{ color: brandColor, borderColor: brandColor }}
           >
-            {t.billing.markPaid}
+            UPI QR & WhatsApp
           </Button>
-        ) : (
-          <Tag color="green">PAID</Tag>
-        ),
+          {record.status !== 'paid' && (
+            <Button
+              size="small"
+              icon={<CheckCircleOutlined />}
+              onClick={() => handleMarkPaid(record.id)}
+            >
+              {t.billing.markPaid}
+            </Button>
+          )}
+        </Space>
+      ),
     },
   ];
 
+  const currentUpiUri = selectedInvoice
+    ? buildUpiUri({
+        vpa: adminUpiVpa,
+        payeeName: 'Ginie Space',
+        amount: Number(selectedInvoice.total || 0),
+        transactionNote: `Invoice ${selectedInvoice.invoiceNumber}`,
+      })
+    : '';
+
+  const qrImageUrl = currentUpiUri ? buildUpiQrCodeUrl(currentUpiUri, 280) : '';
+
   const tabItems = [
+    {
+      key: 'invoices',
+      label: (
+        <span>
+          <CheckCircleOutlined /> {t.billing.invoicesTab}
+        </span>
+      ),
+      children: (
+        <Card title={t.billing.invoicesTab} style={{ borderRadius: 12 }}>
+          <Table
+            dataSource={invoices}
+            columns={invoiceColumns}
+            rowKey="id"
+            loading={loading}
+            pagination={{ pageSize: 10 }}
+            locale={{ emptyText: 'No invoices generated yet.' }}
+          />
+        </Card>
+      ),
+    },
     {
       key: 'quotes',
       label: (
@@ -293,26 +377,6 @@ export default function BillingPage() {
             loading={loading}
             pagination={{ pageSize: 10 }}
             locale={{ emptyText: 'No price quotes created yet.' }}
-          />
-        </Card>
-      ),
-    },
-    {
-      key: 'invoices',
-      label: (
-        <span>
-          <CheckCircleOutlined /> {t.billing.invoicesTab}
-        </span>
-      ),
-      children: (
-        <Card title={t.billing.invoicesTab} style={{ borderRadius: 12 }}>
-          <Table
-            dataSource={invoices}
-            columns={invoiceColumns}
-            rowKey="id"
-            loading={loading}
-            pagination={{ pageSize: 10 }}
-            locale={{ emptyText: 'No invoices generated yet.' }}
           />
         </Card>
       ),
@@ -360,7 +424,97 @@ export default function BillingPage() {
         <Text type="secondary">{t.billing.subtitle}</Text>
       </div>
 
-      <Tabs items={tabItems} size="large" />
+      <Tabs items={tabItems} size="large" defaultActiveKey="invoices" />
+
+      {/* Dynamic UPI Payment Modal */}
+      <Modal
+        title={
+          <Space>
+            <QrcodeOutlined style={{ color: '#52c41a' }} />
+            <span>UPI Instant Payment & WhatsApp Dispatch</span>
+          </Space>
+        }
+        open={upiModalVisible}
+        onCancel={() => setUpiModalVisible(false)}
+        footer={null}
+        destroyOnClose
+        width={460}
+      >
+        {selectedInvoice && (
+          <div style={{ textAlign: 'center', paddingTop: 8 }}>
+            <div style={{ background: '#f8fafc', padding: '12px 16px', borderRadius: 8, marginBottom: 16 }}>
+              <Text type="secondary">Invoice Number:</Text>{' '}
+              <Text strong>{selectedInvoice.invoiceNumber}</Text>
+              <br />
+              <Text type="secondary">Total Amount Due:</Text>{' '}
+              <span style={{ fontSize: 20, fontWeight: 800, color: '#52c41a', marginLeft: 6 }}>
+                {formatIndianCurrency(Number(selectedInvoice.total || 0))}
+              </span>
+            </div>
+
+            <div style={{ marginBottom: 14 }}>
+              <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>
+                Admin Receiving UPI ID (GooglePay / PhonePe / Paytm / BHIM):
+              </Text>
+              <Input.Search
+                defaultValue={adminUpiVpa}
+                enterButton="Save UPI ID"
+                onSearch={handleSaveUpiVpa}
+                placeholder="yourname@okhdfcbank"
+              />
+            </div>
+
+            {/* Dynamic QR Code Canvas Image */}
+            <div
+              style={{
+                display: 'inline-block',
+                padding: 12,
+                borderRadius: 12,
+                border: '2px solid #e2e8f0',
+                background: '#fff',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
+                marginBottom: 12,
+              }}
+            >
+              <img
+                src={qrImageUrl}
+                alt="UPI Payment QR Code"
+                width={220}
+                height={220}
+                style={{ display: 'block' }}
+              />
+            </div>
+
+            <div>
+              <Tag color="green">Accepts PhonePe &bull; Google Pay &bull; Paytm &bull; BHIM</Tag>
+            </div>
+
+            <Divider style={{ margin: '16px 0' }} />
+
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <Button
+                type="primary"
+                icon={<WhatsAppOutlined />}
+                onClick={handleSendInvoiceWhatsApp}
+                block
+                style={{ height: 42, background: '#25D366', borderColor: '#25D366', fontWeight: 600 }}
+              >
+                Send Invoice on WhatsApp
+              </Button>
+              <Button
+                icon={<CopyOutlined />}
+                onClick={() => {
+                  navigator.clipboard.writeText(currentUpiUri);
+                  message.success('UPI deep link copied!');
+                }}
+                block
+              >
+                Copy UPI Payment Deep Link
+              </Button>
+            </Space>
+          </div>
+        )}
+      </Modal>
 
       {/* Add Product Modal */}
       <Modal

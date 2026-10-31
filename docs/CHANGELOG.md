@@ -227,3 +227,38 @@ ADR-001, ADR-002, CP-001, CP-003.
 
 **PR / commit:**
 main
+
+---
+
+## CP-005 — Dynamic UPI QR Invoicing, Direct WhatsApp Pitch Outreach, and Google Gemini AI Integration — 2026-10-31 — Status: implemented
+**Summary:**
+Implemented key owner-focused workflow upgrades to maximize high-conversion sales and instant payments for the sole admin:
+1. **Dynamic UPI QR Code & WhatsApp Invoice Dispatch:**
+   - Added `apps/web/src/lib/upi.ts` to build valid standard UPI payment URIs (`upi://pay?pa=...&pn=...&am=...&cu=INR&tn=...`) and generate scannable QR code images.
+   - Enhanced `apps/web/src/app/(dashboard)/billing/page.tsx` with a dedicated "UPI QR & WhatsApp" modal on every invoice. Admin can configure & persist their receiving UPI ID (`VPA`) in real-time, view live QR codes with exact invoice amount & description, copy UPI payment deep links, and send pre-formatted invoices via 1-click WhatsApp link (`https://wa.me/...`).
+2. **Direct WhatsApp Pitch Outreach Engine:**
+   - Enhanced `apps/web/src/app/(dashboard)/customers/page.tsx` with a direct WhatsApp pitch launcher. Includes pre-crafted high-converting message templates (Introductory Greeting, Special Discount Offer, Gentle Follow-up) and 1-click WhatsApp Web launch.
+   - Enhanced `apps/web/src/app/(dashboard)/find-customers/page.tsx` with an immediate "Pitch on WhatsApp" action button directly in the Google Maps search results table, eliminating friction before manual import.
+3. **Google Gemini AI Copilot Integration:**
+   - Implemented `GeminiAiProvider` (`apps/api/src/modules/ai/providers/gemini-ai.provider.ts`) connecting to Google Gemini 1.5 Flash API via REST (`generateContent`).
+   - Upgraded `apps/api/src/modules/ai/ai.service.ts` to automatically prioritize Gemini for customer scoring (0-100), personalized smart replies across 4 tones, and call summary analysis when `GEMINI_API_KEY` or `AI_API_KEY` is configured, while retaining zero-config fallback heuristic engine when offline.
+
+**Files changed:**
+- `apps/api/src/modules/ai/ai.module.ts`
+- `apps/api/src/modules/ai/ai.service.ts`
+- `apps/api/src/modules/ai/providers/gemini-ai.provider.ts`
+- `apps/web/src/app/(dashboard)/billing/page.tsx`
+- `apps/web/src/app/(dashboard)/customers/page.tsx`
+- `apps/web/src/app/(dashboard)/find-customers/page.tsx`
+- `apps/web/src/lib/upi.ts`
+- `docs/PROJECT_STATE.md`, `docs/CHANGELOG.md`
+
+**Migrations:**
+None.
+
+**Related decisions/changes:**
+ADR-008, CP-001, CP-002, CP-003, CP-004.
+
+**PR / commit:**
+main
+
