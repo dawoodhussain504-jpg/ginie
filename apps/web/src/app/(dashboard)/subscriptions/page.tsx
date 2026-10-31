@@ -118,7 +118,7 @@ export default function SubscriptionsPage() {
       <Row gutter={[20, 20]} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={12} lg={6}>
           <Card style={{ borderRadius: 12 }}>
-            <Space orientation="vertical" size={4}>
+            <Space direction="vertical" size={4}>
               <Space>
                 <CompassOutlined style={{ color: brandColor, fontSize: 18 }} />
                 <Text type="secondary" style={{ fontSize: 13 }}>Google Places Searches</Text>
@@ -135,7 +135,7 @@ export default function SubscriptionsPage() {
 
         <Col xs={24} sm={12} lg={6}>
           <Card style={{ borderRadius: 12 }}>
-            <Space orientation="vertical" size={4}>
+            <Space direction="vertical" size={4}>
               <Space>
                 <UsergroupAddOutlined style={{ color: '#52c41a', fontSize: 18 }} />
                 <Text type="secondary" style={{ fontSize: 13 }}>Customer Leads</Text>
@@ -152,7 +152,7 @@ export default function SubscriptionsPage() {
 
         <Col xs={24} sm={12} lg={6}>
           <Card style={{ borderRadius: 12 }}>
-            <Space orientation="vertical" size={4}>
+            <Space direction="vertical" size={4}>
               <Space>
                 <WhatsAppOutlined style={{ color: '#25D366', fontSize: 18 }} />
                 <Text type="secondary" style={{ fontSize: 13 }}>WhatsApp Outreach</Text>
@@ -169,7 +169,7 @@ export default function SubscriptionsPage() {
 
         <Col xs={24} sm={12} lg={6}>
           <Card style={{ borderRadius: 12 }}>
-            <Space orientation="vertical" size={4}>
+            <Space direction="vertical" size={4}>
               <Space>
                 <DatabaseOutlined style={{ color: '#722ed1', fontSize: 18 }} />
                 <Text type="secondary" style={{ fontSize: 13 }}>Architecture</Text>

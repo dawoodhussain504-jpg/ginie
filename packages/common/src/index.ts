@@ -313,7 +313,9 @@ export type DraftMessageDto = z.infer<typeof DraftMessageSchema>;
 export interface DraftMessageResult {
   subject?: string;
   message: string;
-  suggestedDelaySeconds: number;
+  suggestedDelaySeconds?: number;
+  tone?: string;
+  channel?: string;
 }
 
 export const SummarizeCallSchema = z.object({

@@ -76,6 +76,7 @@ Return only the drafted message text.`;
     const text = await this.callGemini(prompt);
     return {
       message: text.trim(),
+      suggestedDelaySeconds: 45,
       tone: context.tone,
       channel: context.channel,
     };
