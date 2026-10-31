@@ -89,7 +89,7 @@ export default function SubscriptionsPage() {
           color: '#fff',
         }}
       >
-        <Row orientation="horizontal" justify="space-between" align="middle" gutter={[24, 24]}>
+        <Row justify="space-between" align="middle" gutter={[24, 24]}>
           <Col xs={24} md={16}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
               <Tag color="gold" icon={<SafetyCertificateOutlined />} style={{ padding: '4px 12px', fontSize: 13, fontWeight: 700 }}>

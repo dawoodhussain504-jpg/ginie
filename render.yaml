@@ -9,7 +9,7 @@ services:
     name: ginie-api
     env: node
     plan: free
-    buildCommand: pnpm install && pnpm --filter @ginie/database run generate && pnpm --filter @ginie/api run build
+    buildCommand: pnpm install --no-frozen-lockfile && pnpm --filter @ginie/common run build && pnpm --filter @ginie/i18n run build && pnpm --filter @ginie/database run generate && pnpm --filter @ginie/database run build && pnpm --filter @ginie/api run build
     startCommand: npx prisma db push --schema=packages/database/prisma/schema.prisma && pnpm --filter @ginie/database run seed && pnpm --filter @ginie/api run start:prod
     healthCheckPath: /api/health
     envVars:
@@ -57,7 +57,7 @@ services:
     name: ginie-web
     env: node
     plan: free
-    buildCommand: pnpm install && pnpm --filter @ginie/web run build
+    buildCommand: pnpm install --no-frozen-lockfile && pnpm --filter @ginie/common run build && pnpm --filter @ginie/i18n run build && pnpm --filter @ginie/web run build
     startCommand: pnpm --filter @ginie/web run start
     envVars:
       - key: NODE_ENV
