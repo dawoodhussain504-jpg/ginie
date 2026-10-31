@@ -1,0 +1,139 @@
+{
+  "app": {
+    "name": "GINIE",
+    "tagline": "Your smart CRM genie — discover leads, close deals."
+  },
+  "nav": {
+    "home": "Home",
+    "customers": "Potential customers",
+    "findCustomers": "Find new customers",
+    "sales": "Sales in progress",
+    "people": "People",
+    "companies": "Companies",
+    "tasks": "Tasks & Follow-ups",
+    "whatsapp": "WhatsApp & Messages",
+    "settings": "Settings",
+    "logout": "Sign out"
+  },
+  "auth": {
+    "signInTitle": "Sign in to your account",
+    "signInSubtitle": "Welcome back! Enter your details to continue.",
+    "emailLabel": "Email address",
+    "passwordLabel": "Password",
+    "signInButton": "Sign in",
+    "registerTitle": "Register your company",
+    "registerSubtitle": "Start discovering customers and closing deals today.",
+    "companyNameLabel": "Company name",
+    "yourNameLabel": "Your full name",
+    "phoneLabel": "Phone number",
+    "registerButton": "Create company account",
+    "alreadyHaveAccount": "Already have an account? Sign in",
+    "dontHaveAccount": "Don't have an account? Register your company",
+    "loginFailed": "Wrong email or password. Please try again.",
+    "registerSuccess": "Company created successfully! Welcome to GINIE."
+  },
+  "dashboard": {
+    "title": "Home",
+    "welcome": "Welcome back, {name}",
+    "newCustomersCard": "New potential customers",
+    "activeSalesCard": "Sales in progress",
+    "wonSalesCard": "Sales won this month",
+    "tasksDueCard": "Tasks due today",
+    "recentCustomersTitle": "Recent potential customers",
+    "salesFunnelTitle": "Sales steps overview"
+  },
+  "customers": {
+    "title": "Potential customers",
+    "subtitle": "Track, contact, and manage your new and existing customers.",
+    "addButton": "Add customer",
+    "uploadExcel": "Upload from Excel",
+    "downloadExcel": "Download as Excel",
+    "bulkActions": "Do this for many at once",
+    "deleteConfirm": "Delete this customer? Their notes and tasks will also be removed. This cannot be undone.",
+    "moveToBin": "Moved to bin",
+    "bringBack": "Bring back",
+    "alreadyAdded": "This business is already in your list.",
+    "empty": "No customers yet. Add your first customer or upload them from Excel.",
+    "searchPlaceholder": "Search by name, phone, or city...",
+    "fields": {
+      "name": "Customer name",
+      "company": "Company",
+      "phone": "Phone number",
+      "email": "Email address",
+      "city": "City",
+      "status": "Current status",
+      "owner": "Assigned to",
+      "created": "Date added",
+      "actions": "Actions"
+    },
+    "timeline": {
+      "title": "Activity history",
+      "addNote": "Add a note",
+      "notePlaceholder": "Write what happened or next steps...",
+      "saveNote": "Save note"
+    }
+  },
+  "discovery": {
+    "title": "Find new customers",
+    "subtitle": "Discover businesses from Google Maps and add them to your customer list in one click.",
+    "countryLabel": "Country",
+    "cityLabel": "State or City",
+    "pincodeLabel": "Pincode (optional)",
+    "categoryLabel": "Business category or keyword",
+    "categoryPlaceholder": "e.g., Doctors, Real Estate Agents, Cafes, Manufacturers",
+    "searchButton": "Find new customers",
+    "searching": "Searching Google Maps... This takes a few seconds.",
+    "quotaNotice": "Monthly limit used: {used} of {total} searches.",
+    "quotaExceeded": "You have used all your searches for this month. Upgrade your plan to search more.",
+    "addToCustomers": "Add to Customers",
+    "exportExcel": "Download as Excel",
+    "empty": "Enter a location and business type above to find potential customers.",
+    "foundResults": "Found {count} businesses",
+    "table": {
+      "name": "Business name",
+      "address": "Address",
+      "phone": "Phone",
+      "website": "Website",
+      "email": "Public email",
+      "rating": "Rating",
+      "googleMaps": "View on Google Maps",
+      "status": "Status"
+    }
+  },
+  "sales": {
+    "title": "Sales in progress",
+    "subtitle": "Move your deals forward step by step.",
+    "boardView": "Board view",
+    "addSale": "Add sale in progress",
+    "emptyColumn": "No sales at this step.",
+    "won": "Won sale",
+    "lost": "Lost sale",
+    "lostReason": "Why was this sale not completed?",
+    "valueLabel": "Expected value (₹)"
+  },
+  "tasks": {
+    "title": "Tasks & Follow-ups",
+    "addTask": "Add task",
+    "dueToday": "Due today",
+    "overdue": "Overdue",
+    "completed": "Finished"
+  },
+  "settings": {
+    "title": "Settings",
+    "companyProfile": "Company profile",
+    "brandColor": "Company brand color",
+    "teamAccess": "Team access & roles",
+    "salesSteps": "Sales steps configuration",
+    "extraDetails": "Extra details (Custom fields)"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "loading": "Loading...",
+    "success": "Changes saved successfully",
+    "error": "Something went wrong. Please check your internet and try again.",
+    "pleaseCheckField": "Please check this field"
+  }
+}

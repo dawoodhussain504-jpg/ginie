@@ -1,0 +1,20 @@
+{
+  "name": "@ginie/worker",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node src/main.ts",
+    "start": "node dist/main.js"
+  },
+  "dependencies": {
+    "@ginie/database": "workspace:*",
+    "dotenv": "^16.4.5",
+    "pg-boss": "^9.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.12",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
+  }
+}

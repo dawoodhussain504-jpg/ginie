@@ -1,0 +1,22 @@
+{
+  "name": "ginie-crm",
+  "version": "1.0.0",
+  "private": true,
+  "description": "GINIE — Multi-Tenant CRM SaaS with Google Maps Lead Discovery & WhatsApp Outreach",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "db:generate": "npm run generate --workspace=@ginie/database",
+    "db:migrate": "npm run migrate:dev --workspace=@ginie/database",
+    "db:seed": "npm run seed --workspace=@ginie/database"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  }
+}
