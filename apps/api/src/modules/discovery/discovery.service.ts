@@ -15,42 +15,35 @@ export class DiscoveryService {
   private readonly logger = new Logger(DiscoveryService.name);
 
   async getUsage(tenantId: string) {
-    const tenant = await prisma.tenant.findUnique({
-      where: { id: tenantId },
-      include: { plan: true },
-    });
-
     const now = new Date();
     const periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    const counter = await prisma.usageCounter.findFirst({
-      where: {
-        tenantId,
-        metric: 'discovery_searches',
-        periodStart: { gte: periodStart },
-      },
-    });
-
-    const used = counter?.counter || 0;
-    const planLimits = (tenant?.plan?.limits as any) || {};
-    const total = planLimits.monthlyDiscoverySearches || 50;
+    let used = 0;
+    try {
+      const counter = await prisma.usageCounter.findFirst({
+        where: {
+          tenantId,
+          metric: 'discovery_searches',
+          periodStart: { gte: periodStart },
+        },
+      });
+      used = counter?.counter || 0;
+    } catch {
+      used = 0;
+    }
 
     return {
       used,
-      total,
-      remaining: Math.max(0, total - used),
+      total: 999999,
+      remaining: 999999,
+      isUnlimited: true,
       periodStart,
     };
   }
 
   async search(tenantId: string, userId: string, dto: DiscoverySearchDto) {
-    // 1. Check Quota
-    const usage = await this.getUsage(tenantId);
-    if (usage.remaining <= 0) {
-      throw new BadRequestException(
-        'You have used all your searches for this month. Upgrade your plan to search more.',
-      );
-    }
+    // 1. Master Admin Mode: Unlimited Searches (no quota restriction)
+    await this.getUsage(tenantId);
 
     // 2. Create search record
     const searchRecord = await prisma.discoverySearch.create({
@@ -70,25 +63,29 @@ export class DiscoveryService {
     const periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
 
-    await prisma.usageCounter.upsert({
-      where: {
-        tenantId_metric_periodStart: {
+    try {
+      await prisma.usageCounter.upsert({
+        where: {
+          tenantId_metric_periodStart: {
+            tenantId,
+            metric: 'discovery_searches',
+            periodStart,
+          },
+        },
+        update: {
+          counter: { increment: 1 },
+        },
+        create: {
           tenantId,
           metric: 'discovery_searches',
+          counter: 1,
           periodStart,
+          periodEnd,
         },
-      },
-      update: {
-        counter: { increment: 1 },
-      },
-      create: {
-        tenantId,
-        metric: 'discovery_searches',
-        counter: 1,
-        periodStart,
-        periodEnd,
-      },
-    });
+      });
+    } catch (e) {
+      this.logger.warn('Could not update usage counter, continuing search:', e);
+    }
 
     // 4. Fetch Places from Google Places API (New) or fallback to realistic mock
     const apiKey = process.env.GOOGLE_PLACES_API_KEY;

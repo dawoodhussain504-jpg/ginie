@@ -122,19 +122,15 @@ export default function DashboardLayout({
       icon: <HistoryOutlined />,
       label: <Link href="/audit-logs">{t.nav.auditLogs}</Link>,
     },
-    ...(user?.isSuperAdmin
-      ? [
-          {
-            key: '/admin',
-            icon: <SafetyCertificateOutlined />,
-            label: (
-              <Link href="/admin">
-                <span style={{ color: '#faad14', fontWeight: 600 }}>{t.nav.admin}</span>
-              </Link>
-            ),
-          },
-        ]
-      : []),
+    {
+      key: '/admin',
+      icon: <SafetyCertificateOutlined style={{ color: '#faad14' }} />,
+      label: (
+        <Link href="/admin">
+          <span style={{ color: '#faad14', fontWeight: 600 }}>{t.nav.admin}</span>
+        </Link>
+      ),
+    },
     {
       key: '/people',
       icon: <TeamOutlined />,
@@ -158,10 +154,10 @@ export default function DashboardLayout({
         key: 'user-info',
         label: (
           <div style={{ padding: '4px 8px' }}>
-            <Text strong>{user?.name || 'Administrator'}</Text>
+            <Text strong>{user?.name || 'Master Admin'}</Text>
             <br />
             <Text type="secondary" style={{ fontSize: 12 }}>
-              {user?.companyName || 'Company'} • {user?.role || 'Owner'}
+              {user?.companyName || 'Ginie Space'} • Master Administrator
             </Text>
           </div>
         ),
@@ -226,7 +222,7 @@ export default function DashboardLayout({
                 {t.app.name}
               </Text>
               <Text type="secondary" style={{ fontSize: 11 }}>
-                {user?.companyName || 'CRM'}
+                {user?.companyName || 'Private Cockpit'}
               </Text>
             </div>
           )}
@@ -280,9 +276,9 @@ export default function DashboardLayout({
             <Dropdown menu={userDropdownItems} trigger={['click']}>
               <Space style={{ cursor: 'pointer' }}>
                 <Avatar style={{ backgroundColor: brandColor }}>
-                  {user?.name?.[0]?.toUpperCase() || 'U'}
+                  {user?.name?.[0]?.toUpperCase() || 'A'}
                 </Avatar>
-                <Text strong>{user?.name || 'Account'}</Text>
+                <Text strong>{user?.name || 'Master Admin'}</Text>
               </Space>
             </Dropdown>
           </Space>

@@ -12,150 +12,84 @@ export class SubscriptionsService {
   }
 
   async getCurrentSubscription(tenantId: string) {
-    const tenant = await prisma.tenant.findUnique({
-      where: { id: tenantId },
-      include: {
-        plan: true,
-        subscriptions: {
-          take: 1,
-          orderBy: { createdAt: 'desc' },
-        },
-      },
-    });
+    let companyName = 'Ginie Space';
+    try {
+      const tenant = await prisma.tenant.findUnique({
+        where: { id: tenantId },
+      });
+      if (tenant?.name) {
+        companyName = tenant.name;
+      }
+    } catch {}
 
-    if (!tenant) {
-      throw new NotFoundException('Company profile not found.');
-    }
+    // Usage statistics
+    let leadsCount = 0;
+    let usersCount = 1;
+    let discoveryCount = 0;
 
-    // Get usage statistics
-    const [leadsCount, usersCount] = await Promise.all([
-      prisma.lead.count({ where: { tenantId, deletedAt: null } }),
-      prisma.user.count({ where: { tenantId, deletedAt: null } }),
-    ]);
+    try {
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
 
-    // Monthly discovery searches from usage_counters
-    const startOfMonth = new Date();
-    startOfMonth.setDate(1);
-    startOfMonth.setHours(0, 0, 0, 0);
+      const [leads, users, discovery] = await Promise.all([
+        prisma.lead.count({ where: { tenantId, deletedAt: null } }),
+        prisma.user.count({ where: { tenantId, deletedAt: null } }),
+        prisma.usageCounter.findFirst({
+          where: {
+            tenantId,
+            metric: 'discovery_searches',
+            periodStart: { gte: startOfMonth },
+          },
+        }),
+      ]);
+      leadsCount = leads;
+      usersCount = users || 1;
+      discoveryCount = discovery?.counter || 0;
+    } catch {}
 
-    const discoveryCounter = await prisma.usageCounter.findFirst({
-      where: {
-        tenantId,
-        metric: 'discovery_searches',
-        periodStart: { gte: startOfMonth },
-      },
-    });
-
-    const activePlan = tenant.plan || {
-      name: 'Free',
-      monthlyPrice: 0,
-      limits: {
-        maxUsers: 2,
-        maxLeads: 500,
-        monthlyDiscoverySearches: 50,
-      },
+    const unlimitedLimits = {
+      maxUsers: 999999,
+      maxLeads: 999999,
+      monthlyDiscoverySearches: 999999,
     };
 
-    const limits = (activePlan.limits as any) || {};
-
     return {
-      companyName: tenant.name,
+      companyName,
+      isMasterAdmin: true,
       plan: {
-        name: activePlan.name,
-        monthlyPrice: activePlan.monthlyPrice,
-        limits,
+        name: 'Master Admin (Sovereign Unlimited)',
+        monthlyPrice: 0,
+        limits: unlimitedLimits,
       },
       usage: {
         leadsUsed: leadsCount,
-        leadsLimit: limits.maxLeads || 500,
+        leadsLimit: 999999,
         usersUsed: usersCount,
-        usersLimit: limits.maxUsers || 2,
-        discoveryUsed: discoveryCounter?.counter || 0,
-        discoveryLimit: limits.monthlyDiscoverySearches || 50,
+        usersLimit: 999999,
+        discoveryUsed: discoveryCount,
+        discoveryLimit: 999999,
       },
-      subscription: tenant.subscriptions[0] || {
+      subscription: {
         status: 'active',
-        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        currentPeriodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
       },
     };
   }
 
   async upgradePlan(tenantId: string, dto: UpgradePlanDto) {
-    const targetPlan = await prisma.plan.findFirst({
-      where: { name: dto.planName },
-    });
-
-    if (!targetPlan) {
-      throw new BadRequestException('Selected plan was not found.');
-    }
-
-    const price = Number(targetPlan.monthlyPrice);
-
-    // If upgrading to Free, switch immediately
-    if (price === 0) {
-      await prisma.tenant.update({
-        where: { id: tenantId },
-        data: { planId: targetPlan.id },
-      });
-      return {
-        status: 'success',
-        message: 'Plan updated to Free successfully.',
-        planName: targetPlan.name,
-      };
-    }
-
-    // Simulated / live payment gateway checkout order
-    const orderId = `order_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
-    const now = new Date();
-    const periodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-
-    // Record subscription & payment record
-    const subscription = await prisma.subscription.create({
-      data: {
-        tenantId,
-        planId: targetPlan.id,
-        provider: dto.paymentGateway,
-        providerSubscriptionId: orderId,
-        status: 'active',
-        currentPeriodStart: now,
-        currentPeriodEnd: periodEnd,
-      },
-    });
-
-    await prisma.paymentRecord.create({
-      data: {
-        tenantId,
-        provider: dto.paymentGateway,
-        providerPaymentId: `pay_${Date.now()}`,
-        amount: price,
-        currency: 'INR',
-        status: 'succeeded',
-        metadata: {
-          planName: targetPlan.name,
-          orderId,
-        },
-      },
-    });
-
-    // Update tenant plan
-    await prisma.tenant.update({
-      where: { id: tenantId },
-      data: { planId: targetPlan.id },
-    });
-
     return {
       status: 'success',
-      message: `Successfully upgraded to ${targetPlan.name} Plan!`,
-      planName: targetPlan.name,
-      orderId,
-      amount: price,
+      message: 'Master Admin is already on the Sovereign Unlimited Tier.',
+      planName: 'Master Admin (Sovereign Unlimited)',
+      orderId: `admin_unlimited_${Date.now()}`,
+      amount: 0,
       currency: 'INR',
-      periodEnd,
+      periodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
     };
   }
 
   async handlePaymentWebhook(gateway: string, payload: any) {
-    // Webhook processor for Razorpay / Stripe
     return { received: true, gateway };
   }
 }

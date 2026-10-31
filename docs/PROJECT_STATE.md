@@ -19,6 +19,7 @@
     - **Milestone 3.4 — Owner Control Panel (Super Admin):** Platform owner portal (`/admin`) guarded by `AdminGuard` (`isSuperAdmin: true`). Platform-wide metrics (total companies, active users, total searches, gross platform revenue), company status management (Active / Paused), and instant plan allocation.
     - **Milestone 3.5 — Activity History & Audit Logs:** Dedicated `audit_logs` tracking sensitive changes (customers, deals, invoices, settings), and activity history viewer with before/after state diff inspection drawer.
     - **Milestone 3.6 — Monorepo Build & Tests:** All 7 workspace packages and all 21 Next.js App Router routes compile, prerender, and build with 0 errors. Multi-tenant isolation unit tests pass 100%.
+  - **Single-Admin Mode (CP-004):** Converted system to private single-admin owner cockpit. Public registration disabled, search limits uncapped to unlimited, and subscription paywall replaced with sovereign lifetime access.
 - **Active Branch:** `feat/phase-3-automation-ai-billing`
 - **Blockers:** None.
 

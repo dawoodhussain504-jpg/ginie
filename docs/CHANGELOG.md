@@ -188,3 +188,42 @@ ADR-001, ADR-002, ADR-003, ADR-004, ADR-005, ADR-007, ADR-008, ADR-009.
 
 **PR / commit:**
 feat/phase-3-automation-ai-billing
+
+
+---
+
+## CP-004 — Single-Admin Private Mode & Unlimited Sovereign Access — 2026-10-31 — Status: implemented
+**Summary:**
+Converted the platform from public multi-tenant SaaS into a dedicated Single-Owner Private Cockpit:
+1. **Public Registration Disabled:**
+   - Disabled `/api/auth/register` with `ForbiddenException`.
+   - Updated `/register` page to a locked information screen directing users back to Admin login.
+   - Removed register CTA from `/login` and restyled login screen for Master Administrator Cockpit.
+2. **Unlimited Sovereign Access:**
+   - Removed search quota ceiling in `apps/api/src/modules/discovery/discovery.service.ts` so Google Places Lead Discovery searches are unlimited.
+   - Updated `/find-customers` UI to display active Master Admin Unlimited status instead of quota limit bar.
+3. **Subscriptions Replaced with Sovereign License Overview:**
+   - Transformed `/subscriptions` from a SaaS paywall into a Sovereign License overview displaying lifetime ₹0 fee and unlocked limits.
+4. **Owner Panel Permanent Access:**
+   - Updated `apps/web/src/app/(dashboard)/layout.tsx` so Master Admin Panel (`/admin`) is permanently available in the sidebar navigation.
+
+**Files changed:**
+- `apps/api/src/modules/auth/auth.controller.ts`
+- `apps/api/src/modules/auth/auth.service.ts`
+- `apps/api/src/modules/discovery/discovery.service.ts`
+- `apps/api/src/modules/subscriptions/subscriptions.service.ts`
+- `apps/web/src/app/(auth)/login/page.tsx`
+- `apps/web/src/app/(auth)/register/page.tsx`
+- `apps/web/src/app/(dashboard)/find-customers/page.tsx`
+- `apps/web/src/app/(dashboard)/layout.tsx`
+- `apps/web/src/app/(dashboard)/subscriptions/page.tsx`
+- `docs/PROJECT_STATE.md`, `docs/CHANGELOG.md`
+
+**Migrations:**
+None.
+
+**Related decisions/changes:**
+ADR-001, ADR-002, CP-001, CP-003.
+
+**PR / commit:**
+main

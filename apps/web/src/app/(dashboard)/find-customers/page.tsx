@@ -10,12 +10,9 @@ import {
   Space,
   Typography,
   Tag,
-  Alert,
   Modal,
   Select,
-  Progress,
   message,
-  Tooltip,
 } from 'antd';
 import {
   CompassOutlined,
@@ -26,6 +23,7 @@ import {
   StarFilled,
   GlobalOutlined,
   PhoneOutlined,
+  SafetyCertificateOutlined,
 } from '@ant-design/icons';
 import { useApp } from '@/context/AppContext';
 import { api } from '@/lib/api';
@@ -39,7 +37,7 @@ export default function FindCustomersPage() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [currentSearchId, setCurrentSearchId] = useState<string | null>(null);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
-  const [usage, setUsage] = useState({ used: 0, total: 50, remaining: 50 });
+  const [usage, setUsage] = useState({ used: 0, total: 999999, remaining: 999999 });
   const [importModalVisible, setImportModalVisible] = useState(false);
   const [importing, setImporting] = useState(false);
   const [statuses, setStatuses] = useState<any[]>([]);
@@ -148,34 +146,40 @@ export default function FindCustomersPage() {
       title: t.discovery.table.address,
       dataIndex: 'address',
       key: 'address',
-      render: (address: string) => (
-        <span style={{ fontSize: 13, color: '#595959' }}>{address}</span>
-      ),
+      ellipsis: true,
     },
     {
       title: t.discovery.table.phone,
       dataIndex: 'phone',
       key: 'phone',
-      render: (phone: string) =>
-        phone ? (
-          <a href={`tel:${phone}`}>
-            <PhoneOutlined /> {phone}
-          </a>
+      render: (text: string) =>
+        text ? (
+          <Space size="small">
+            <PhoneOutlined style={{ color: '#52c41a' }} />
+            <Text copyable={{ text }}>{text}</Text>
+          </Space>
         ) : (
-          '—'
+          <Text type="secondary">-</Text>
         ),
     },
     {
       title: t.discovery.table.website,
       dataIndex: 'website',
       key: 'website',
-      render: (website: string) =>
-        website ? (
-          <a href={website} target="_blank" rel="noopener noreferrer">
-            <GlobalOutlined /> Visit
-          </a>
+      render: (text: string) =>
+        text ? (
+          <Button
+            size="small"
+            type="link"
+            href={text}
+            target="_blank"
+            icon={<GlobalOutlined />}
+            style={{ padding: 0 }}
+          >
+            Visit Site
+          </Button>
         ) : (
-          '—'
+          <Text type="secondary">-</Text>
         ),
     },
     {
@@ -184,17 +188,17 @@ export default function FindCustomersPage() {
       key: 'rating',
       render: (rating: number, record: any) =>
         rating ? (
-          <Space size={4}>
+          <Space size="small">
             <StarFilled style={{ color: '#faad14' }} />
             <Text strong>{rating.toFixed(1)}</Text>
             {record.userRatingsTotal && (
-              <Text type="secondary" style={{ fontSize: 11 }}>
+              <Text type="secondary" style={{ fontSize: 12 }}>
                 ({record.userRatingsTotal})
               </Text>
             )}
           </Space>
         ) : (
-          '—'
+          <Text type="secondary">-</Text>
         ),
     },
     {
@@ -233,7 +237,7 @@ export default function FindCustomersPage() {
         <Text type="secondary">{t.discovery.subtitle}</Text>
       </div>
 
-      {/* Quota & Search Card */}
+      {/* Sovereign Admin Mode Card */}
       <Card style={{ marginBottom: 24, borderRadius: 12 }}>
         <div
           style={{
@@ -246,18 +250,14 @@ export default function FindCustomersPage() {
           }}
         >
           <div>
-            <Text strong style={{ fontSize: 14 }}>
-              {t.discovery.quotaNotice
-                .replace('{used}', String(usage.used))
-                .replace('{total}', String(usage.total))}
-            </Text>
+            <Tag color="gold" icon={<SafetyCertificateOutlined />} style={{ fontSize: 13, padding: '4px 12px', borderRadius: 12, fontWeight: 600 }}>
+              Master Admin Mode: Unlimited Google Searches
+            </Tag>
           </div>
-          <div style={{ width: 160 }}>
-            <Progress
-              percent={Math.min(100, Math.round((usage.used / usage.total) * 100))}
-              size="small"
-              strokeColor={brandColor}
-            />
+          <div>
+            <Text type="secondary" style={{ fontSize: 13 }}>
+              Total Searches Performed This Month: <strong style={{ color: brandColor }}>{usage.used}</strong>
+            </Text>
           </div>
         </div>
 
