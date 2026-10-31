@@ -54,6 +54,7 @@ export interface AuthenticatedUser {
   companyName: string;
   companyBrandColor?: string;
   language: string;
+  isSuperAdmin?: boolean;
 }
 
 // ========================================================
@@ -248,3 +249,132 @@ export const SubmitWebFormSchema = z.object({
   customFields: z.record(z.any()).optional().default({}),
 });
 export type SubmitWebFormDto = z.infer<typeof SubmitWebFormSchema>;
+
+// ========================================================
+// 10. Auto Actions (Workflow Automation)
+// ========================================================
+export const WorkflowTriggerEvent = z.enum([
+  'customer.created',
+  'deal.stage_changed',
+  'task.overdue',
+  'form.submitted',
+]);
+export type WorkflowTriggerEventType = z.infer<typeof WorkflowTriggerEvent>;
+
+export const WorkflowConditionSchema = z.object({
+  field: z.string(),
+  operator: z.enum(['equals', 'not_equals', 'contains', 'greater_than', 'less_than']),
+  value: z.any(),
+});
+export type WorkflowConditionDto = z.infer<typeof WorkflowConditionSchema>;
+
+export const WorkflowActionSchema = z.object({
+  type: z.enum(['send_whatsapp', 'create_task', 'assign_owner', 'webhook', 'update_status']),
+  params: z.record(z.any()),
+});
+export type WorkflowActionDto = z.infer<typeof WorkflowActionSchema>;
+
+export const CreateWorkflowSchema = z.object({
+  name: z.string().min(2, 'Name is required'),
+  description: z.string().optional(),
+  triggerEvent: WorkflowTriggerEvent,
+  conditions: z.array(WorkflowConditionSchema).default([]),
+  actions: z.array(WorkflowActionSchema).min(1, 'Please add at least one action'),
+  isActive: z.boolean().default(true),
+});
+export type CreateWorkflowDto = z.infer<typeof CreateWorkflowSchema>;
+
+// ========================================================
+// 11. AI Intelligence (Provider-Agnostic Layer)
+// ========================================================
+export type AiTone = 'professional' | 'friendly' | 'urgent' | 'persuasive';
+
+export const ScoreCustomerSchema = z.object({
+  customerId: z.string(),
+});
+export type ScoreCustomerDto = z.infer<typeof ScoreCustomerSchema>;
+
+export interface CustomerScoreResult {
+  score: number; // 0 to 100
+  category: 'Hot' | 'Warm' | 'Cold';
+  reason: string;
+  suggestedAction: string;
+}
+
+export const DraftMessageSchema = z.object({
+  customerId: z.string(),
+  channel: z.enum(['whatsapp', 'email']).default('whatsapp'),
+  tone: z.enum(['professional', 'friendly', 'urgent', 'persuasive']).default('friendly'),
+  goal: z.string().optional(), // e.g. "follow up after demo", "send quotation reminder"
+  additionalNotes: z.string().optional(),
+});
+export type DraftMessageDto = z.infer<typeof DraftMessageSchema>;
+
+export interface DraftMessageResult {
+  subject?: string;
+  message: string;
+  suggestedDelaySeconds: number;
+}
+
+export const SummarizeCallSchema = z.object({
+  rawNotes: z.string().min(5, 'Please provide notes to summarize'),
+  customerId: z.string().optional(),
+});
+export type SummarizeCallDto = z.infer<typeof SummarizeCallSchema>;
+
+export interface SummarizeCallResult {
+  summary: string;
+  sentiment: 'Positive' | 'Neutral' | 'Concerning';
+  keyTakeaways: string[];
+  nextRecommendedAction: string;
+}
+
+// ========================================================
+// 12. SaaS Subscription Billing & Quotas
+// ========================================================
+export interface PlanLimitConfig {
+  maxUsers: number;
+  maxLeads: number;
+  monthlyDiscoverySearches: number;
+  monthlyWhatsAppMessages?: number;
+  hasAiFeatures?: boolean;
+  hasAutomations?: boolean;
+}
+
+export const UpgradePlanSchema = z.object({
+  planName: z.enum(['Free', 'Pro', 'Enterprise']),
+  paymentGateway: z.enum(['razorpay', 'stripe', 'manual']).default('razorpay'),
+});
+export type UpgradePlanDto = z.infer<typeof UpgradePlanSchema>;
+
+// ========================================================
+// 13. Platform Owner (Super Admin)
+// ========================================================
+export const UpdateTenantStatusSchema = z.object({
+  status: z.enum(['active', 'suspended', 'trial']),
+  reason: z.string().optional(),
+});
+export type UpdateTenantStatusDto = z.infer<typeof UpdateTenantStatusSchema>;
+
+export const UpdateTenantPlanSchema = z.object({
+  planName: z.string(),
+});
+export type UpdateTenantPlanDto = z.infer<typeof UpdateTenantPlanSchema>;
+
+// ========================================================
+// 14. Activity History & Audit Logs
+// ========================================================
+export interface AuditLogDto {
+  id: string;
+  tenantId: string;
+  userId?: string | null;
+  userName?: string | null;
+  action: string;
+  entity: string;
+  entityId?: string | null;
+  before?: any;
+  after?: any;
+  ipAddress?: string | null;
+  createdAt: string;
+}
+

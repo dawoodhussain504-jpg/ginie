@@ -11,6 +11,11 @@ import { WhatsAppModule } from './modules/whatsapp/whatsapp.module';
 import { BillingModule } from './modules/billing/billing.module';
 import { FormsModule } from './modules/forms/forms.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { AutomationsModule } from './modules/automations/automations.module';
+import { AiModule } from './modules/ai/ai.module';
+import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
+import { AdminModule } from './modules/admin/admin.module';
+import { AuditModule } from './modules/audit/audit.module';
 import { TenantAuthGuard } from './common/tenant.guard';
 import { PlainLanguageExceptionFilter } from './common/plain-language-exception.filter';
 import { HealthController } from './health.controller';
@@ -28,6 +33,11 @@ import { HealthController } from './health.controller';
     BillingModule,
     FormsModule,
     ReportsModule,
+    AutomationsModule,
+    AiModule,
+    SubscriptionsModule,
+    AdminModule,
+    AuditModule,
   ],
   controllers: [HealthController],
   providers: [

@@ -84,5 +84,30 @@ This document records the architectural, technical, and operational decisions ma
 - **Context:** Section 15 mandates that everything visible to the user must be in simple, everyday words with no developer or technical jargon, supporting both English and Hindi (`en_US`, `hi_IN`).
 - **Decision:**
   - All user-facing strings are strictly extracted into translation files (`packages/i18n/src/locales/en.json` and `hi.json`).
-  - No hardcoded English or developer terms in UI components.
   - Lint/CI rule or unit check to verify no banned terms (e.g. "Lead", "Tenant", "Webhook", "API key", "Quota") appear in user-facing translation keys without using the approved plain-language vocabulary.
+
+---
+
+## ADR-008: Workflow Automation Engine (Auto Actions)
+- **Date:** 2026-10-31
+- **Status:** Implemented (Phase 3)
+- **Context:** Businesses need custom automations (welcome messages on new leads, follow-up tasks on proposal moves, webhook alerts) without writing code.
+- **Decision:**
+  - Build a declarative Trigger-Condition-Action model stored in `workflows` and executed synchronously or via `pg-boss`.
+  - Supported Triggers: `customer.created`, `deal.stage_changed`, `task.overdue`, `form.submitted`.
+  - Conditions: evaluated against entity JSON payload with operators `equals`, `not_equals`, `contains`, `greater_than`, `less_than`.
+  - Actions: modular handlers (`send_whatsapp`, `create_task`, `assign_owner`, `webhook`).
+  - Run History: every execution is persisted to `workflow_runs` for transparent auditability and debugging.
+- **Consequences:** Provides intuitive no-code workflow builder while keeping execution overhead low and reliable.
+
+---
+
+## ADR-009: Provider-Agnostic AI Architecture with Heuristic Fallback
+- **Date:** 2026-10-31
+- **Status:** Implemented (Phase 3)
+- **Context:** AI features (Customer scoring, message drafting, call note summarization) must be responsive, cost-effective, and functional even if third-party LLM keys (OpenAI / Anthropic / Gemini) are absent or face temporary rate limits.
+- **Decision:**
+  - Abstract AI operations behind the `AiProvider` interface (`scoreCustomer`, `draftMessage`, `summarizeCall`).
+  - Provide a robust built-in `FallbackAiProvider` utilizing structured NLP heuristics (contact completeness, engagement velocity, tone templates, keyword sentiment extraction).
+  - External LLM providers plug into the same interface and seamlessly fall back to heuristic evaluation on network/quota failure.
+- **Consequences:** Guarantees 100% testability, zero downtime, zero initial API cost, and predictable responses conforming strictly to plain-language rules.

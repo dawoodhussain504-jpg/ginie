@@ -132,6 +132,7 @@ export class AuthService {
       companyName: result.tenant.name,
       companyBrandColor: result.tenant.brandColor,
       language: result.user.language,
+      isSuperAdmin: (result.user as any).isSuperAdmin || false,
     };
 
     return { tokens, user: profile };
@@ -165,6 +166,7 @@ export class AuthService {
       id: user.id,
       tenantId: user.tenantId,
       email: user.email,
+      isSuperAdmin: (user as any).isSuperAdmin || false,
     });
 
     const profile: AuthenticatedUser = {
@@ -177,6 +179,7 @@ export class AuthService {
       companyName: user.tenant.name,
       companyBrandColor: user.tenant.brandColor,
       language: user.language,
+      isSuperAdmin: (user as any).isSuperAdmin || false,
     };
 
     return { tokens, user: profile };
@@ -202,10 +205,11 @@ export class AuthService {
       companyName: user.tenant.name,
       companyBrandColor: user.tenant.brandColor,
       language: user.language,
+      isSuperAdmin: (user as any).isSuperAdmin || false,
     };
   }
 
-  private generateTokens(payload: { id: string; tenantId: string; email: string }): AuthTokens {
+  private generateTokens(payload: { id: string; tenantId: string; email: string; isSuperAdmin?: boolean }): AuthTokens {
     const secret = process.env.JWT_SECRET || 'dev_secret_jwt_ginie_app';
     const refreshSecret = process.env.JWT_REFRESH_SECRET || 'dev_secret_refresh_ginie_app';
 

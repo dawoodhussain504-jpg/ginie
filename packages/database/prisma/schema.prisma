@@ -19,7 +19,8 @@ model Plan {
   isActive     Boolean       @default(true)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
-  tenants      Tenant[]
+  tenants       Tenant[]
+  subscriptions Subscription[]
 
   @@map("plans")
 }
@@ -62,6 +63,11 @@ model Tenant {
   invoices              Invoice[]
   customFieldDefs       CustomFieldDefinition[]
   webForms              WebForm[]
+  workflows             Workflow[]
+  workflowRuns          WorkflowRun[]
+  auditLogs             AuditLog[]
+  subscriptions         Subscription[]
+  payments              PaymentRecord[]
 
   @@map("tenants")
 }
@@ -98,6 +104,7 @@ model User {
   language         String    @default("en") // en, hi
   lastLoginAt      DateTime?
   twoFactorSecret  String?
+  isSuperAdmin     Boolean   @default(false)
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
   deletedAt        DateTime?
@@ -108,6 +115,7 @@ model User {
   assignedTasks    Task[]            @relation("TaskAssignee")
   activities       Activity[]
   searches         DiscoverySearch[]
+  auditLogs        AuditLog[]
 
   @@unique([tenantId, email])
   @@index([tenantId, email])
@@ -156,6 +164,9 @@ model Lead {
   ownerId            String?
   owner              User?       @relation("LeadOwner", fields: [ownerId], references: [id])
   score              Int         @default(0)
+  aiScoreCategory    String?     // hot, warm, cold
+  aiScoreReason      String?     // plain-language explanation of interest score
+  aiSummary          String?     // AI key takeaways and notes
   tags               Json        @default("[]")
   customFields       Json        @default("{}")
   createdBy          String?
@@ -593,3 +604,98 @@ model UsageCounter {
   @@unique([tenantId, metric, periodStart])
   @@map("usage_counters")
 }
+
+// ----------------------------------------------------
+// 12. Workflow Automations ("Auto Actions")
+// ----------------------------------------------------
+model Workflow {
+  id           String        @id @default(uuid())
+  tenantId     String
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name         String
+  description  String?
+  triggerEvent String        // customer.created, deal.stage_changed, task.overdue, form.submitted
+  conditions   Json          @default("[]") // [{ field, operator, value }]
+  actions      Json          @default("[]") // [{ type: 'send_whatsapp'|'create_task'|'assign_owner'|'webhook', ... }]
+  isActive     Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  runs         WorkflowRun[]
+
+  @@map("workflows")
+}
+
+model WorkflowRun {
+  id          String    @id @default(uuid())
+  tenantId    String
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  workflowId  String
+  workflow    Workflow  @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  entityId    String?
+  status      String    @default("success") // success, failed, running
+  result      Json      @default("{}")
+  executedAt  DateTime  @default(now())
+
+  @@map("workflow_runs")
+}
+
+// ----------------------------------------------------
+// 13. Audit Logs (Activity History)
+// ----------------------------------------------------
+model AuditLog {
+  id         String   @id @default(uuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+  action     String   // create, update, delete, login, export
+  entity     String   // lead, deal, quotation, invoice, settings, user
+  entityId   String?
+  before     Json?
+  after      Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, entity, entityId])
+  @@map("audit_logs")
+}
+
+// ----------------------------------------------------
+// 14. Subscriptions & Payments
+// ----------------------------------------------------
+model Subscription {
+  id                     String    @id @default(uuid())
+  tenantId               String
+  tenant                 Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  planId                 String
+  plan                   Plan      @relation(fields: [planId], references: [id])
+  provider               String    @default("razorpay") // razorpay, stripe, manual
+  providerSubscriptionId String?
+  status                 String    @default("active") // active, past_due, cancelled, trialing
+  currentPeriodStart     DateTime  @default(now())
+  currentPeriodEnd       DateTime
+  cancelAtPeriodEnd      Boolean   @default(false)
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  @@map("subscriptions")
+}
+
+model PaymentRecord {
+  id                String   @id @default(uuid())
+  tenantId          String
+  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  provider          String   // razorpay, stripe
+  providerPaymentId String?
+  amount            Decimal  @db.Decimal(10, 2)
+  currency          String   @default("INR")
+  status            String   @default("succeeded") // succeeded, pending, failed
+  metadata          Json?
+  createdAt         DateTime @default(now())
+
+  @@map("payment_records")
+}
+

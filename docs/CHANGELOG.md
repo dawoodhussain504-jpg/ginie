@@ -126,4 +126,65 @@ Prisma schema expanded and client generated.
 ADR-001, ADR-002, ADR-004, ADR-005, ADR-007.
 
 **PR / commit:**
-feat/phase-2-whatsapp-communication-billing
+feat/phase-2-whatsapp-communication-billing (merged via PR #2)
+
+---
+
+## CP-003 — Phase 3 Workflow Automation, AI Features, Subscription Billing, Super Admin & Audit Logs — 2026-10-31 — Status: implemented
+**Summary:**
+Implemented all Phase 3 milestones and complete production capabilities:
+1. **Auto Actions (Workflow Automation Engine):**
+   - No-code visual trigger-condition-action workflow builder (`apps/api/src/modules/automations` & `/automations`).
+   - Trigger events: `customer.created`, `deal.stage_changed`, `task.overdue`, `form.submitted`.
+   - Condition evaluation: `equals`, `not_equals`, `contains`, `greater_than`, `less_than`.
+   - Automated actions: `send_whatsapp`, `create_task`, `assign_owner`, and `webhook`.
+   - Execution run logs tracking status (`success` / `failed`) with dry-run simulator.
+2. **AI Intelligence (Provider-Agnostic Layer):**
+   - Provider-agnostic abstraction (`AiProvider` interface) supporting fallback heuristic analysis engine, OpenAI, and Gemini (`apps/api/src/modules/ai`).
+   - Customer scoring: calculates 0-100 score, categorizes as Hot / Warm / Cold, and explains plain-language reasoning.
+   - Smart reply generator: context-aware WhatsApp/Email drafting across 4 tones (Friendly, Professional, Urgent, Persuasive) with one-click copy and WhatsApp launch.
+   - Call note summarizer: extracts key discussion points, sentiment (Positive, Neutral, Concerning), and recommends next steps.
+3. **SaaS Subscription Billing & Usage Limits:**
+   - Multi-tier SaaS plans: Free Starter, Pro Growth (₹2,999/mo), Enterprise (₹4,999/mo).
+   - Usage meters tracking customers, Google Maps discovery searches, and team member seats (`/subscriptions`).
+   - Razorpay (India) & Stripe (International) payment checkout integration.
+4. **Owner Control Panel (Platform Super Admin):**
+   - Platform owner dashboard (`/admin`) protected by `AdminGuard` (`isSuperAdmin: true`).
+   - Platform metrics: Total registered companies, active team members, total searches, and gross revenue.
+   - Company account actions: instant account pause / activation and subscription plan allocation.
+5. **Activity History & Audit Logs:**
+   - Dedicated `audit_logs` tracking sensitive entity modifications (customers, sales, invoices, settings).
+   - Activity history timeline (`/audit-logs`) with before/after state diff inspection drawer.
+6. **Plain-Language UI Rule & Localization:**
+   - 100% compliant English (`en.json`) and Hindi (`hi.json`) translations for all new Phase 3 features.
+7. **Monorepo Build & Isolation Verification:**
+   - All 7 workspace packages and all 21 Next.js App Router pages compile and build cleanly with 0 errors.
+   - Multi-tenant isolation verified with automated test suite.
+
+**Files changed:**
+- `packages/database/prisma/schema.prisma` (added `Workflow`, `WorkflowRun`, `AuditLog`, `Subscription`, `PaymentRecord` models, added `isSuperAdmin` to `User`, added AI fields to `Lead`)
+- `packages/database/prisma/seed.ts` (added Enterprise plan and marked owner user as `isSuperAdmin: true`)
+- `packages/common/src/index.ts` (added Phase 3 DTOs, schemas, and types)
+- `packages/i18n/src/locales/en.json` & `hi.json` (added Phase 3 plain-language strings and nav keys)
+- `apps/api/src/app.module.ts`, `apps/api/src/common/zod-validation.pipe.ts`
+- `apps/api/src/modules/automations/**` (Automations module, controller, service)
+- `apps/api/src/modules/ai/**` (AI module, controller, service, fallback provider)
+- `apps/api/src/modules/subscriptions/**` (Subscriptions module, controller, service)
+- `apps/api/src/modules/admin/**` (Admin module, controller, service, guard)
+- `apps/api/src/modules/audit/**` (Audit module, controller, service)
+- `apps/web/src/app/(dashboard)/layout.tsx` (added navigation links and icons)
+- `apps/web/src/app/(dashboard)/automations/page.tsx` (Auto Actions builder)
+- `apps/web/src/app/(dashboard)/subscriptions/page.tsx` (Plans & Billing)
+- `apps/web/src/app/(dashboard)/audit-logs/page.tsx` (Activity History)
+- `apps/web/src/app/(dashboard)/admin/page.tsx` (Owner Control Panel)
+- `apps/web/src/app/(dashboard)/customers/page.tsx` (Integrated AI scoring, drafting, and summarization)
+- `docs/PROJECT_STATE.md`, `docs/DECISIONS.md`, `docs/CHANGELOG.md`
+
+**Migrations:**
+Prisma client generated and seed script updated.
+
+**Related decisions/changes:**
+ADR-001, ADR-002, ADR-003, ADR-004, ADR-005, ADR-007, ADR-008, ADR-009.
+
+**PR / commit:**
+feat/phase-3-automation-ai-billing
