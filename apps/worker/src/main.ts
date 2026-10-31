@@ -1,5 +1,6 @@
 import PgBoss from 'pg-boss';
 import * as dotenv from 'dotenv';
+import { processWebsiteCrawl, WebsiteCrawlJobData } from './jobs/website-crawler.job';
 dotenv.config();
 
 const connectionString = process.env.DIRECT_URL || process.env.DATABASE_URL;
@@ -22,12 +23,17 @@ async function bootstrapWorker() {
     await boss.start();
     console.log('✓ pg-boss queue initialized successfully.');
 
-    // Discovery job handler
+    // 1. Google Places Discovery search handler
     await boss.work('discovery.search', async (job) => {
       console.log(`[Worker] Processing discovery search job: ${job.id}`, job.data);
     });
 
-    console.log('🚀 Worker listening for background jobs (discovery, emails, WhatsApp)...');
+    // 2. Website Crawler email extraction handler (Section 7.3)
+    await boss.work('website.crawl', async (job) => {
+      await processWebsiteCrawl(job.data as WebsiteCrawlJobData);
+    });
+
+    console.log('🚀 Worker listening for background jobs (discovery, website.crawl, whatsapp)...');
 
     const shutdown = async () => {
       console.log('Shutting down worker...');

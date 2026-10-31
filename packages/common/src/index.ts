@@ -16,6 +16,8 @@ export interface PermissionMatrix {
   contacts: { view: boolean; create: boolean; edit: boolean; delete: boolean; export: boolean };
   tasks: { view: boolean; create: boolean; edit: boolean; delete: boolean; export: boolean };
   discovery: { view: boolean; search: boolean; import: boolean };
+  whatsapp: { view: boolean; send: boolean; manage: boolean };
+  billing: { view: boolean; create: boolean; edit: boolean };
   settings: { view: boolean; edit: boolean };
 }
 
@@ -154,3 +156,95 @@ export const ImportDiscoveryResultsSchema = z.object({
   tags: z.array(z.string()).optional().default(['Google Maps']),
 });
 export type ImportDiscoveryResultsDto = z.infer<typeof ImportDiscoveryResultsSchema>;
+
+// ========================================================
+// 7. WhatsApp Subsystem & Bridge (Section 5.8.1)
+// ========================================================
+export interface WhatsAppProvider {
+  sendText(to: string, text: string): Promise<{ messageId: string }>;
+  sendMedia?(to: string, mediaUrl: string, caption?: string): Promise<{ messageId: string }>;
+  setPresence(to: string, presence: 'composing' | 'paused'): Promise<void>;
+  markRead(messageId: string): Promise<void>;
+  getStatus(): Promise<{ status: 'connected' | 'disconnected' | 'qr_ready'; qrCode?: string }>;
+}
+
+export const SendWhatsAppMessageSchema = z.object({
+  phone: z.string().min(8, 'Phone number is required'),
+  message: z.string().min(1, 'Message text is required'),
+  contactId: z.string().optional(),
+});
+export type SendWhatsAppMessageDto = z.infer<typeof SendWhatsAppMessageSchema>;
+
+export const CreateAutoReplyRuleSchema = z.object({
+  name: z.string().min(2, 'Rule name is required'),
+  triggerType: z.enum(['keyword', 'first_message', 'outside_hours', 'ai']),
+  triggerConfig: z.record(z.any()).default({}),
+  replyVariants: z.array(z.string()).min(1, 'Please add at least one message variation'),
+  delayMinSeconds: z.number().min(3).max(60).default(8),
+  delayMaxSeconds: z.number().min(10).max(120).default(45),
+  businessHours: z.record(z.any()).optional(),
+  isActive: z.boolean().default(true),
+});
+export type CreateAutoReplyRuleDto = z.infer<typeof CreateAutoReplyRuleSchema>;
+
+// ========================================================
+// 8. Products, Quotations & Invoices (Section 5.9)
+// ========================================================
+export const CreateProductSchema = z.object({
+  name: z.string().min(2, 'Product or service name is required'),
+  code: z.string().optional(),
+  price: z.number().min(0, 'Price must be 0 or more'),
+  taxRate: z.number().min(0).max(100).default(18), // Default 18% GST
+  unit: z.string().default('piece'),
+  description: z.string().optional(),
+});
+export type CreateProductDto = z.infer<typeof CreateProductSchema>;
+
+export const QuotationItemSchema = z.object({
+  productId: z.string().optional(),
+  name: z.string().min(1, 'Item name is required'),
+  price: z.number().min(0),
+  quantity: z.number().min(1),
+  taxRate: z.number().min(0).default(18),
+});
+export type QuotationItemDto = z.infer<typeof QuotationItemSchema>;
+
+export const CreateQuotationSchema = z.object({
+  contactId: z.string().optional(),
+  dealId: z.string().optional(),
+  items: z.array(QuotationItemSchema).min(1, 'Add at least one item'),
+  validUntil: z.string().optional(),
+  notes: z.string().optional(),
+});
+export type CreateQuotationDto = z.infer<typeof CreateQuotationSchema>;
+
+export const CreateInvoiceSchema = z.object({
+  quotationId: z.string().optional(),
+  contactId: z.string().optional(),
+  items: z.array(QuotationItemSchema).min(1, 'Add at least one item'),
+  dueDate: z.string().optional(),
+  notes: z.string().optional(),
+});
+export type CreateInvoiceDto = z.infer<typeof CreateInvoiceSchema>;
+
+// ========================================================
+// 9. Extra Details (Custom Fields) & Web Forms
+// ========================================================
+export const CreateCustomFieldSchema = z.object({
+  entityType: z.enum(['lead', 'contact', 'company', 'deal']),
+  key: z.string().min(2),
+  label: z.string().min(2),
+  fieldType: z.enum(['text', 'number', 'date', 'dropdown', 'boolean']),
+  options: z.array(z.string()).optional().default([]),
+  isRequired: z.boolean().default(false),
+});
+export type CreateCustomFieldDto = z.infer<typeof CreateCustomFieldSchema>;
+
+export const SubmitWebFormSchema = z.object({
+  name: z.string().min(2, 'Your name is required'),
+  phone: z.string().optional(),
+  email: z.string().email().optional(),
+  message: z.string().optional(),
+  customFields: z.record(z.any()).optional().default({}),
+});
+export type SubmitWebFormDto = z.infer<typeof SubmitWebFormSchema>;

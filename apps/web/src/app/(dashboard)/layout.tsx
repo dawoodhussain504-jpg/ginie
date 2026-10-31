@@ -24,6 +24,10 @@ import {
   BulbOutlined,
   BulbFilled,
   GlobalOutlined,
+  WhatsAppOutlined,
+  FileTextOutlined,
+  FormOutlined,
+  BarChartOutlined,
 } from '@ant-design/icons';
 import { useApp } from '@/context/AppContext';
 import { usePathname, useRouter } from 'next/navigation';
@@ -78,6 +82,26 @@ export default function DashboardLayout({
       key: '/tasks',
       icon: <CheckSquareOutlined />,
       label: <Link href="/tasks">{t.nav.tasks}</Link>,
+    },
+    {
+      key: '/whatsapp',
+      icon: <WhatsAppOutlined />,
+      label: <Link href="/whatsapp">{t.nav.whatsapp}</Link>,
+    },
+    {
+      key: '/billing',
+      icon: <FileTextOutlined />,
+      label: <Link href="/billing">{t.nav.billing}</Link>,
+    },
+    {
+      key: '/forms',
+      icon: <FormOutlined />,
+      label: <Link href="/forms">{t.nav.forms}</Link>,
+    },
+    {
+      key: '/reports',
+      icon: <BarChartOutlined />,
+      label: <Link href="/reports">{t.nav.reports}</Link>,
     },
     {
       key: '/people',
