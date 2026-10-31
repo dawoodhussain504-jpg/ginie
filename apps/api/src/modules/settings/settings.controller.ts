@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Body } from '@nestjs/common';
+import { Controller, Get, Patch, Post, Body } from '@nestjs/common';
 import { SettingsService } from './settings.service';
 import { CurrentTenant } from '../../common/current-user.decorator';
 
@@ -27,5 +27,40 @@ export class SettingsController {
   @Get('roles')
   async getRoles(@CurrentTenant() tenantId: string) {
     return this.settingsService.getRoles(tenantId);
+  }
+
+  @Get('alerts')
+  async getAlerts(@CurrentTenant() tenantId: string) {
+    return this.settingsService.getAlerts(tenantId);
+  }
+
+  @Patch('alerts')
+  async updateAlerts(
+    @CurrentTenant() tenantId: string,
+    @Body() body: {
+      telegramBotToken?: string;
+      telegramChatId?: string;
+      adminWhatsAppPhone?: string;
+      leadAlertsEnabled?: boolean;
+    },
+  ) {
+    return this.settingsService.updateAlerts(tenantId, body);
+  }
+
+  @Post('alerts/test')
+  async testAlert(
+    @CurrentTenant() tenantId: string,
+    @Body() body: {
+      channel: 'telegram' | 'whatsapp';
+      botToken?: string;
+      chatId?: string;
+      phone?: string;
+    },
+  ) {
+    return this.settingsService.testAlert(body.channel, {
+      botToken: body.botToken,
+      chatId: body.chatId,
+      phone: body.phone,
+    });
   }
 }

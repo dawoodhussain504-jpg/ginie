@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4f46e5" />
+      <stop offset="50%" stop-color="#7c3aed" />
+      <stop offset="100%" stop-color="#9333ea" />
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="50%" stop-color="#facc15" />
+      <stop offset="100%" stop-color="#eab308" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="16" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Background Card -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)" />
+
+  <!-- Magic Sparkles -->
+  <circle cx="390" cy="120" r="14" fill="#ffffff" opacity="0.9" filter="url(#glow)" />
+  <path d="M 390 90 L 395 115 L 420 120 L 395 125 L 390 150 L 385 125 L 360 120 L 385 115 Z" fill="#ffffff" />
+  
+  <circle cx="120" cy="180" r="8" fill="#ffffff" opacity="0.8" />
+  <path d="M 120 165 L 123 177 L 135 180 L 123 183 L 120 195 L 117 183 L 105 180 L 117 177 Z" fill="#ffffff" />
+
+  <!-- Genie Magic Lamp Silhouette / Symbol -->
+  <g transform="translate(64, 110) scale(0.75)" filter="url(#glow)">
+    <!-- Magic Smoke -->
+    <path d="M 280 80 Q 320 30 380 50 Q 430 70 410 120 Q 390 150 330 140" fill="none" stroke="url(#goldGrad)" stroke-width="14" stroke-linecap="round" opacity="0.85" />
+    
+    <!-- Lamp Body -->
+    <path d="M 160 260 C 130 260 80 280 80 320 C 80 370 140 400 240 400 C 340 400 420 360 460 300 C 470 285 460 270 440 270 L 310 270 C 300 240 280 220 250 220 L 210 220 C 180 220 170 245 160 260 Z" fill="url(#goldGrad)" />
+    
+    <!-- Lamp Handle -->
+    <path d="M 140 270 C 90 260 40 300 50 350 C 60 390 100 400 130 380" fill="none" stroke="url(#goldGrad)" stroke-width="20" stroke-linecap="round" />
+    
+    <!-- Lamp Spout & Lid -->
+    <ellipse cx="230" cy="210" rx="36" ry="14" fill="#fef08a" />
+    <circle cx="230" cy="190" r="16" fill="url(#goldGrad)" />
+    
+    <!-- Lamp Base -->
+    <ellipse cx="240" cy="415" rx="90" ry="22" fill="url(#goldGrad)" />
+  </g>
+
+  <!-- Title Monogram / Text -->
+  <text x="256" y="445" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="52" font-weight="900" fill="#ffffff" letter-spacing="6" text-anchor="middle">GINIE</text>
+</svg>

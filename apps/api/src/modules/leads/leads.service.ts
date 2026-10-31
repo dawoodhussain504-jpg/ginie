@@ -5,9 +5,11 @@ import {
 } from '@nestjs/common';
 import { prisma, getTenantPrisma } from '@ginie/database';
 import { CreateLeadDto, UpdateLeadDto, CreateActivityDto } from '@ginie/common';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class LeadsService {
+  constructor(private readonly notificationsService?: NotificationsService) {}
   async findAll(
     tenantId: string,
     query: {
@@ -209,6 +211,17 @@ export class LeadsService {
     });
 
     // Add creation activity
+    if (this.notificationsService) {
+      this.notificationsService.sendLeadAlert(tenantId, {
+        name: lead.name,
+        companyName: lead.companyName,
+        phone: lead.phone,
+        email: lead.email,
+        source: lead.source,
+        notes: dto.notes,
+      }).catch(() => {});
+    }
+
     await prisma.activity.create({
       data: {
         tenantId,

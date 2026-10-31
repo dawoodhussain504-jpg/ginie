@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { NotificationsService } from '../notifications/notifications.service';
 import { prisma } from '@ginie/database';
 import {
   CreateCustomFieldDto,
@@ -7,6 +8,7 @@ import {
 
 @Injectable()
 export class FormsService {
+  constructor(private readonly notificationsService?: NotificationsService) {}
   // Custom Fields
   async getCustomFields(tenantId: string, entityType?: string) {
     const where: any = { tenantId };
@@ -85,6 +87,16 @@ export class FormsService {
     });
 
     // Create activity record
+    if (this.notificationsService) {
+      this.notificationsService.sendLeadAlert(form.tenantId, {
+        name: lead.name,
+        phone: lead.phone,
+        email: lead.email,
+        source: 'Website Form',
+        notes: `Form: "${form.title}"${dto.message ? ` - ${dto.message}` : ''}`,
+      }).catch(() => {});
+    }
+
     await prisma.activity.create({
       data: {
         tenantId: form.tenantId,

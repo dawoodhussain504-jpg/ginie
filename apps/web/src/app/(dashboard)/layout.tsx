@@ -10,8 +10,10 @@ import {
   Space,
   Select,
   Typography,
+  message,
 } from 'antd';
 import {
+  MobileOutlined,
   HomeOutlined,
   UsergroupAddOutlined,
   CompassOutlined,
@@ -49,6 +51,33 @@ export default function DashboardLayout({
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isInstallable, setIsInstallable] = useState(false);
+
+  useEffect(() => {
+    const handleBeforeInstall = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setIsInstallable(true);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+  }, []);
+
+  const handleInstallApp = async () => {
+    if (!deferredPrompt) {
+      message.info('App install karne ke liye browser menu (3 dots) par "Install App" ya "Add to Home screen" par click karein.');
+      return;
+    }
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setIsInstallable(false);
+      setDeferredPrompt(null);
+      message.success('GINIE App installed successfully!');
+    }
+  };
+
 
   useEffect(() => {
     const token = localStorage.getItem('ginie_token');
@@ -255,6 +284,24 @@ export default function DashboardLayout({
           </div>
 
           <Space size="middle">
+            {isInstallable && (
+              <Button
+                type="primary"
+                size="small"
+                icon={<MobileOutlined />}
+                onClick={handleInstallApp}
+                style={{
+                  background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+                  borderColor: '#4f46e5',
+                  borderRadius: 20,
+                  fontWeight: 600,
+                  boxShadow: '0 2px 8px rgba(79, 70, 229, 0.3)',
+                }}
+              >
+                Install App
+              </Button>
+            )}
+
             <Select
               size="middle"
               value={locale}

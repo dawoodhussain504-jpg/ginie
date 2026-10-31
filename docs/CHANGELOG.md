@@ -262,3 +262,50 @@ ADR-008, CP-001, CP-002, CP-003, CP-004.
 **PR / commit:**
 main
 
+---
+
+## CP-006 — PWA Mobile App Support & Instant Admin Alert Channels (Telegram & WhatsApp) — 2026-10-31 — Status: implemented
+**Summary:**
+Implemented full Progressive Web App (PWA) installability and automated personal admin alerts for new leads:
+1. **PWA Mobile App (Android & iOS) Support:**
+   - Added `apps/web/public/manifest.json` configured for standalone app mode with brand themes and icons.
+   - Generated SVG brand icon and multi-resolution PNG icons (`192x192` & `512x512`) in `apps/web/public/icons/`.
+   - Implemented Service Worker (`apps/web/public/sw.js`) enabling offline app shell caching and native PWA installation capability.
+   - Updated `apps/web/src/app/layout.tsx` with PWA manifest metadata, Apple touch icon meta tags, theme colors, and automated service worker registration.
+   - Added interactive "Install App" prompt in `apps/web/src/app/(dashboard)/layout.tsx` header capturing `beforeinstallprompt`.
+   - Added a dedicated "Mobile App (PWA)" tab in `apps/web/src/app/(dashboard)/settings/page.tsx` with straightforward step-by-step installation instructions for Android Chrome and iOS Safari.
+2. **Instant Lead Alert Engine (Telegram & WhatsApp):**
+   - Created `apps/api/src/modules/notifications/notifications.service.ts` and `notifications.module.ts`.
+   - Wired automated real-time alerts into `LeadsService.create()` and `FormsService.submitPublicForm()` so the admin is immediately alerted whenever a new lead is added or an inquiry is submitted.
+   - Supports Telegram Bot API (`sendMessage` with rich Markdown lead details) and personal WhatsApp alerts.
+   - Added `GET /api/settings/alerts`, `PATCH /api/settings/alerts`, and `POST /api/settings/alerts/test` in `SettingsController`.
+   - Added an "Admin Alert Channels" tab in `apps/web/src/app/(dashboard)/settings/page.tsx` to configure and test Telegram and WhatsApp alerts with 1 click.
+
+**Files changed:**
+- `apps/api/src/app.module.ts`
+- `apps/api/src/modules/forms/forms.service.ts`
+- `apps/api/src/modules/leads/leads.service.ts`
+- `apps/api/src/modules/notifications/notifications.module.ts`
+- `apps/api/src/modules/notifications/notifications.service.ts`
+- `apps/api/src/modules/settings/settings.controller.ts`
+- `apps/api/src/modules/settings/settings.service.ts`
+- `apps/web/public/icons/icon-192.png`
+- `apps/web/public/icons/icon-512.png`
+- `apps/web/public/icons/icon.svg`
+- `apps/web/public/manifest.json`
+- `apps/web/public/sw.js`
+- `apps/web/src/app/(dashboard)/layout.tsx`
+- `apps/web/src/app/(dashboard)/settings/page.tsx`
+- `apps/web/src/app/layout.tsx`
+- `docs/PROJECT_STATE.md`, `docs/CHANGELOG.md`
+
+**Migrations:**
+None.
+
+**Related decisions/changes:**
+ADR-001, ADR-002, CP-004, CP-005.
+
+**PR / commit:**
+main
+
+

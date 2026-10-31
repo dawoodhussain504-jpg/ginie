@@ -16,6 +16,7 @@ import { AiModule } from './modules/ai/ai.module';
 import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { AuditModule } from './modules/audit/audit.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 import { TenantAuthGuard } from './common/tenant.guard';
 import { PlainLanguageExceptionFilter } from './common/plain-language-exception.filter';
 import { HealthController } from './health.controller';
@@ -38,6 +39,7 @@ import { HealthController } from './health.controller';
     SubscriptionsModule,
     AdminModule,
     AuditModule,
+    NotificationsModule,
   ],
   controllers: [HealthController],
   providers: [
