@@ -1,0 +1,18 @@
+ginie.space, www.ginie.space, *.ginie.space {
+    # Reverse proxy API endpoints
+    handle /api/* {
+        reverse_proxy api:4000
+    }
+
+    # Reverse proxy all other requests to Next.js frontend
+    handle {
+        reverse_proxy web:3000
+    }
+
+    log {
+        output file /var/log/caddy/access.log {
+            roll_size 20mb
+            roll_keep 5
+        }
+    }
+}

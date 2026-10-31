@@ -12,6 +12,9 @@
     "companies": "Companies",
     "tasks": "Tasks & Follow-ups",
     "whatsapp": "WhatsApp & Messages",
+    "billing": "Quotes & Invoices",
+    "forms": "Forms & Extra details",
+    "reports": "Reports & Insights",
     "settings": "Settings",
     "logout": "Sign out"
   },
@@ -110,6 +113,50 @@
     "lost": "Lost sale",
     "lostReason": "Why was this sale not completed?",
     "valueLabel": "Expected value (₹)"
+  },
+  "whatsapp": {
+    "title": "WhatsApp & Messages",
+    "subtitle": "Connect with your customers on WhatsApp directly from your CRM.",
+    "linkTitle": "Link your WhatsApp (scan the code with your phone)",
+    "warningNotice": "Notice: Unofficial WhatsApp links can occasionally get restricted by Meta. Use Official WhatsApp Business for bulk group messages.",
+    "connectionStatus": "Connection Status",
+    "connected": "Connected",
+    "disconnected": "Disconnected",
+    "scanQrInstruction": "Open WhatsApp on your phone → Settings → Linked Devices → Link a Device, then scan this code.",
+    "unlinkButton": "Unlink WhatsApp",
+    "sendMessageTitle": "Send WhatsApp message",
+    "chatHistory": "Messages history",
+    "autoReplyTitle": "Auto-reply rules",
+    "addRule": "Add auto-reply rule"
+  },
+  "billing": {
+    "title": "Quotes & Invoices",
+    "subtitle": "Manage products, send price quotes, and generate invoices.",
+    "productsTab": "Products & Services",
+    "quotesTab": "Price Quotes",
+    "invoicesTab": "Invoices",
+    "addProduct": "Add product",
+    "createQuote": "Create price quote",
+    "convertToInvoice": "Convert to Invoice",
+    "markPaid": "Mark as Paid",
+    "gstNotice": "GST tax included"
+  },
+  "forms": {
+    "title": "Forms & Extra details",
+    "subtitle": "Capture leads from your website and configure custom fields.",
+    "formsTab": "Website Forms",
+    "fieldsTab": "Extra details (Custom fields)",
+    "createForm": "Create website form",
+    "addField": "Add custom field",
+    "publicLink": "Public form link",
+    "copyLink": "Copy Link"
+  },
+  "reports": {
+    "title": "Reports & Insights",
+    "subtitle": "Analyze lead sources, sales performance, and conversion rates.",
+    "customerSources": "Customer acquisition sources",
+    "funnelOverview": "Sales conversion overview",
+    "teamLeaderboard": "Team performance"
   },
   "tasks": {
     "title": "Tasks & Follow-ups",
