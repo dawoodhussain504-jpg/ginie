@@ -22,6 +22,7 @@
   - **Single-Admin Mode (CP-004):** Converted system to private single-admin owner cockpit. Public registration disabled, search limits uncapped to unlimited, and subscription paywall replaced with sovereign lifetime access.
   - **Dynamic UPI QR Invoicing, WhatsApp Outreach & Gemini AI (CP-005):** Added real-time UPI QR code modal with deep links & WhatsApp invoice dispatch, instant 1-click WhatsApp pitch outreach on Customer Directory & Google Maps Lead Discovery, and native Google Gemini 1.5 Flash Copilot integration for scoring & reply drafting.
   - **PWA Mobile App & Instant Lead Alert Channels (CP-006):** Added progressive web app installability for mobile/desktop (manifest, service worker, icons, native install prompt) and real-time automated Telegram & WhatsApp lead alerts on new inquiries and web form submissions.
+  - **Cloudflare & Render Production Blueprint (CP-007):** Optimized render.yaml with automated PostgreSQL provisioning, seed hooks, and dynamic API URL routing for ginie.space production launch.
 - **Active Branch:** `main`
 - **Blockers:** None.
 

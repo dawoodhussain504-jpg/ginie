@@ -308,4 +308,28 @@ ADR-001, ADR-002, CP-004, CP-005.
 **PR / commit:**
 main
 
+---
 
+## CP-007 — Production Cloudflare & Render Blueprint Optimization — 2026-10-31 — Status: implemented
+**Summary:**
+Optimized codebase for 1-click Render Blueprint cloud deployment and Cloudflare edge proxying:
+1. **Managed PostgreSQL Auto-Provisioning:**
+   - Configured `databases:` block in `render.yaml` (`ginie-db`) linking automated connection strings directly to `DATABASE_URL`.
+   - Automated Prisma client generation, schema sync, and database seeding in the build/start cycle.
+2. **Dynamic API Routing for Production:**
+   - Updated `apps/web/next.config.js` and `apps/web/src/lib/api.ts` to flexibly route backend requests via `API_URL` or `NEXT_PUBLIC_API_URL`, seamlessly resolving internal Render service mesh (`http://ginie-api:4000`) or public custom domains (`https://ginie.space/api/*`).
+
+**Files changed:**
+- `apps/web/next.config.js`
+- `apps/web/src/lib/api.ts`
+- `render.yaml`
+- `docs/PROJECT_STATE.md`, `docs/CHANGELOG.md`
+
+**Migrations:**
+None.
+
+**Related decisions/changes:**
+ADR-001, ADR-002, CP-004, CP-005, CP-006.
+
+**PR / commit:**
+main
