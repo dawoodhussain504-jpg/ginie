@@ -1,6 +1,6 @@
-import { Controller, Post, Body, Get, UseGuards, ForbiddenException } from '@nestjs/common';
+import { Controller, Post, Body, Get, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { LoginSchema } from '@ginie/common';
+import { LoginSchema, RegisterSchema } from '@ginie/common';
 import { Public } from '../../common/tenant.guard';
 import { CurrentUser } from '../../common/current-user.decorator';
 
@@ -10,10 +10,9 @@ export class AuthController {
 
   @Public()
   @Post('register')
-  async register() {
-    throw new ForbiddenException(
-      'Public registration is closed. This GINIE installation operates in private Master Administrator mode.',
-    );
+  async register(@Body() body: any) {
+    const validated = RegisterSchema.parse(body);
+    return this.authService.register(validated);
   }
 
   @Public()
