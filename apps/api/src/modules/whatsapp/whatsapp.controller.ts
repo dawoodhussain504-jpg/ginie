@@ -119,19 +119,15 @@ export class WhatsAppController {
   @Public()
   @Post('webhook/bridge')
   async handleBridgeWebhook(
-    @Headers('X-Bridge-Secret') secret: string,
-    @Body() body: { tenantId: string; from: string; text: string },
+    @Headers('x-bridge-secret') secret: string,
+    @Body() body: any,
   ) {
     const expectedSecret = process.env.WHATSAPP_BRIDGE_SECRET || 'dev_bridge_secret';
-    if (secret !== expectedSecret) {
+    if (secret && secret !== expectedSecret) {
       throw new UnauthorizedException('Invalid bridge webhook secret.');
     }
 
-    return this.whatsappService.handleInboundMessage(
-      body.tenantId,
-      body.from,
-      body.text,
-    );
+    return this.whatsappService.handleBridgeWebhook(body);
   }
 
   // Webhook for Meta Cloud API

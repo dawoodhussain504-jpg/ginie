@@ -82,6 +82,16 @@ export default function WhatsAppPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [activeThread?.messages]);
 
+  // Auto-refresh pairing QR & connection status while in Pairing tab
+  useEffect(() => {
+    if (activeTab === 'connect' && session?.status !== 'connected') {
+      const timer = setInterval(() => {
+        loadSession();
+      }, 5000);
+      return () => clearInterval(timer);
+    }
+  }, [activeTab, session?.status]);
+
   const loadSession = async () => {
     try {
       const res = await api.get('/api/whatsapp/session');

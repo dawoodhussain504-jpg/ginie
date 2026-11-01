@@ -28,12 +28,41 @@ export class WhatsAppService {
           tenantId,
           provider: 'bridge',
           status: 'qr_ready',
-          qrCode: 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=GINIE_WHATSAPP_CONNECT_DEMO',
+          qrCode: null,
           warmupStartedAt: new Date(),
           dailyCap: 50,
           sentToday: 0,
         },
       });
+    }
+
+    // Sync live session & QR code with Baileys Bridge
+    if (session.provider === 'bridge') {
+      try {
+        const bridge = new BridgeProvider(session.id);
+        const liveStatus = await bridge.getStatus();
+        if (liveStatus.status === 'connected') {
+          session = await prisma.whatsAppSession.update({
+            where: { id: session.id },
+            data: {
+              status: 'connected',
+              phone: liveStatus.phone || session.phone,
+              qrCode: null,
+              lastActiveAt: new Date(),
+            },
+          });
+        } else if (liveStatus.qrCode && liveStatus.qrCode !== session.qrCode) {
+          session = await prisma.whatsAppSession.update({
+            where: { id: session.id },
+            data: {
+              status: 'qr_ready',
+              qrCode: liveStatus.qrCode,
+            },
+          });
+        }
+      } catch (err: any) {
+        this.logger.warn(`Could not sync live session with bridge: ${err.message}`);
+      }
     }
 
     return session;
@@ -685,10 +714,43 @@ export class WhatsAppService {
     });
   }
 
+  async handleBridgeWebhook(dto: { from?: string; phone?: string; message?: string; text?: string; tenantId?: string }) {
+    const from = dto.from || dto.phone || '';
+    const text = dto.message || dto.text || '';
+    if (!from || !text) {
+      return { status: 'ignored', reason: 'empty_from_or_text' };
+    }
+
+    let tenantId = dto.tenantId;
+    if (!tenantId) {
+      const activeSession = await prisma.whatsAppSession.findFirst({
+        where: { provider: 'bridge' },
+        select: { tenantId: true },
+      });
+      tenantId = activeSession?.tenantId;
+    }
+
+    if (!tenantId) {
+      const defaultTenant = await prisma.tenant.findFirst({ select: { id: true } });
+      tenantId = defaultTenant?.id;
+    }
+
+    if (!tenantId) {
+      return { status: 'ignored', reason: 'no_tenant_found' };
+    }
+
+    return this.handleInboundMessage(tenantId, from, text);
+  }
+
   async unlinkSession(tenantId: string) {
+    const session = await prisma.whatsAppSession.findFirst({ where: { tenantId } });
+    if (session && session.provider === 'bridge') {
+      const bridge = new BridgeProvider(session.id);
+      await bridge.disconnect();
+    }
     await prisma.whatsAppSession.updateMany({
       where: { tenantId },
-      data: { status: 'disconnected', qrCode: null, sentToday: 0 },
+      data: { status: 'disconnected', qrCode: null, sentToday: 0, phone: null },
     });
     return { success: true };
   }
