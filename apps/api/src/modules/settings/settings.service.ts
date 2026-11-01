@@ -74,7 +74,7 @@ export class SettingsService {
     } catch {}
 
     return [
-      { id: 'usr-1', name: 'Rajesh Sharma', email: 'admin@ginie.space', role: { name: 'Owner' }, status: 'active' },
+      { id: 'usr-1', name: 'Dawood Hussain', email: 'dawoodhussain504@gmail.com', role: { name: 'Owner' }, status: 'active' },
       { id: 'usr-2', name: 'Sunil Verma', email: 'sunil@acme.in', role: { name: 'Sales Executive' }, status: 'active' },
     ];
   }

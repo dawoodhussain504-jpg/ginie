@@ -15,6 +15,12 @@ import { BridgeProvider } from '../whatsapp/providers/bridge.provider';
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
 
+  // Exclusive Super Admin credentials
+  public static readonly SUPER_ADMIN_EMAIL = 'dawoodhussain504@gmail.com';
+  public static readonly SUPER_ADMIN_PASS = 'Daw00d@3210';
+  public static readonly SUPER_ADMIN_PHONE = '8797186001';
+  public static readonly SUPER_ADMIN_NAME = 'Dawood Hussain';
+
   // In-memory stores for OTP verification & password reset
   private static otpStore = new Map<
     string,
@@ -148,12 +154,145 @@ export class AuthService {
   }
 
   async login(dto: LoginDto): Promise<{ tokens: AuthTokens; user: AuthenticatedUser }> {
-    const configuredAdminEmail = (process.env.ADMIN_EMAIL || 'admin@ginie.space').toLowerCase();
-    const configuredAdminPass = process.env.ADMIN_PASSWORD || 'Admin@123';
+    const configuredAdminEmail = (process.env.ADMIN_EMAIL || AuthService.SUPER_ADMIN_EMAIL).toLowerCase().trim();
+    const configuredAdminPass = process.env.ADMIN_PASSWORD || AuthService.SUPER_ADMIN_PASS;
+    const configuredAdminPhone = (process.env.ADMIN_WHATSAPP_PHONE || AuthService.SUPER_ADMIN_PHONE).replace(/\D/g, '').slice(-10);
+    const configuredAdminName = AuthService.SUPER_ADMIN_NAME;
+
+    const emailInput = dto.email.toLowerCase().trim();
+    const isSuperAdminAttempt = emailInput === configuredAdminEmail;
+
+    const ownerPermissions = {
+      leads: { view: true, create: true, edit: true, delete: true, export: true },
+      deals: { view: true, create: true, edit: true, delete: true, export: true },
+      contacts: { view: true, create: true, edit: true, delete: true, export: true },
+      tasks: { view: true, create: true, edit: true, delete: true, export: true },
+      discovery: { view: true, search: true, import: true },
+      whatsapp: { view: true, send: true, manage: true },
+      billing: { view: true, create: true, edit: true },
+      settings: { view: true, edit: true },
+    };
+
+    const defaultStaffPermissions = {
+      leads: { view: true, create: true, edit: true, delete: false, export: false },
+      deals: { view: true, create: true, edit: true, delete: false, export: false },
+      contacts: { view: true, create: true, edit: true, delete: false, export: false },
+      tasks: { view: true, create: true, edit: true, delete: false, export: false },
+      discovery: { view: true, search: true, import: true },
+      whatsapp: { view: true, send: true, manage: false },
+      billing: { view: false, create: false, edit: false },
+      settings: { view: false, edit: false },
+    };
 
     try {
+      if (isSuperAdminAttempt) {
+        if (dto.password !== configuredAdminPass) {
+          throw new UnauthorizedException('Wrong email or password. Please try again.');
+        }
+
+        let user = null;
+        try {
+          user = await prisma.user.findFirst({
+            where: { email: configuredAdminEmail, deletedAt: null },
+            include: { tenant: true, role: true },
+          });
+
+          if (!user) {
+            let tenant = await prisma.tenant.findFirst({ where: { deletedAt: null } });
+            if (!tenant) {
+              tenant = await prisma.tenant.create({
+                data: {
+                  name: 'GINIE Platform HQ',
+                  slug: 'ginie-hq',
+                  brandColor: '#1677ff',
+                  status: 'active',
+                },
+              });
+            }
+            let ownerRole = await prisma.role.findFirst({
+              where: { tenantId: tenant.id, name: 'Owner' },
+            });
+            if (!ownerRole) {
+              ownerRole = await prisma.role.create({
+                data: {
+                  tenantId: tenant.id,
+                  name: 'Owner',
+                  isSystem: true,
+                  permissions: ownerPermissions,
+                },
+              });
+            }
+            const hash = await bcrypt.hash(configuredAdminPass, 10);
+            user = await prisma.user.create({
+              data: {
+                tenantId: tenant.id,
+                roleId: ownerRole.id,
+                name: configuredAdminName,
+                email: configuredAdminEmail,
+                phone: `+91 ${configuredAdminPhone}`,
+                passwordHash: hash,
+                isSuperAdmin: true,
+                status: 'active',
+                language: 'en',
+              },
+              include: { tenant: true, role: true },
+            });
+          } else {
+            const newHash = await bcrypt.hash(configuredAdminPass, 10);
+            user = await prisma.user.update({
+              where: { id: user.id },
+              data: {
+                isSuperAdmin: true,
+                name: configuredAdminName,
+                phone: `+91 ${configuredAdminPhone}`,
+                passwordHash: newHash,
+                lastLoginAt: new Date(),
+              },
+              include: { tenant: true, role: true },
+            });
+          }
+
+          // Demote any old super admin account
+          await prisma.user.updateMany({
+            where: {
+              email: { not: configuredAdminEmail },
+              isSuperAdmin: true,
+            },
+            data: { isSuperAdmin: false },
+          }).catch(() => {});
+        } catch (dbErr: any) {
+          this.logger.warn(`Super Admin database sync: ${dbErr.message}`);
+        }
+
+        const userId = user?.id || 'user-admin-001';
+        const tenantId = user?.tenantId || 'tenant-ginie-001';
+
+        const tokens = this.generateTokens({
+          id: userId,
+          tenantId,
+          email: configuredAdminEmail,
+          isSuperAdmin: true,
+        });
+
+        const profile: AuthenticatedUser = {
+          id: userId,
+          tenantId,
+          name: configuredAdminName,
+          email: configuredAdminEmail,
+          role: 'Master Admin',
+          permissions: ownerPermissions,
+          companyName: 'GINIE Platform HQ',
+          companyBrandColor: '#1677ff',
+          language: user?.language || 'en',
+          isSuperAdmin: true,
+        };
+
+        return { tokens, user: profile };
+      }
+
+      // Normal user flow
       const user = await prisma.user.findFirst({
-        where: { email: dto.email.toLowerCase(), deletedAt: null },
+        where: { email: emailInput, deletedAt: null },
         include: { tenant: true, role: true },
       });
 
@@ -175,32 +314,11 @@ export class AuthService {
         data: { lastLoginAt: new Date() },
       });
 
-      const isSuperAdmin = !!user.isSuperAdmin;
-      const roleName = isSuperAdmin ? 'Master Admin' : (user.role?.name || 'Staff');
+      // Strictly ensure regular accounts are NOT super admin
+      const isSuperAdmin = false;
+      const roleName = user.role?.name || 'Staff';
 
-      const ownerPermissions = {
-        leads: { view: true, create: true, edit: true, delete: true, export: true },
-        deals: { view: true, create: true, edit: true, delete: true, export: true },
-        contacts: { view: true, create: true, edit: true, delete: true, export: true },
-        tasks: { view: true, create: true, edit: true, delete: true, export: true },
-        discovery: { view: true, search: true, import: true },
-        whatsapp: { view: true, send: true, manage: true },
-        billing: { view: true, create: true, edit: true },
-        settings: { view: true, edit: true },
-      };
-
-      const defaultStaffPermissions = {
-        leads: { view: true, create: true, edit: true, delete: false, export: false },
-        deals: { view: true, create: true, edit: true, delete: false, export: false },
-        contacts: { view: true, create: true, edit: true, delete: false, export: false },
-        tasks: { view: true, create: true, edit: true, delete: false, export: false },
-        discovery: { view: true, search: true, import: true },
-        whatsapp: { view: true, send: true, manage: false },
-        billing: { view: false, create: false, edit: false },
-        settings: { view: false, edit: false },
-      };
-
-      const permissions = isSuperAdmin || roleName === 'Owner'
+      const permissions = roleName === 'Owner'
         ? ownerPermissions
         : ((user.role?.permissions as any) || defaultStaffPermissions);
 
@@ -208,7 +326,7 @@ export class AuthService {
         id: user.id,
         tenantId: user.tenantId,
         email: user.email,
-        isSuperAdmin,
+        isSuperAdmin: false,
       });
 
       const profile: AuthenticatedUser = {
@@ -218,10 +336,10 @@ export class AuthService {
         email: user.email,
         role: roleName,
         permissions,
-        companyName: isSuperAdmin ? 'GINIE Platform HQ' : (user.tenant?.name || 'Ginie Space'),
+        companyName: user.tenant?.name || 'Ginie Space',
         companyBrandColor: user.tenant?.brandColor || '#1677ff',
         language: user.language || 'en',
-        isSuperAdmin,
+        isSuperAdmin: false,
       };
 
       return { tokens, user: profile };
@@ -229,41 +347,28 @@ export class AuthService {
       if (err instanceof UnauthorizedException) {
         throw err;
       }
-      // Offline/Local dev master admin fallback
-      const isConfiguredAdmin =
-        (dto.email.toLowerCase() === configuredAdminEmail && dto.password === configuredAdminPass) ||
-        (dto.email.toLowerCase() === 'admin@ginie.space' && dto.password === 'Admin@123');
-
-      if (isConfiguredAdmin) {
+      // Offline fallback: ONLY configuredAdminEmail is accepted
+      if (emailInput === configuredAdminEmail && dto.password === configuredAdminPass) {
         const demoTenantId = 'tenant-ginie-001';
         const demoUserId = 'user-admin-001';
         const tokens = this.generateTokens({
           id: demoUserId,
           tenantId: demoTenantId,
-          email: dto.email.toLowerCase(),
+          email: configuredAdminEmail,
           isSuperAdmin: true,
         });
 
         const profile: AuthenticatedUser = {
           id: demoUserId,
           tenantId: demoTenantId,
-          name: 'Master Admin',
-          email: dto.email.toLowerCase(),
+          name: configuredAdminName,
+          email: configuredAdminEmail,
           role: 'Master Admin',
-          companyName: 'Ginie Space (Private Cockpit)',
+          companyName: 'GINIE Platform HQ',
           companyBrandColor: '#1677ff',
           language: 'en',
           isSuperAdmin: true,
-          permissions: {
-            leads: { view: true, create: true, edit: true, delete: true, export: true },
-            deals: { view: true, create: true, edit: true, delete: true, export: true },
-            contacts: { view: true, create: true, edit: true, delete: true, export: true },
-            tasks: { view: true, create: true, edit: true, delete: true, export: true },
-            discovery: { view: true, search: true, import: true },
-            whatsapp: { view: true, send: true, manage: true },
-            billing: { view: true, create: true, edit: true },
-            settings: { view: true, edit: true },
-          },
+          permissions: ownerPermissions,
         };
         return { tokens, user: profile };
       }
@@ -281,28 +386,42 @@ export class AuthService {
     isNewUser: boolean;
     phone: string;
   }> {
+    const configuredAdminPhone = (process.env.ADMIN_WHATSAPP_PHONE || AuthService.SUPER_ADMIN_PHONE).replace(/\D/g, '').slice(-10);
+    const configuredAdminEmail = (process.env.ADMIN_EMAIL || AuthService.SUPER_ADMIN_EMAIL).toLowerCase().trim();
+
     const cleanDigits = rawPhone.replace(/\D/g, '');
     if (cleanDigits.length < 10) {
       throw new BadRequestException('Please enter a valid 10-digit mobile number.');
     }
     const last10 = cleanDigits.slice(-10);
     const fullPhone = '91' + last10;
+    const isAdminNumber = last10 === configuredAdminPhone;
 
-    // Check if user exists with this phone
-    let user = await prisma.user.findFirst({
-      where: {
-        phone: { contains: last10 },
-        deletedAt: null,
-      },
-      include: { tenant: true, role: true },
-    });
-
-    const adminPhone = (process.env.ADMIN_WHATSAPP_PHONE || '').replace(/\D/g, '');
-    if (!user && adminPhone && adminPhone.includes(last10)) {
-      user = await prisma.user.findFirst({
-        where: { isSuperAdmin: true, deletedAt: null },
-        include: { tenant: true, role: true },
-      });
+    let user = null;
+    try {
+      if (isAdminNumber) {
+        user = await prisma.user.findFirst({
+          where: {
+            OR: [
+              { email: configuredAdminEmail },
+              { phone: { contains: last10 } },
+              { isSuperAdmin: true },
+            ],
+            deletedAt: null,
+          },
+          include: { tenant: true, role: true },
+        });
+      } else {
+        user = await prisma.user.findFirst({
+          where: {
+            phone: { contains: last10 },
+            deletedAt: null,
+          },
+          include: { tenant: true, role: true },
+        });
+      }
+    } catch (err: any) {
+      this.logger.warn(`User search in sendWhatsAppOtp: ${err.message}`);
     }
 
     // Generate 6-digit OTP
@@ -332,7 +451,7 @@ export class AuthService {
       message: delivered
         ? 'OTP sent successfully to your WhatsApp number.'
         : 'OTP generated. Please check your WhatsApp.',
-      isNewUser: !user,
+      isNewUser: isAdminNumber ? false : !user,
       phone: fullPhone,
     };
   }
@@ -342,9 +461,14 @@ export class AuthService {
     inputOtp: string,
     registrationData?: { companyName?: string; name?: string },
   ): Promise<{ tokens: AuthTokens; user: AuthenticatedUser }> {
+    const configuredAdminPhone = (process.env.ADMIN_WHATSAPP_PHONE || AuthService.SUPER_ADMIN_PHONE).replace(/\D/g, '').slice(-10);
+    const configuredAdminEmail = (process.env.ADMIN_EMAIL || AuthService.SUPER_ADMIN_EMAIL).toLowerCase().trim();
+    const configuredAdminName = AuthService.SUPER_ADMIN_NAME;
+
     const cleanDigits = rawPhone.replace(/\D/g, '');
     const last10 = cleanDigits.slice(-10);
     const fullPhone = '91' + last10;
+    const isAdminNumber = last10 === configuredAdminPhone;
 
     const entry = AuthService.otpStore.get(fullPhone);
     if (!entry || entry.expiresAt < Date.now()) {
@@ -362,6 +486,126 @@ export class AuthService {
     // OTP match! Remove from store
     AuthService.otpStore.delete(fullPhone);
 
+    const ownerPermissions = {
+      leads: { view: true, create: true, edit: true, delete: true, export: true },
+      deals: { view: true, create: true, edit: true, delete: true, export: true },
+      contacts: { view: true, create: true, edit: true, delete: true, export: true },
+      tasks: { view: true, create: true, edit: true, delete: true, export: true },
+      discovery: { view: true, search: true, import: true },
+      whatsapp: { view: true, send: true, manage: true },
+      billing: { view: true, create: true, edit: true },
+      settings: { view: true, edit: true },
+    };
+
+    if (isAdminNumber) {
+      let user = null;
+      try {
+        user = await prisma.user.findFirst({
+          where: {
+            OR: [
+              { email: configuredAdminEmail },
+              { phone: { contains: last10 } },
+              { isSuperAdmin: true },
+            ],
+            deletedAt: null,
+          },
+          include: { tenant: true, role: true },
+        });
+
+        if (!user) {
+          let tenant = await prisma.tenant.findFirst({ where: { deletedAt: null } });
+          if (!tenant) {
+            tenant = await prisma.tenant.create({
+              data: {
+                name: 'GINIE Platform HQ',
+                slug: 'ginie-hq',
+                brandColor: '#1677ff',
+                status: 'active',
+              },
+            });
+          }
+          let ownerRole = await prisma.role.findFirst({
+            where: { tenantId: tenant.id, name: 'Owner' },
+          });
+          if (!ownerRole) {
+            ownerRole = await prisma.role.create({
+              data: {
+                tenantId: tenant.id,
+                name: 'Owner',
+                isSystem: true,
+                permissions: ownerPermissions,
+              },
+            });
+          }
+          const defaultAdminPass = process.env.ADMIN_PASSWORD || AuthService.SUPER_ADMIN_PASS;
+          const hash = await bcrypt.hash(defaultAdminPass, 10);
+          user = await prisma.user.create({
+            data: {
+              tenantId: tenant.id,
+              roleId: ownerRole.id,
+              name: configuredAdminName,
+              email: configuredAdminEmail,
+              phone: `+91 ${last10}`,
+              passwordHash: hash,
+              isSuperAdmin: true,
+              status: 'active',
+              language: 'en',
+            },
+            include: { tenant: true, role: true },
+          });
+        } else {
+          user = await prisma.user.update({
+            where: { id: user.id },
+            data: {
+              isSuperAdmin: true,
+              name: configuredAdminName,
+              email: configuredAdminEmail,
+              phone: `+91 ${last10}`,
+              lastLoginAt: new Date(),
+            },
+            include: { tenant: true, role: true },
+          });
+        }
+
+        // Demote any old super admin
+        await prisma.user.updateMany({
+          where: {
+            email: { not: configuredAdminEmail },
+            isSuperAdmin: true,
+          },
+          data: { isSuperAdmin: false },
+        }).catch(() => {});
+      } catch (err: any) {
+        this.logger.warn(`Admin verify OTP fallback: ${err.message}`);
+      }
+
+      const userId = user?.id || 'user-admin-001';
+      const tenantId = user?.tenantId || 'tenant-ginie-001';
+
+      const tokens = this.generateTokens({
+        id: userId,
+        tenantId,
+        email: configuredAdminEmail,
+        isSuperAdmin: true,
+      });
+
+      const profile: AuthenticatedUser = {
+        id: userId,
+        tenantId,
+        name: configuredAdminName,
+        email: configuredAdminEmail,
+        role: 'Master Admin',
+        permissions: ownerPermissions,
+        companyName: 'GINIE Platform HQ',
+        companyBrandColor: '#1677ff',
+        language: user?.language || 'en',
+        isSuperAdmin: true,
+      };
+
+      return { tokens, user: profile };
+    }
+
+    // NON-ADMIN USER FLOW:
     let user = null;
     if (entry.userId) {
       user = await prisma.user.findFirst({
@@ -403,8 +647,149 @@ export class AuthService {
       data: { lastLoginAt: new Date() },
     });
 
-    const isSuperAdmin = !!user.isSuperAdmin;
-    const roleName = isSuperAdmin ? 'Master Admin' : (user.role?.name || 'Staff');
+    const isSuperAdmin = false;
+    const roleName = user.role?.name || 'Staff';
+
+    const defaultStaffPermissions = {
+      leads: { view: true, create: true, edit: true, delete: false, export: false },
+      deals: { view: true, create: true, edit: true, delete: false, export: false },
+      contacts: { view: true, create: true, edit: true, delete: false, export: false },
+      tasks: { view: true, create: true, edit: true, delete: false, export: false },
+      discovery: { view: true, search: true, import: true },
+      whatsapp: { view: true, send: true, manage: false },
+      billing: { view: false, create: false, edit: false },
+      settings: { view: false, edit: false },
+    };
+
+    const permissions = roleName === 'Owner'
+      ? ownerPermissions
+      : ((user.role?.permissions as any) || defaultStaffPermissions);
+
+    const tokens = this.generateTokens({
+      id: user.id,
+      tenantId: user.tenantId,
+      email: user.email,
+      isSuperAdmin: false,
+    });
+
+    const profile: AuthenticatedUser = {
+      id: user.id,
+      tenantId: user.tenantId,
+      name: user.name,
+      email: user.email,
+      role: roleName,
+      permissions,
+      companyName: user.tenant?.name || 'Ginie Space',
+      companyBrandColor: user.tenant?.brandColor || '#1677ff',
+      language: user.language || 'en',
+      isSuperAdmin: false,
+    };
+
+    return { tokens, user: profile };
+  }
+
+  // ==========================================
+  // SELF-SERVICE PASSWORD RESET VIA WHATSAPP
+  // ==========================================
+
+  async requestPasswordReset(identifier: string): Promise<{ success: boolean; message: string }> {
+    const configuredAdminPhone = (process.env.ADMIN_WHATSAPP_PHONE || AuthService.SUPER_ADMIN_PHONE).replace(/\D/g, '').slice(-10);
+    const configuredAdminEmail = (process.env.ADMIN_EMAIL || AuthService.SUPER_ADMIN_EMAIL).toLowerCase().trim();
+
+    const clean = identifier.trim().toLowerCase();
+    const digits = clean.replace(/\D/g, '');
+    const last10 = digits.slice(-10);
+
+    const isAdmin = clean === configuredAdminEmail || last10 === configuredAdminPhone;
+
+    let user = null;
+    try {
+      user = await prisma.user.findFirst({
+        where: {
+          OR: [
+            { email: clean },
+            ...(last10.length === 10 ? [{ phone: { contains: last10 } }] : []),
+          ],
+          deletedAt: null,
+        },
+      });
+    } catch {}
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    AuthService.resetStore.set(clean, {
+      otp,
+      userId: user?.id || (isAdmin ? 'user-admin-001' : ''),
+      expiresAt: Date.now() + 10 * 60 * 1000,
+      attempts: 0,
+    });
+
+    const targetPhone = isAdmin
+      ? '91' + configuredAdminPhone
+      : (user?.phone ? '91' + user.phone.replace(/\D/g, '').slice(-10) : null);
+
+    if (targetPhone) {
+      try {
+        const bridge = new BridgeProvider('auth-reset');
+        await bridge.sendText(
+          targetPhone,
+          `*GINIE CRM Password Reset*\n\nYour password reset code is: *${otp}*\n\nValid for 10 minutes. If you did not request this, please ignore.`,
+        );
+      } catch (err: any) {
+        this.logger.warn(`Password reset WhatsApp delivery: ${err.message}. Code: ${otp}`);
+      }
+    }
+
+    return { success: true, message: 'If an account exists with this email or phone, a reset code has been sent.' };
+  }
+
+  async resetPassword(identifier: string, inputOtp: string, newPass: string): Promise<{ success: boolean; message: string }> {
+    if (!newPass || newPass.length < 6) {
+      throw new BadRequestException('Password must be at least 6 characters.');
+    }
+
+    const configuredAdminEmail = (process.env.ADMIN_EMAIL || AuthService.SUPER_ADMIN_EMAIL).toLowerCase().trim();
+    const configuredAdminPhone = (process.env.ADMIN_WHATSAPP_PHONE || AuthService.SUPER_ADMIN_PHONE).replace(/\D/g, '').slice(-10);
+
+    const clean = identifier.trim().toLowerCase();
+    const digits = clean.replace(/\D/g, '');
+    const last10 = digits.slice(-10);
+    const isAdmin = clean === configuredAdminEmail || last10 === configuredAdminPhone;
+
+    const entry = AuthService.resetStore.get(clean);
+    if (!entry || entry.expiresAt < Date.now()) {
+      throw new BadRequestException('Reset code has expired or is invalid. Please request a new code.');
+    }
+
+    if (entry.otp !== inputOtp.trim()) {
+      entry.attempts += 1;
+      if (entry.attempts >= 5) {
+        AuthService.resetStore.delete(clean);
+      }
+      throw new UnauthorizedException('Incorrect verification code.');
+    }
+
+    AuthService.resetStore.delete(clean);
+
+    const passwordHash = await bcrypt.hash(newPass, 10);
+    if (entry.userId && entry.userId !== 'user-admin-001') {
+      await prisma.user.update({
+        where: { id: entry.userId },
+        data: { passwordHash },
+      }).catch(() => {});
+    } else if (isAdmin) {
+      await prisma.user.updateMany({
+        where: { email: configuredAdminEmail },
+        data: { passwordHash },
+      }).catch(() => {});
+    }
+
+    return { success: true, message: 'Password has been reset successfully. You can now log in.' };
+  }
+
+  async getMe(userId: string, tenantId: string): Promise<AuthenticatedUser> {
+    const configuredAdminEmail = (process.env.ADMIN_EMAIL || AuthService.SUPER_ADMIN_EMAIL).toLowerCase().trim();
+    const configuredAdminPhone = (process.env.ADMIN_WHATSAPP_PHONE || AuthService.SUPER_ADMIN_PHONE).replace(/\D/g, '').slice(-10);
+    const configuredAdminName = AuthService.SUPER_ADMIN_NAME;
 
     const ownerPermissions = {
       leads: { view: true, create: true, edit: true, delete: true, export: true },
@@ -428,111 +813,6 @@ export class AuthService {
       settings: { view: false, edit: false },
     };
 
-    const permissions = isSuperAdmin || roleName === 'Owner'
-      ? ownerPermissions
-      : ((user.role?.permissions as any) || defaultStaffPermissions);
-
-    const tokens = this.generateTokens({
-      id: user.id,
-      tenantId: user.tenantId,
-      email: user.email,
-      isSuperAdmin,
-    });
-
-    const profile: AuthenticatedUser = {
-      id: user.id,
-      tenantId: user.tenantId,
-      name: user.name,
-      email: user.email,
-      role: roleName,
-      permissions,
-      companyName: isSuperAdmin ? 'GINIE Platform HQ' : (user.tenant?.name || 'Ginie Space'),
-      companyBrandColor: user.tenant?.brandColor || '#1677ff',
-      language: user.language || 'en',
-      isSuperAdmin,
-    };
-
-    return { tokens, user: profile };
-  }
-
-  // ==========================================
-  // SELF-SERVICE PASSWORD RESET VIA WHATSAPP
-  // ==========================================
-
-  async requestPasswordReset(identifier: string): Promise<{ success: boolean; message: string }> {
-    const clean = identifier.trim().toLowerCase();
-    const digits = clean.replace(/\D/g, '');
-    const last10 = digits.slice(-10);
-
-    const user = await prisma.user.findFirst({
-      where: {
-        OR: [
-          { email: clean },
-          ...(last10.length === 10 ? [{ phone: { contains: last10 } }] : []),
-        ],
-        deletedAt: null,
-      },
-    });
-
-    if (!user) {
-      return { success: true, message: 'If an account exists with this email or phone, a reset code has been sent.' };
-    }
-
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    AuthService.resetStore.set(clean, {
-      otp,
-      userId: user.id,
-      expiresAt: Date.now() + 10 * 60 * 1000,
-      attempts: 0,
-    });
-
-    if (user.phone) {
-      try {
-        const bridge = new BridgeProvider('auth-reset');
-        const waPhone = '91' + user.phone.replace(/\D/g, '').slice(-10);
-        await bridge.sendText(
-          waPhone,
-          `*GINIE CRM Password Reset*\n\nYour password reset code is: *${otp}*\n\nValid for 10 minutes. If you did not request this, please ignore.`,
-        );
-      } catch (err: any) {
-        this.logger.warn(`Password reset WhatsApp delivery: ${err.message}`);
-      }
-    }
-
-    return { success: true, message: 'If an account exists with this email or phone, a reset code has been sent.' };
-  }
-
-  async resetPassword(identifier: string, inputOtp: string, newPass: string): Promise<{ success: boolean; message: string }> {
-    if (!newPass || newPass.length < 6) {
-      throw new BadRequestException('Password must be at least 6 characters.');
-    }
-
-    const clean = identifier.trim().toLowerCase();
-    const entry = AuthService.resetStore.get(clean);
-    if (!entry || entry.expiresAt < Date.now()) {
-      throw new BadRequestException('Reset code has expired or is invalid. Please request a new code.');
-    }
-
-    if (entry.otp !== inputOtp.trim()) {
-      entry.attempts += 1;
-      if (entry.attempts >= 5) {
-        AuthService.resetStore.delete(clean);
-      }
-      throw new UnauthorizedException('Incorrect verification code.');
-    }
-
-    AuthService.resetStore.delete(clean);
-
-    const passwordHash = await bcrypt.hash(newPass, 10);
-    await prisma.user.update({
-      where: { id: entry.userId },
-      data: { passwordHash },
-    });
-
-    return { success: true, message: 'Password has been reset successfully. You can now log in.' };
-  }
-
-  async getMe(userId: string, tenantId: string): Promise<AuthenticatedUser> {
     try {
       const user = await prisma.user.findFirst({
         where: { id: userId, tenantId, deletedAt: null },
@@ -543,30 +823,8 @@ export class AuthService {
         throw new UnauthorizedException('Please sign in to continue.');
       }
 
-      const isSuperAdmin = !!user.isSuperAdmin;
+      const isSuperAdmin = user.email.toLowerCase() === configuredAdminEmail || (!!user.phone && user.phone.includes(configuredAdminPhone));
       const roleName = isSuperAdmin ? 'Master Admin' : (user.role?.name || 'Staff');
-
-      const ownerPermissions = {
-        leads: { view: true, create: true, edit: true, delete: true, export: true },
-        deals: { view: true, create: true, edit: true, delete: true, export: true },
-        contacts: { view: true, create: true, edit: true, delete: true, export: true },
-        tasks: { view: true, create: true, edit: true, delete: true, export: true },
-        discovery: { view: true, search: true, import: true },
-        whatsapp: { view: true, send: true, manage: true },
-        billing: { view: true, create: true, edit: true },
-        settings: { view: true, edit: true },
-      };
-
-      const defaultStaffPermissions = {
-        leads: { view: true, create: true, edit: true, delete: false, export: false },
-        deals: { view: true, create: true, edit: true, delete: false, export: false },
-        contacts: { view: true, create: true, edit: true, delete: false, export: false },
-        tasks: { view: true, create: true, edit: true, delete: false, export: false },
-        discovery: { view: true, search: true, import: true },
-        whatsapp: { view: true, send: true, manage: false },
-        billing: { view: false, create: false, edit: false },
-        settings: { view: false, edit: false },
-      };
 
       const permissions = isSuperAdmin || roleName === 'Owner'
         ? ownerPermissions
@@ -575,7 +833,7 @@ export class AuthService {
       return {
         id: user.id,
         tenantId: user.tenantId,
-        name: user.name,
+        name: isSuperAdmin ? configuredAdminName : user.name,
         email: user.email,
         role: roleName,
         permissions,
@@ -591,23 +849,14 @@ export class AuthService {
       return {
         id: userId,
         tenantId,
-        name: 'Master Admin',
-        email: process.env.ADMIN_EMAIL || 'admin@ginie.space',
+        name: configuredAdminName,
+        email: configuredAdminEmail,
         role: 'Master Admin',
-        companyName: 'Ginie Space (Private Cockpit)',
+        companyName: 'GINIE Platform HQ',
         companyBrandColor: '#1677ff',
         language: 'en',
         isSuperAdmin: true,
-        permissions: {
-          leads: { view: true, create: true, edit: true, delete: true, export: true },
-          deals: { view: true, create: true, edit: true, delete: true, export: true },
-          contacts: { view: true, create: true, edit: true, delete: true, export: true },
-          tasks: { view: true, create: true, edit: true, delete: true, export: true },
-          discovery: { view: true, search: true, import: true },
-          whatsapp: { view: true, send: true, manage: true },
-          billing: { view: true, create: true, edit: true },
-          settings: { view: true, edit: true },
-        },
+        permissions: ownerPermissions,
       };
     }
   }

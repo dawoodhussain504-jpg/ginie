@@ -127,28 +127,39 @@ async function main() {
             },
         },
     });
-    // 4. Create Owner User
-    const passwordHash = await bcrypt.hash('Admin@123', 10);
+    // 4. Create Owner User (Super Admin for the platform - Dawood Hussain)
+    const passwordHash = await bcrypt.hash('Daw00d@3210', 10);
     const adminUser = await prisma.user.upsert({
         where: {
             tenantId_email: {
                 tenantId: tenant.id,
-                email: 'admin@ginie.space',
+                email: 'dawoodhussain504@gmail.com',
             },
         },
-        update: {},
+        update: {
+            isSuperAdmin: true,
+            name: 'Dawood Hussain',
+            phone: '+91 8797186001',
+            passwordHash,
+        },
         create: {
             tenantId: tenant.id,
             roleId: ownerRole.id,
-            name: 'Rajesh Sharma',
-            email: 'admin@ginie.space',
-            phone: '+91 9820123456',
+            name: 'Dawood Hussain',
+            email: 'dawoodhussain504@gmail.com',
+            phone: '+91 8797186001',
             passwordHash,
+            isSuperAdmin: true,
             status: 'active',
             language: 'en',
         },
     });
-    console.log(`✓ Owner Admin created: ${adminUser.email} / Admin@123`);
+    console.log(`✓ Super Admin created: ${adminUser.email} / Daw00d@3210 / +91 8797186001 (Super Admin: true)`);
+    // Explicitly ensure old demo admin does not have super admin rights
+    await prisma.user.updateMany({
+        where: { email: 'admin@ginie.space' },
+        data: { isSuperAdmin: false },
+    }).catch(() => {});
     // 5. Create Default Lead Statuses
     const statuses = [
         { name: 'New', color: '#1677ff', orderIndex: 0, isDefault: true },

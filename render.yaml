@@ -22,9 +22,11 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: ADMIN_EMAIL
-        value: admin@ginie.space
+        value: dawoodhussain504@gmail.com
       - key: ADMIN_PASSWORD
-        generateValue: true
+        value: Daw00d@3210
+      - key: ADMIN_WHATSAPP_PHONE
+        value: "8797186001"
 
   - type: worker
     name: ginie-worker
