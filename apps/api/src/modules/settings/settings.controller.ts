@@ -1,5 +1,5 @@
 import { CompleteOnboardingDto } from '@ginie/common';
-import { Controller, Get, Patch, Post, Body } from '@nestjs/common';
+import { Controller, Get, Patch, Post, Delete, Param, Body } from '@nestjs/common';
 import { SettingsService } from './settings.service';
 import { CurrentTenant } from '../../common/current-user.decorator';
 
@@ -23,6 +23,22 @@ export class SettingsController {
   @Get('team')
   async getTeam(@CurrentTenant() tenantId: string) {
     return this.settingsService.getTeam(tenantId);
+  }
+
+  @Post('team')
+  async addTeamMember(
+    @CurrentTenant() tenantId: string,
+    @Body() body: { name: string; email: string; phone?: string; roleId: string; password?: string },
+  ) {
+    return this.settingsService.addTeamMember(tenantId, body);
+  }
+
+  @Delete('team/:id')
+  async removeTeamMember(
+    @CurrentTenant() tenantId: string,
+    @Param('id') userId: string,
+  ) {
+    return this.settingsService.removeTeamMember(tenantId, userId);
   }
 
   @Get('roles')

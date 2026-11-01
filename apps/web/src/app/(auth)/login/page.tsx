@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Card, Form, Input, Button, Typography, Alert, Select } from 'antd';
-import { UserOutlined, LockOutlined, GlobalOutlined } from '@ant-design/icons';
+import React, { useState, useEffect } from 'react';
+import { Card, Form, Input, Button, Typography, Alert, Select, Checkbox, Space, Divider } from 'antd';
+import { UserOutlined, LockOutlined, GlobalOutlined, KeyOutlined } from '@ant-design/icons';
 import { useApp } from '@/context/AppContext';
 import { api } from '@/lib/api';
 import { useRouter } from 'next/navigation';
@@ -14,13 +14,34 @@ export default function LoginPage() {
   const { t, login, locale, setLocale, brandColor } = useApp();
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [showDemoChips, setShowDemoChips] = useState(false);
+  const [form] = Form.useForm();
   const router = useRouter();
+
+  useEffect(() => {
+    const rememberedEmail = localStorage.getItem('ginie_remembered_email');
+    if (rememberedEmail) {
+      form.setFieldsValue({
+        email: rememberedEmail,
+        remember: true,
+      });
+    }
+  }, [form]);
 
   const onFinish = async (values: any) => {
     setLoading(true);
     setErrorMessage(null);
     try {
-      const res = await api.post('/api/auth/login', values);
+      if (values.remember) {
+        localStorage.setItem('ginie_remembered_email', values.email.trim());
+      } else {
+        localStorage.removeItem('ginie_remembered_email');
+      }
+
+      const res = await api.post('/api/auth/login', {
+        email: values.email.trim(),
+        password: values.password,
+      });
       login(res.tokens.accessToken, res.user);
       router.push('/');
     } catch (err: any) {
@@ -98,17 +119,20 @@ export default function LoginPage() {
           />
         )}
 
-        <Form layout="vertical" onFinish={onFinish} size="large">
+        <Form form={form} layout="vertical" onFinish={onFinish} size="large">
           <Form.Item
             label={t.auth.emailLabel}
             name="email"
-            initialValue="admin@ginie.space"
             rules={[
               { required: true, message: t.common.pleaseCheckField },
               { type: 'email', message: t.common.pleaseCheckField },
             ]}
           >
-            <Input prefix={<UserOutlined />} placeholder="admin@ginie.space" />
+            <Input
+              prefix={<UserOutlined />}
+              placeholder="you@company.com"
+              autoComplete="email"
+            />
           </Form.Item>
 
           <Form.Item
@@ -116,11 +140,58 @@ export default function LoginPage() {
             name="password"
             rules={[{ required: true, message: t.common.pleaseCheckField }]}
           >
-            <Input.Password prefix={<LockOutlined />} placeholder="••••••••" />
+            <Input.Password
+              prefix={<LockOutlined />}
+              placeholder="••••••••"
+              autoComplete="current-password"
+            />
           </Form.Item>
 
-          <Form.Item style={{ marginTop: 24, marginBottom: 12 }}>
-            <Button type="primary" htmlType="submit" loading={loading} block style={{ height: 44, fontWeight: 600 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
+            <Form.Item name="remember" valuePropName="checked" noStyle>
+              <Checkbox>{locale === 'hi' ? 'मुझे याद रखें' : 'Remember me'}</Checkbox>
+            </Form.Item>
+            <a
+              onClick={(e) => {
+                e.preventDefault();
+                setShowDemoChips(!showDemoChips);
+              }}
+              style={{ fontSize: 12, color: '#8c8c8c' }}
+            >
+              <KeyOutlined /> {showDemoChips ? 'Hide test login' : 'Test logins'}
+            </a>
+          </div>
+
+          {showDemoChips && (
+            <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: 8, marginBottom: 16, border: '1px dashed #cbd5e1' }}>
+              <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 6 }}>
+                Quick Test Accounts:
+              </Text>
+              <Space wrap size="small">
+                <Button
+                  size="small"
+                  onClick={() => form.setFieldsValue({ email: 'admin@ginie.space', password: 'Admin@123' })}
+                >
+                  Super Admin
+                </Button>
+                <Button
+                  size="small"
+                  onClick={() => form.setFieldsValue({ email: 'sunil@acme.in', password: 'password123' })}
+                >
+                  Sales Staff (Sunil)
+                </Button>
+              </Space>
+            </div>
+          )}
+
+          <Form.Item style={{ marginBottom: 12 }}>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={loading}
+              block
+              style={{ height: 44, fontWeight: 600 }}
+            >
               {t.auth.signInButton}
             </Button>
           </Form.Item>

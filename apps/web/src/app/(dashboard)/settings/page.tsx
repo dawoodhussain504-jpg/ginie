@@ -15,6 +15,9 @@ import {
   Divider,
   Switch,
   Alert,
+  Modal,
+  Select,
+  Popconfirm,
   message,
 } from 'antd';
 import {
@@ -39,6 +42,8 @@ import {
   EditOutlined,
   PlayCircleOutlined,
   PauseCircleOutlined,
+  UserAddOutlined,
+  DeleteOutlined,
 } from '@ant-design/icons';
 import { useApp } from '@/context/AppContext';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -99,6 +104,9 @@ function SettingsContent() {
   };
 
   const [team, setTeam] = useState<any[]>([]);
+  const [roles, setRoles] = useState<any[]>([]);
+  const [addMemberModalOpen, setAddMemberModalOpen] = useState(false);
+  const [savingMember, setSavingMember] = useState(false);
   const [alertSettings, setAlertSettings] = useState({
     telegramBotToken: '',
     telegramChatId: '',
@@ -108,6 +116,7 @@ function SettingsContent() {
 
   const [form] = Form.useForm();
   const [alertsForm] = Form.useForm();
+  const [addMemberForm] = Form.useForm();
 
   useEffect(() => {
     loadSettings();
@@ -116,13 +125,15 @@ function SettingsContent() {
   const loadSettings = async () => {
     setLoading(true);
     try {
-      const [compRes, teamRes, alertsRes] = await Promise.all([
+      const [compRes, teamRes, alertsRes, rolesRes] = await Promise.all([
         api.get('/api/settings/company').catch(() => ({})),
         api.get('/api/settings/team').catch(() => []),
         api.get('/api/settings/alerts').catch(() => ({})),
+        api.get('/api/settings/roles').catch(() => []),
       ]);
       setCompany(compRes);
       setTeam(teamRes || []);
+      setRoles(rolesRes || []);
       form.setFieldsValue({
         name: compRes?.name || 'Acme Enterprises',
       });
@@ -188,6 +199,33 @@ function SettingsContent() {
     }
   };
 
+  const handleAddMember = async (values: any) => {
+    setSavingMember(true);
+    try {
+      const res = await api.post('/api/settings/team', values);
+      message.success(res.message || 'Team member added successfully!');
+      setAddMemberModalOpen(false);
+      addMemberForm.resetFields();
+      const updatedTeam = await api.get('/api/settings/team');
+      setTeam(updatedTeam || []);
+    } catch (err: any) {
+      message.error(err.message || 'Failed to add team member');
+    } finally {
+      setSavingMember(false);
+    }
+  };
+
+  const handleRemoveMember = async (userId: string) => {
+    try {
+      await api.delete(`/api/settings/team/${userId}`);
+      message.success('Team member removed.');
+      const updatedTeam = await api.get('/api/settings/team');
+      setTeam(updatedTeam || []);
+    } catch (err: any) {
+      message.error(err.message || 'Failed to remove team member');
+    }
+  };
+
   const teamColumns = [
     {
       title: 'Member Name',
@@ -196,7 +234,7 @@ function SettingsContent() {
       render: (text: string) => <Text strong>{text}</Text>,
     },
     {
-      title: 'Email Address',
+      title: 'Email (Sign-in ID)',
       dataIndex: 'email',
       key: 'email',
     },
@@ -204,14 +242,18 @@ function SettingsContent() {
       title: 'Team Role',
       dataIndex: 'role',
       key: 'role',
-      render: (role: any) => <Tag color="blue">{role?.name || 'Master Admin'}</Tag>,
+      render: (role: any, record: any) => (
+        <Tag color={record.isSuperAdmin ? 'gold' : role?.name === 'Owner' ? 'purple' : 'blue'}>
+          {record.isSuperAdmin ? 'Platform Admin' : role?.name || 'Staff'}
+        </Tag>
+      ),
     },
     {
       title: 'Status',
       dataIndex: 'status',
       key: 'status',
       render: (status: string) => (
-        <Tag color={status === 'active' ? 'green' : 'orange'}>{status.toUpperCase()}</Tag>
+        <Tag color={status === 'active' ? 'green' : 'orange'}>{(status || 'active').toUpperCase()}</Tag>
       ),
     },
     {
@@ -219,6 +261,30 @@ function SettingsContent() {
       dataIndex: 'createdAt',
       key: 'createdAt',
       render: (date: string) => (date ? formatDateIndian(date) : 'Today'),
+    },
+    {
+      title: 'Actions',
+      key: 'actions',
+      render: (_: any, record: any) => {
+        if (record.id === user?.id) {
+          return <Tag color="default">You (Active)</Tag>;
+        }
+        if (record.isSuperAdmin) {
+          return <Tag color="gold">Protected</Tag>;
+        }
+        return (
+          <Popconfirm
+            title="Are you sure you want to remove this team member?"
+            onConfirm={() => handleRemoveMember(record.id)}
+            okText="Remove"
+            cancelText="Cancel"
+          >
+            <Button type="text" danger size="small" icon={<DeleteOutlined />}>
+              Remove
+            </Button>
+          </Popconfirm>
+        );
+      },
     },
   ];
 
@@ -307,6 +373,22 @@ function SettingsContent() {
       ),
       children: (
         <Card style={{ borderRadius: 12 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
+            <div>
+              <Title level={4} style={{ margin: 0 }}>Team & Staff Members</Title>
+              <Text type="secondary">Invite and manage employees, sales executives, and their permissions</Text>
+            </div>
+            <Button
+              type="primary"
+              icon={<UserAddOutlined />}
+              onClick={() => {
+                addMemberForm.resetFields();
+                setAddMemberModalOpen(true);
+              }}
+            >
+              Add Team Member
+            </Button>
+          </div>
           <Table
             dataSource={team}
             columns={teamColumns}
@@ -616,6 +698,73 @@ function SettingsContent() {
         onClose={() => setOnboardingOpen(false)}
         onSuccess={() => loadSettings()}
       />
+
+      {/* Add Team Member Modal */}
+      <Modal
+        title="Add New Team Member"
+        open={addMemberModalOpen}
+        onCancel={() => setAddMemberModalOpen(false)}
+        footer={null}
+        destroyOnClose
+      >
+        <Form form={addMemberForm} layout="vertical" onFinish={handleAddMember}>
+          <Form.Item
+            name="name"
+            label="Full Name"
+            rules={[{ required: true, message: 'Please enter staff member name' }]}
+          >
+            <Input placeholder="e.g. Sunil Verma" />
+          </Form.Item>
+
+          <Form.Item
+            name="email"
+            label="Email Address (Login ID)"
+            rules={[
+              { required: true, message: 'Please enter valid email' },
+              { type: 'email', message: 'Valid email required' },
+            ]}
+          >
+            <Input placeholder="e.g. sunil@acme.in" />
+          </Form.Item>
+
+          <Form.Item name="phone" label="Phone Number (Optional)">
+            <Input placeholder="+91 9876543210" />
+          </Form.Item>
+
+          <Form.Item
+            name="roleId"
+            label="Assign Team Role"
+            rules={[{ required: true, message: 'Please select a role' }]}
+            initialValue={roles.find((r) => r.name === 'Sales Executive')?.id || roles[0]?.id}
+          >
+            <Select
+              options={roles.map((r) => ({
+                value: r.id,
+                label: `${r.name} ${r.name === 'Sales Executive' ? '(Staff / Sales)' : r.name === 'Owner' ? '(Co-Owner)' : ''}`,
+              }))}
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="password"
+            label="Initial Password"
+            initialValue="Staff@123"
+            rules={[{ required: true, min: 6, message: 'Password must be at least 6 characters' }]}
+            extra="Share this password with your employee so they can sign in."
+          >
+            <Input.Password placeholder="••••••••" />
+          </Form.Item>
+
+          <div style={{ textAlign: 'right', marginTop: 20 }}>
+            <Space>
+              <Button onClick={() => setAddMemberModalOpen(false)}>Cancel</Button>
+              <Button type="primary" htmlType="submit" loading={savingMember}>
+                Add Member
+              </Button>
+            </Space>
+          </div>
+        </Form>
+      </Modal>
     </div>
   );
 }

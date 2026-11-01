@@ -1,7 +1,8 @@
 import { BUSINESS_TEMPLATES, CompleteOnboardingDto } from '@ginie/common';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { prisma } from '@ginie/database';
 import { NotificationsService } from '../notifications/notifications.service';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class SettingsService {
@@ -52,6 +53,63 @@ export class SettingsService {
       { id: 'usr-1', name: 'Rajesh Sharma', email: 'admin@ginie.space', role: { name: 'Owner' }, status: 'active' },
       { id: 'usr-2', name: 'Sunil Verma', email: 'sunil@acme.in', role: { name: 'Sales Executive' }, status: 'active' },
     ];
+  }
+
+  async addTeamMember(
+    tenantId: string,
+    data: { name: string; email: string; phone?: string; roleId: string; password?: string },
+  ) {
+    const email = data.email.toLowerCase().trim();
+    const existing = await prisma.user.findFirst({
+      where: { tenantId, email, deletedAt: null },
+    });
+    if (existing) {
+      throw new BadRequestException('A team member with this email already exists in your company.');
+    }
+
+    // Default password if not provided
+    const password = data.password && data.password.length >= 6 ? data.password : 'Staff@123';
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    const user = await prisma.user.create({
+      data: {
+        tenantId,
+        roleId: data.roleId,
+        name: data.name.trim(),
+        email,
+        phone: data.phone?.trim() || null,
+        passwordHash,
+        status: 'active',
+        isSuperAdmin: false,
+      },
+      include: { role: true },
+    });
+
+    return {
+      success: true,
+      user,
+      initialPassword: password,
+      message: `Team member ${user.name} added successfully.`,
+    };
+  }
+
+  async removeTeamMember(tenantId: string, userId: string) {
+    const user = await prisma.user.findFirst({
+      where: { id: userId, tenantId },
+    });
+    if (!user) {
+      throw new NotFoundException('Team member not found.');
+    }
+    if (user.isSuperAdmin) {
+      throw new BadRequestException('Cannot remove platform Super Admin account.');
+    }
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { deletedAt: new Date(), status: 'suspended' },
+    });
+
+    return { success: true, message: 'Team member removed.' };
   }
 
   async getRoles(tenantId: string) {

@@ -147,26 +147,53 @@ export default function DashboardLayout({
     },
   ];
 
+  const isOwnerOrSuper = user?.isSuperAdmin || user?.role === 'Owner';
+  const canViewBilling = isOwnerOrSuper || user?.permissions?.billing?.view !== false;
+
+  const visibleMenuItems = menuItems.filter((item) => {
+    if (item.key === '/billing' && !canViewBilling) return false;
+    return true;
+  });
+
   const userDropdownItems = {
     items: [
       {
         key: 'user-info',
         label: (
-          <div style={{ padding: '4px 8px' }}>
-            <Text strong>{user?.name || 'Master Admin'}</Text>
+          <div style={{ padding: '6px 8px' }}>
+            <Text strong>{user?.name || 'User'}</Text>
             <br />
             <Text type="secondary" style={{ fontSize: 12 }}>
-              {user?.companyName || 'Ginie Space'} • {user?.role || 'Administrator'}
+              {user?.companyName || 'Ginie Space'}
             </Text>
+            <div style={{ marginTop: 4 }}>
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  padding: '2px 8px',
+                  borderRadius: 6,
+                  background: user?.isSuperAdmin ? '#fffbe6' : user?.role === 'Owner' ? '#f9f0ff' : '#e6f4ff',
+                  color: user?.isSuperAdmin ? '#d48806' : user?.role === 'Owner' ? '#722ed1' : '#1677ff',
+                  border: user?.isSuperAdmin ? '1px solid #ffe58f' : user?.role === 'Owner' ? '1px solid #d3adf7' : '1px solid #91caff',
+                }}
+              >
+                {user?.isSuperAdmin ? 'Platform Admin' : user?.role || 'Staff Member'}
+              </span>
+            </div>
           </div>
         ),
       },
       { type: 'divider' as const },
-      {
-        key: 'onboarding-wizard',
-        icon: <AppstoreOutlined />,
-        label: <a onClick={() => setOnboardingOpen(true)}>Business Setup Wizard</a>,
-      },
+      ...(isOwnerOrSuper
+        ? [
+            {
+              key: 'onboarding-wizard',
+              icon: <AppstoreOutlined />,
+              label: <a onClick={() => setOnboardingOpen(true)}>Business Setup Wizard</a>,
+            },
+          ]
+        : []),
       {
         key: 'settings',
         icon: <SettingOutlined />,
@@ -248,7 +275,7 @@ export default function DashboardLayout({
         <Menu
           mode="inline"
           selectedKeys={[getActiveKey()]}
-          items={menuItems}
+          items={visibleMenuItems}
           style={{ borderRight: 0, marginTop: 8 }}
         />
       </Sider>

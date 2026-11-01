@@ -160,11 +160,40 @@ export class AuthService {
         data: { lastLoginAt: new Date() },
       });
 
+      const isSuperAdmin = !!user.isSuperAdmin;
+      const roleName = isSuperAdmin ? 'Master Admin' : (user.role?.name || 'Staff');
+
+      const ownerPermissions = {
+        leads: { view: true, create: true, edit: true, delete: true, export: true },
+        deals: { view: true, create: true, edit: true, delete: true, export: true },
+        contacts: { view: true, create: true, edit: true, delete: true, export: true },
+        tasks: { view: true, create: true, edit: true, delete: true, export: true },
+        discovery: { view: true, search: true, import: true },
+        whatsapp: { view: true, send: true, manage: true },
+        billing: { view: true, create: true, edit: true },
+        settings: { view: true, edit: true },
+      };
+
+      const defaultStaffPermissions = {
+        leads: { view: true, create: true, edit: true, delete: false, export: false },
+        deals: { view: true, create: true, edit: true, delete: false, export: false },
+        contacts: { view: true, create: true, edit: true, delete: false, export: false },
+        tasks: { view: true, create: true, edit: true, delete: false, export: false },
+        discovery: { view: true, search: true, import: true },
+        whatsapp: { view: true, send: true, manage: false },
+        billing: { view: false, create: false, edit: false },
+        settings: { view: false, edit: false },
+      };
+
+      const permissions = isSuperAdmin || roleName === 'Owner'
+        ? ownerPermissions
+        : ((user.role?.permissions as any) || defaultStaffPermissions);
+
       const tokens = this.generateTokens({
         id: user.id,
         tenantId: user.tenantId,
         email: user.email,
-        isSuperAdmin: true,
+        isSuperAdmin,
       });
 
       const profile: AuthenticatedUser = {
@@ -172,21 +201,12 @@ export class AuthService {
         tenantId: user.tenantId,
         name: user.name,
         email: user.email,
-        role: 'Master Admin',
-        permissions: {
-          leads: { view: true, create: true, edit: true, delete: true, export: true },
-          deals: { view: true, create: true, edit: true, delete: true, export: true },
-          contacts: { view: true, create: true, edit: true, delete: true, export: true },
-          tasks: { view: true, create: true, edit: true, delete: true, export: true },
-          discovery: { view: true, search: true, import: true },
-          whatsapp: { view: true, send: true, manage: true },
-          billing: { view: true, create: true, edit: true },
-          settings: { view: true, edit: true },
-        },
+        role: roleName,
+        permissions,
         companyName: user.tenant?.name || 'Ginie Space',
         companyBrandColor: user.tenant?.brandColor || '#1677ff',
         language: user.language || 'en',
-        isSuperAdmin: true,
+        isSuperAdmin,
       };
 
       return { tokens, user: profile };
@@ -247,26 +267,46 @@ export class AuthService {
         throw new UnauthorizedException('Please sign in to continue.');
       }
 
+      const isSuperAdmin = !!user.isSuperAdmin;
+      const roleName = isSuperAdmin ? 'Master Admin' : (user.role?.name || 'Staff');
+
+      const ownerPermissions = {
+        leads: { view: true, create: true, edit: true, delete: true, export: true },
+        deals: { view: true, create: true, edit: true, delete: true, export: true },
+        contacts: { view: true, create: true, edit: true, delete: true, export: true },
+        tasks: { view: true, create: true, edit: true, delete: true, export: true },
+        discovery: { view: true, search: true, import: true },
+        whatsapp: { view: true, send: true, manage: true },
+        billing: { view: true, create: true, edit: true },
+        settings: { view: true, edit: true },
+      };
+
+      const defaultStaffPermissions = {
+        leads: { view: true, create: true, edit: true, delete: false, export: false },
+        deals: { view: true, create: true, edit: true, delete: false, export: false },
+        contacts: { view: true, create: true, edit: true, delete: false, export: false },
+        tasks: { view: true, create: true, edit: true, delete: false, export: false },
+        discovery: { view: true, search: true, import: true },
+        whatsapp: { view: true, send: true, manage: false },
+        billing: { view: false, create: false, edit: false },
+        settings: { view: false, edit: false },
+      };
+
+      const permissions = isSuperAdmin || roleName === 'Owner'
+        ? ownerPermissions
+        : ((user.role?.permissions as any) || defaultStaffPermissions);
+
       return {
         id: user.id,
         tenantId: user.tenantId,
         name: user.name,
         email: user.email,
-        role: 'Master Admin',
-        permissions: {
-          leads: { view: true, create: true, edit: true, delete: true, export: true },
-          deals: { view: true, create: true, edit: true, delete: true, export: true },
-          contacts: { view: true, create: true, edit: true, delete: true, export: true },
-          tasks: { view: true, create: true, edit: true, delete: true, export: true },
-          discovery: { view: true, search: true, import: true },
-          whatsapp: { view: true, send: true, manage: true },
-          billing: { view: true, create: true, edit: true },
-          settings: { view: true, edit: true },
-        },
+        role: roleName,
+        permissions,
         companyName: user.tenant?.name || 'Ginie Space',
         companyBrandColor: user.tenant?.brandColor || '#1677ff',
         language: user.language || 'en',
-        isSuperAdmin: true,
+        isSuperAdmin,
       };
     } catch (err: any) {
       if (err instanceof UnauthorizedException) {
