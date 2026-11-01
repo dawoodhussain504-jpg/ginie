@@ -43,7 +43,11 @@ export default function LoginPage() {
         password: values.password,
       });
       login(res.tokens.accessToken, res.user);
-      router.push('/');
+      if (res.user?.isSuperAdmin) {
+        router.push('/admin');
+      } else {
+        router.push('/');
+      }
     } catch (err: any) {
       setErrorMessage(err.message || t.auth.loginFailed);
     } finally {

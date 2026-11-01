@@ -32,6 +32,11 @@ export class AdminController {
     return this.adminService.listTenants();
   }
 
+  @Get('plans')
+  async listPlans() {
+    return this.adminService.listPlans();
+  }
+
   @Patch('tenants/:id/status')
   @UsePipes(new ZodValidationPipe(UpdateTenantStatusSchema))
   async updateTenantStatus(

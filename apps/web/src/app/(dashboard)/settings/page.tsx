@@ -64,44 +64,7 @@ function SettingsContent() {
   const initialTab = searchParams.get('tab') || 'profile';
   const [activeTab, setActiveTab] = useState(initialTab);
 
-  // Owner Control state
-  const [adminMetrics, setAdminMetrics] = useState<any>(null);
-  const [adminTenants, setAdminTenants] = useState<any[]>([]);
-  const [adminLoading, setAdminLoading] = useState(false);
 
-  useEffect(() => {
-    if (user?.isSuperAdmin) {
-      loadAdminData();
-    }
-  }, [user]);
-
-  const loadAdminData = async () => {
-    setAdminLoading(true);
-    try {
-      const [m, t] = await Promise.all([
-        api.get('/api/admin/metrics'),
-        api.get('/api/admin/tenants'),
-      ]);
-      setAdminMetrics(m);
-      setAdminTenants(t || []);
-    } catch {
-      // Fallback
-      setAdminMetrics({ totalTenants: 1, totalUsers: 1, totalSearches: 20, totalRevenueINR: 0 });
-    } finally {
-      setAdminLoading(false);
-    }
-  };
-
-  const handleToggleTenantStatus = async (tenant: any) => {
-    const nextStatus = tenant.status === 'active' ? 'suspended' : 'active';
-    try {
-      await api.patch(`/api/admin/tenants/${tenant.id}/status`, { status: nextStatus });
-      setAdminTenants(prev => prev.map(t => t.id === tenant.id ? { ...t, status: nextStatus } : t));
-      message.success(`Company account is now ${nextStatus}`);
-    } catch {
-      message.error('Failed to update status');
-    }
-  };
 
   const [team, setTeam] = useState<any[]>([]);
   const [roles, setRoles] = useState<any[]>([]);
@@ -568,110 +531,12 @@ function SettingsContent() {
     },
   ];
 
-  // Strictly add Owner Control panel only if user is Super Admin
-  if (user?.isSuperAdmin) {
-    tabItems.push({
-      key: 'owner-control',
-      label: (
-        <span style={{ color: '#faad14', fontWeight: 600 }}>
-          <SafetyCertificateOutlined /> Owner Control Panel
-        </span>
-      ),
-      children: (
-        <div>
-          <Title level={4}>Platform Owner Control Panel</Title>
-          <Paragraph type="secondary">
-            Platform-wide company management, tenant statuses, and resource usage metrics.
-          </Paragraph>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
-            <Card style={{ borderRadius: 10 }}>
-              <Text type="secondary">Total Registered Companies</Text>
-              <Title level={3} style={{ margin: '4px 0 0', color: brandColor }}>
-                {adminMetrics?.totalTenants || 0}
-              </Title>
-            </Card>
-
-            <Card style={{ borderRadius: 10 }}>
-              <Text type="secondary">Active Team Members</Text>
-              <Title level={3} style={{ margin: '4px 0 0', color: '#52c41a' }}>
-                {adminMetrics?.totalUsers || 0}
-              </Title>
-            </Card>
-
-            <Card style={{ borderRadius: 10 }}>
-              <Text type="secondary">Total Searches Run</Text>
-              <Title level={3} style={{ margin: '4px 0 0', color: '#722ed1' }}>
-                {adminMetrics?.totalSearches || 0}
-              </Title>
-            </Card>
-
-            <Card style={{ borderRadius: 10 }}>
-              <Text type="secondary">Platform Revenue</Text>
-              <Title level={3} style={{ margin: '4px 0 0', color: '#faad14' }}>
-                ₹{Number(adminMetrics?.totalRevenueINR || 0).toLocaleString('en-IN')}
-              </Title>
-            </Card>
-          </div>
-
-          <Card title={<Text strong>Registered Companies</Text>} style={{ borderRadius: 12 }}>
-            <Table
-              dataSource={adminTenants}
-              rowKey="id"
-              loading={adminLoading}
-              pagination={{ pageSize: 10 }}
-              columns={[
-                {
-                  title: 'Company',
-                  dataIndex: 'name',
-                  key: 'name',
-                  render: (name, record) => (
-                    <div>
-                      <Text strong>{name}</Text>
-                      <br />
-                      <Text type="secondary" style={{ fontSize: 12 }}>slug: {record.slug}</Text>
-                    </div>
-                  ),
-                },
-                {
-                  title: 'Plan',
-                  dataIndex: 'planName',
-                  key: 'planName',
-                  render: (p) => <Tag color="gold">{p || 'Pro'}</Tag>,
-                },
-                {
-                  title: 'Status',
-                  dataIndex: 'status',
-                  key: 'status',
-                  render: (st) => <Tag color={st === 'active' ? 'green' : 'red'}>{st?.toUpperCase()}</Tag>,
-                },
-                {
-                  title: 'Users',
-                  dataIndex: 'userCount',
-                  key: 'userCount',
-                  render: (c) => c || 1,
-                },
-                {
-                  title: 'Actions',
-                  key: 'action',
-                  render: (_, record) => (
-                    <Button
-                      size="small"
-                      danger={record.status === 'active'}
-                      icon={record.status === 'active' ? <PauseCircleOutlined /> : <PlayCircleOutlined />}
-                      onClick={() => handleToggleTenantStatus(record)}
-                    >
-                      {record.status === 'active' ? 'Suspend' : 'Activate'}
-                    </Button>
-                  ),
-                },
-              ]}
-            />
-          </Card>
-        </div>
-      ),
-    });
-  }
+  // If navigated with ?tab=owner-control, redirect to dedicated /admin Master Console
+  useEffect(() => {
+    if (initialTab === 'owner-control') {
+      router.replace('/admin');
+    }
+  }, [initialTab, router]);
 
   return (
     <div>

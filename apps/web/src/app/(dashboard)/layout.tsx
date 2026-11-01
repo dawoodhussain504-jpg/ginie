@@ -29,6 +29,7 @@ import {
   MobileOutlined,
   MenuOutlined,
   AppstoreOutlined,
+  SafetyCertificateOutlined,
 } from '@ant-design/icons';
 import { useApp } from '@/context/AppContext';
 import { usePathname, useRouter } from 'next/navigation';
@@ -150,10 +151,25 @@ export default function DashboardLayout({
   const isOwnerOrSuper = user?.isSuperAdmin || user?.role === 'Owner';
   const canViewBilling = isOwnerOrSuper || user?.permissions?.billing?.view !== false;
 
-  const visibleMenuItems = menuItems.filter((item) => {
-    if (item.key === '/billing' && !canViewBilling) return false;
-    return true;
-  });
+  const visibleMenuItems = [
+    ...menuItems.filter((item) => {
+      if (item.key === '/billing' && !canViewBilling) return false;
+      return true;
+    }),
+    ...(user?.isSuperAdmin
+      ? [
+          {
+            key: '/admin',
+            icon: <SafetyCertificateOutlined style={{ color: '#faad14' }} />,
+            label: (
+              <Link href="/admin">
+                <span style={{ color: '#faad14', fontWeight: 600 }}>Master Console</span>
+              </Link>
+            ),
+          },
+        ]
+      : []),
+  ];
 
   const userDropdownItems = {
     items: [
@@ -185,6 +201,19 @@ export default function DashboardLayout({
         ),
       },
       { type: 'divider' as const },
+      ...(user?.isSuperAdmin
+        ? [
+            {
+              key: 'admin-console',
+              icon: <SafetyCertificateOutlined style={{ color: '#faad14' }} />,
+              label: (
+                <Link href="/admin">
+                  <span style={{ color: '#d48806', fontWeight: 600 }}>Platform Master Console</span>
+                </Link>
+              ),
+            },
+          ]
+        : []),
       ...(isOwnerOrSuper
         ? [
             {
@@ -210,13 +239,14 @@ export default function DashboardLayout({
   };
 
   const getActiveKey = () => {
+    if (pathname === '/admin') return '/admin';
     if (pathname.startsWith('/customers') || pathname === '/people' || pathname === '/companies') return '/customers';
     if (pathname.startsWith('/sales') || pathname === '/tasks') return '/sales';
     if (pathname.startsWith('/find-customers')) return '/find-customers';
     if (pathname.startsWith('/whatsapp')) return '/whatsapp';
     if (pathname.startsWith('/billing')) return '/billing';
     if (pathname.startsWith('/reports')) return '/reports';
-    if (pathname.startsWith('/settings') || pathname === '/admin' || pathname === '/subscriptions' || pathname === '/forms' || pathname === '/automations' || pathname === '/audit-logs') return '/settings';
+    if (pathname.startsWith('/settings') || pathname === '/subscriptions' || pathname === '/forms' || pathname === '/automations' || pathname === '/audit-logs') return '/settings';
     return '/';
   };
 
@@ -300,6 +330,33 @@ export default function DashboardLayout({
           </div>
 
           <Space size="middle">
+            {user?.isSuperAdmin && (
+              pathname === '/admin' ? (
+                <Button
+                  size="middle"
+                  icon={<HomeOutlined />}
+                  onClick={() => router.push('/')}
+                  style={{ fontWeight: 600 }}
+                >
+                  CRM Workspace
+                </Button>
+              ) : (
+                <Button
+                  size="middle"
+                  icon={<SafetyCertificateOutlined />}
+                  onClick={() => router.push('/admin')}
+                  style={{
+                    background: '#faad14',
+                    borderColor: '#d48806',
+                    color: '#000',
+                    fontWeight: 600,
+                  }}
+                >
+                  Master Console
+                </Button>
+              )
+            )}
+
             {isInstallable && (
               <Button
                 type="primary"

@@ -68,6 +68,12 @@ export class AdminService {
     });
   }
 
+  async listPlans() {
+    return prisma.plan.findMany({
+      orderBy: { monthlyPrice: 'asc' },
+    });
+  }
+
   async updateTenantPlan(tenantId: string, planName: string) {
     const plan = await prisma.plan.findFirst({ where: { name: planName } });
     if (!plan) {
