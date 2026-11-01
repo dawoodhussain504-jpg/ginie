@@ -1,4 +1,4 @@
-import { BusinessTemplate } from '../index';
+import type { BusinessTemplate } from '../index';
 
 export const BUSINESS_TEMPLATES: Record<string, BusinessTemplate> = {
   shop: {
