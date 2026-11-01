@@ -34,7 +34,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 
 const { Title, Text } = Typography;
 
-export default function SalesAndTasksPage() {
+function SalesAndTasksContent() {
   const { t, brandColor } = useApp();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -522,5 +522,13 @@ export default function SalesAndTasksPage() {
         </Form>
       </Modal>
     </div>
+  );
+}
+
+export default function SalesAndTasksPage() {
+  return (
+    <React.Suspense fallback={<div style={{ padding: 32, textAlign: 'center' }}>Loading sales & tasks...</div>}>
+      <SalesAndTasksContent />
+    </React.Suspense>
   );
 }

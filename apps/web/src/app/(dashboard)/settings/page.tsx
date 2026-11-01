@@ -48,7 +48,7 @@ import { formatDateIndian } from '@ginie/i18n';
 
 const { Title, Text, Paragraph } = Typography;
 
-export default function SettingsPage() {
+function SettingsContent() {
   const { t, brandColor, setBrandColor, user } = useApp();
   const [loading, setLoading] = useState(false);
   const [testingAlert, setTestingAlert] = useState<string | null>(null);
@@ -617,5 +617,13 @@ export default function SettingsPage() {
         onSuccess={() => loadSettings()}
       />
     </div>
+  );
+}
+
+export default function SettingsPage() {
+  return (
+    <React.Suspense fallback={<div style={{ padding: 32, textAlign: 'center' }}>Loading settings...</div>}>
+      <SettingsContent />
+    </React.Suspense>
   );
 }

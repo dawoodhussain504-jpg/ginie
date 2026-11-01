@@ -34,7 +34,7 @@ import CustomerImportModal from '@/components/CustomerImportModal';
 
 const { Title, Text } = Typography;
 
-export default function CustomersPage() {
+function CustomersContent() {
   const { t, brandColor } = useApp();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -410,5 +410,13 @@ export default function CustomersPage() {
         </Form>
       </Modal>
     </div>
+  );
+}
+
+export default function CustomersPage() {
+  return (
+    <React.Suspense fallback={<div style={{ padding: 32, textAlign: 'center' }}>Loading customers...</div>}>
+      <CustomersContent />
+    </React.Suspense>
   );
 }
