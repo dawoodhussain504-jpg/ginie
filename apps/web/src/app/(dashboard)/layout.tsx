@@ -33,6 +33,7 @@ import {
 import { useApp } from '@/context/AppContext';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { api } from '@/lib/api';
 import OnboardingWizardModal from '@/components/OnboardingWizardModal';
 
 const { Header, Sider, Content } = Layout;
@@ -83,11 +84,18 @@ export default function DashboardLayout({
     }
   }, [router]);
 
-  // Check if onboarding needs to be shown for first-time login
+  // Check if onboarding needs to be shown for first-time business login
   useEffect(() => {
-    const hasSeenWizard = localStorage.getItem('ginie_onboarding_skipped');
-    if (user && !user.isSuperAdmin && !hasSeenWizard) {
-      // Prompt onboarding for fresh business setup
+    if (!user) return;
+    const skipped = localStorage.getItem(`ginie_wizard_skip_${user.tenantId}`);
+    if (!skipped) {
+      api.get('/api/settings/company')
+        .then((company: any) => {
+          if (company && company.onboardingCompleted === false) {
+            setOnboardingOpen(true);
+          }
+        })
+        .catch(() => {});
     }
   }, [user]);
 

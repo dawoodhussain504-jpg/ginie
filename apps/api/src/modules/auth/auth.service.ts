@@ -13,10 +13,123 @@ import * as bcrypt from 'bcrypt';
 export class AuthService {
   constructor(private readonly jwtService: JwtService) {}
 
-  async register(_dto: RegisterDto): Promise<{ tokens: AuthTokens; user: AuthenticatedUser }> {
-    throw new ForbiddenException(
-      'Public registration is closed. GINIE is running in private Single-Admin Mode.',
-    );
+  async register(dto: RegisterDto): Promise<{ tokens: AuthTokens; user: AuthenticatedUser }> {
+    const email = dto.email.toLowerCase().trim();
+
+    const existingUser = await prisma.user.findFirst({
+      where: { email, deletedAt: null },
+    });
+
+    if (existingUser) {
+      throw new BadRequestException('An account with this email address already exists. Please log in.');
+    }
+
+    // Default to 'Free' plan or first available plan
+    const plan = (await prisma.plan.findFirst({ where: { name: 'Free' } })) || (await prisma.plan.findFirst());
+
+    let slug = dto.companyName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+    if (!slug) slug = 'company-' + Date.now();
+
+    const existingSlug = await prisma.tenant.findUnique({ where: { slug } });
+    if (existingSlug) {
+      slug = `${slug}-${Date.now().toString().slice(-4)}`;
+    }
+
+    // Create the business Tenant
+    const tenant = await prisma.tenant.create({
+      data: {
+        name: dto.companyName.trim(),
+        slug,
+        brandColor: '#1677ff',
+        status: 'active',
+        planId: plan?.id,
+        onboardingCompleted: false, // will trigger setup wizard on first login
+        settings: {
+          currency: 'INR',
+          timezone: 'Asia/Kolkata',
+        },
+      },
+    });
+
+    // Create Owner role for this tenant
+    const ownerRole = await prisma.role.create({
+      data: {
+        tenantId: tenant.id,
+        name: 'Owner',
+        isSystem: true,
+        permissions: {
+          leads: { view: true, create: true, edit: true, delete: true, export: true },
+          deals: { view: true, create: true, edit: true, delete: true, export: true },
+          contacts: { view: true, create: true, edit: true, delete: true, export: true },
+          tasks: { view: true, create: true, edit: true, delete: true, export: true },
+          discovery: { view: true, search: true, import: true },
+          whatsapp: { view: true, send: true, manage: true },
+          billing: { view: true, create: true, edit: true },
+          settings: { view: true, edit: true },
+        },
+      },
+    });
+
+    // Create default Sales Executive role as well for staff
+    await prisma.role.create({
+      data: {
+        tenantId: tenant.id,
+        name: 'Sales Executive',
+        isSystem: true,
+        permissions: {
+          leads: { view: true, create: true, edit: true, delete: false, export: false },
+          deals: { view: true, create: true, edit: true, delete: false, export: false },
+          contacts: { view: true, create: true, edit: true, delete: false, export: false },
+          tasks: { view: true, create: true, edit: true, delete: false, export: false },
+          discovery: { view: true, search: true, import: true },
+          whatsapp: { view: true, send: true, manage: true },
+          billing: { view: false, create: false, edit: false },
+          settings: { view: false, edit: false },
+        },
+      },
+    });
+
+    // Hash password & create user
+    const passwordHash = await bcrypt.hash(dto.password, 10);
+    const user = await prisma.user.create({
+      data: {
+        tenantId: tenant.id,
+        roleId: ownerRole.id,
+        name: dto.name.trim(),
+        email,
+        phone: dto.phone?.trim() || null,
+        passwordHash,
+        isSuperAdmin: false,
+        status: 'active',
+        language: 'en',
+      },
+      include: { tenant: true, role: true },
+    });
+
+    const tokens = this.generateTokens({
+      id: user.id,
+      tenantId: user.tenantId,
+      email: user.email,
+      isSuperAdmin: false,
+    });
+
+    const profile: AuthenticatedUser = {
+      id: user.id,
+      tenantId: user.tenantId,
+      name: user.name,
+      email: user.email,
+      role: 'Owner',
+      permissions: ownerRole.permissions as any,
+      companyName: tenant.name,
+      companyBrandColor: tenant.brandColor || '#1677ff',
+      language: user.language || 'en',
+      isSuperAdmin: false,
+    };
+
+    return { tokens, user: profile };
   }
 
   async login(dto: LoginDto): Promise<{ tokens: AuthTokens; user: AuthenticatedUser }> {

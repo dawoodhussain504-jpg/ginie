@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Card, Form, Input, Button, Typography, Alert, Select, Tag } from 'antd';
-import { UserOutlined, LockOutlined, GlobalOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
+import { Card, Form, Input, Button, Typography, Alert, Select } from 'antd';
+import { UserOutlined, LockOutlined, GlobalOutlined } from '@ant-design/icons';
 import { useApp } from '@/context/AppContext';
 import { api } from '@/lib/api';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 const { Title, Text } = Typography;
 
@@ -81,15 +82,10 @@ export default function LoginPage() {
             G
           </div>
           <Title level={3} style={{ margin: 0, letterSpacing: '-0.5px' }}>
-            GINIE Cockpit
+            GINIE CRM
           </Title>
-          <div style={{ marginTop: 6, marginBottom: 8 }}>
-            <Tag color="gold" icon={<SafetyCertificateOutlined />}>
-              Master Administrator Mode
-            </Tag>
-          </div>
-          <Text type="secondary" style={{ fontSize: 13 }}>
-            Private instance for authorized administrator only.
+          <Text type="secondary" style={{ fontSize: 13, marginTop: 4, display: 'block' }}>
+            {locale === 'hi' ? 'अपने बिजनेस वर्कस्पेस में साइन इन करें' : 'Sign in to your business workspace'}
           </Text>
         </div>
 
@@ -130,8 +126,11 @@ export default function LoginPage() {
           </Form.Item>
 
           <div style={{ textAlign: 'center', marginTop: 16 }}>
-            <Text type="secondary" style={{ fontSize: 12 }}>
-              Sovereign Single-Tenant Architecture &bull; All Features Unlocked
+            <Text type="secondary" style={{ fontSize: 13 }}>
+              {locale === 'hi' ? 'नया बिजनेस है? ' : 'New to GINIE? '}
+              <Link href="/register" style={{ color: brandColor, fontWeight: 600 }}>
+                {locale === 'hi' ? 'नया अकाउंट बनाएं' : 'Create Business Account'}
+              </Link>
             </Text>
           </div>
         </Form>
