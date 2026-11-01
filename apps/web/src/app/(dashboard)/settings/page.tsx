@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   Card,
+  Row,
+  Col,
   Form,
   Input,
   Button,
@@ -97,8 +99,23 @@ function SettingsContent() {
       setCompany(compRes);
       setTeam(teamRes || []);
       setRoles(rolesRes || []);
+      const compSettings = compRes?.settings || {};
       form.setFieldsValue({
         name: compRes?.name || 'Acme Enterprises',
+        gstin: compSettings.gstin || '',
+        pan: compSettings.pan || '',
+        address: compSettings.address || '',
+        city: compSettings.city || '',
+        state: compSettings.state || 'Maharashtra',
+        stateCode: compSettings.stateCode || '27',
+        pincode: compSettings.pincode || '',
+        phone: compSettings.phone || '',
+        email: compSettings.email || '',
+        upiId: compSettings.upiId || 'acme@okhdfcbank',
+        upiName: compSettings.upiName || compRes?.name || 'Acme Enterprises',
+        bankName: compSettings.bankName || '',
+        bankAccountNumber: compSettings.bankAccountNumber || '',
+        bankIfsc: compSettings.bankIfsc || '',
       });
       if (alertsRes) {
         setAlertSettings(alertsRes);
@@ -115,10 +132,14 @@ function SettingsContent() {
     setLoading(true);
     try {
       await api.patch('/api/settings/company', {
-        name: values.name,
+        ...values,
         brandColor,
       });
-      message.success(t.common.success);
+      if (values.upiId) {
+        localStorage.setItem('ginie_admin_upi_vpa', values.upiId);
+      }
+      message.success('Company profile & GST settings updated successfully!');
+      loadSettings();
     } catch (err: any) {
       message.error(err.message || t.common.error);
     } finally {
@@ -260,30 +281,126 @@ function SettingsContent() {
         </span>
       ),
       children: (
-        <Card style={{ maxWidth: 640, borderRadius: 12 }}>
+        <Card style={{ maxWidth: 780, borderRadius: 12 }}>
           <Form form={form} layout="vertical" onFinish={handleSaveCompany}>
-            <Form.Item
-              name="name"
-              label={t.auth.companyNameLabel}
-              rules={[{ required: true, message: t.common.pleaseCheckField }]}
-            >
-              <Input placeholder="e.g. Acme Enterprises" />
-            </Form.Item>
+            <Title level={5} style={{ marginTop: 0 }}>Business Identity</Title>
+            <Row gutter={16}>
+              <Col xs={24} md={14}>
+                <Form.Item
+                  name="name"
+                  label={t.auth.companyNameLabel}
+                  rules={[{ required: true, message: t.common.pleaseCheckField }]}
+                >
+                  <Input placeholder="e.g. Acme Enterprises" />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={10}>
+                <Form.Item label={t.settings.brandColor}>
+                  <Space>
+                    <ColorPicker
+                      value={brandColor}
+                      onChange={(color) => setBrandColor(color.toHexString())}
+                      showText
+                    />
+                    <Text type="secondary" style={{ fontSize: 12 }}>Theme Accent</Text>
+                  </Space>
+                </Form.Item>
+              </Col>
+            </Row>
 
-            <Form.Item label={t.settings.brandColor}>
-              <Space>
-                <ColorPicker
-                  value={brandColor}
-                  onChange={(color) => setBrandColor(color.toHexString())}
-                  showText
-                />
-                <Text type="secondary">This sets your primary button and theme accents.</Text>
-              </Space>
-            </Form.Item>
+            <Divider style={{ margin: '12px 0 16px' }}>GST & Tax Information</Divider>
+            <Row gutter={16}>
+              <Col xs={24} md={12}>
+                <Form.Item
+                  name="gstin"
+                  label="GSTIN (Goods & Services Tax ID)"
+                  extra="15-character alphanumeric GST Number"
+                >
+                  <Input placeholder="27AAPFU0939F1ZV" style={{ textTransform: 'uppercase' }} />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12}>
+                <Form.Item name="pan" label="PAN (Permanent Account Number)">
+                  <Input placeholder="AAPFU0939F" style={{ textTransform: 'uppercase' }} />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={14}>
+                <Form.Item name="state" label="State of Supply">
+                  <Input placeholder="e.g. Maharashtra" />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={10}>
+                <Form.Item name="stateCode" label="State Code">
+                  <Input placeholder="e.g. 27" />
+                </Form.Item>
+              </Col>
+            </Row>
+
+            <Divider style={{ margin: '12px 0 16px' }}>Registered Business Address & Contact</Divider>
+            <Row gutter={16}>
+              <Col xs={24}>
+                <Form.Item name="address" label="Street / Office Address">
+                  <Input placeholder="e.g. Plot No 42, MIDC Industrial Area" />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12}>
+                <Form.Item name="city" label="City">
+                  <Input placeholder="e.g. Mumbai" />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12}>
+                <Form.Item name="pincode" label="PIN Code">
+                  <Input placeholder="e.g. 400001" />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12}>
+                <Form.Item name="phone" label="Official Phone / WhatsApp">
+                  <Input placeholder="+91 98765 43210" />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12}>
+                <Form.Item name="email" label="Official Invoicing Email">
+                  <Input placeholder="accounts@acme.in" />
+                </Form.Item>
+              </Col>
+            </Row>
+
+            <Divider style={{ margin: '12px 0 16px' }}>Bank & UPI Details (For GST Invoices & Payment QR)</Divider>
+            <Row gutter={16}>
+              <Col xs={24} md={12}>
+                <Form.Item
+                  name="upiId"
+                  label="Default Receiving UPI VPA (GooglePay/PhonePe/Paytm)"
+                  extra="Printed on Tax Invoices and embedded in the UPI QR code"
+                >
+                  <Input placeholder="acme@okhdfcbank" />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12}>
+                <Form.Item name="upiName" label="UPI Payee / Account Holder Name">
+                  <Input placeholder="Acme Enterprises" />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={8}>
+                <Form.Item name="bankName" label="Bank Name">
+                  <Input placeholder="HDFC Bank" />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={10}>
+                <Form.Item name="bankAccountNumber" label="Account Number">
+                  <Input placeholder="50200012345678" />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={6}>
+                <Form.Item name="bankIfsc" label="IFSC Code">
+                  <Input placeholder="HDFC0000123" style={{ textTransform: 'uppercase' }} />
+                </Form.Item>
+              </Col>
+            </Row>
 
             <Form.Item style={{ marginTop: 24 }}>
-              <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={loading}>
-                {t.common.save}
+              <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={loading} size="large">
+                Save Company & Tax Details
               </Button>
             </Form.Item>
           </Form>

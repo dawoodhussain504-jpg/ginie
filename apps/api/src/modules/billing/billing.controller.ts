@@ -10,6 +10,7 @@ import { BillingService } from './billing.service';
 import {
   CreateProductSchema,
   CreateQuotationSchema,
+  CreateInvoiceSchema,
 } from '@ginie/common';
 import { CurrentTenant } from '../../common/current-user.decorator';
 
@@ -53,6 +54,20 @@ export class BillingController {
   @Get('invoices')
   async getInvoices(@CurrentTenant() tenantId: string) {
     return this.billingService.getInvoices(tenantId);
+  }
+
+  @Get('invoices/:id')
+  async getInvoice(
+    @CurrentTenant() tenantId: string,
+    @Param('id') id: string,
+  ) {
+    return this.billingService.getInvoice(tenantId, id);
+  }
+
+  @Post('invoices')
+  async createInvoice(@CurrentTenant() tenantId: string, @Body() body: any) {
+    const validated = CreateInvoiceSchema.parse(body);
+    return this.billingService.createInvoice(tenantId, validated);
   }
 
   @Patch('invoices/:id/status')

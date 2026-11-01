@@ -207,6 +207,10 @@ export const QuotationItemSchema = z.object({
   price: z.number().min(0),
   quantity: z.number().min(1),
   taxRate: z.number().min(0).default(18),
+  hsn: z.string().optional(),
+  code: z.string().optional(),
+  unit: z.string().optional(),
+  isInterState: z.boolean().optional(),
 });
 export type QuotationItemDto = z.infer<typeof QuotationItemSchema>;
 
@@ -222,9 +226,15 @@ export type CreateQuotationDto = z.infer<typeof CreateQuotationSchema>;
 export const CreateInvoiceSchema = z.object({
   quotationId: z.string().optional(),
   contactId: z.string().optional(),
+  customerName: z.string().optional(),
+  customerGstin: z.string().optional(),
+  customerPhone: z.string().optional(),
+  customerAddress: z.string().optional(),
+  customerState: z.string().optional(),
   items: z.array(QuotationItemSchema).min(1, 'Add at least one item'),
   dueDate: z.string().optional(),
   notes: z.string().optional(),
+  isInterState: z.boolean().optional(),
 });
 export type CreateInvoiceDto = z.infer<typeof CreateInvoiceSchema>;
 

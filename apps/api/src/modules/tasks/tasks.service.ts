@@ -15,26 +15,68 @@ export class TasksService {
         orderBy: { dueAt: 'asc' },
         include: { assignee: true },
       });
-      if (tasks.length > 0) return tasks;
+
+      if (tasks.length > 0) {
+        const enriched = await Promise.all(
+          tasks.map(async (t) => {
+            let contactName = '';
+            let contactPhone = '';
+            if (t.entityType === 'contact' && t.entityId) {
+              const c = await prisma.contact.findUnique({ where: { id: t.entityId } });
+              if (c) {
+                contactName = c.name;
+                contactPhone = c.phone || '';
+              }
+            } else if (t.entityType === 'lead' && t.entityId) {
+              const l = await prisma.lead.findUnique({ where: { id: t.entityId } });
+              if (l) {
+                contactName = l.name;
+                contactPhone = l.phone || '';
+              }
+            }
+            return {
+              ...t,
+              contactName,
+              contactPhone,
+            };
+          }),
+        );
+        return enriched;
+      }
     } catch {}
 
     return [
       {
         id: 'tsk-1',
-        title: 'Call Anil Kumar regarding machinery proposal',
-        description: 'Follow up on technical specs sent via email',
+        title: 'Call Anil Kumar regarding industrial pump proposal',
+        description: 'Follow up on technical quotation sent yesterday',
         dueAt: new Date().toISOString(),
         priority: 'high',
         status: 'pending',
+        contactName: 'Anil Kumar (Metro Hardware)',
+        contactPhone: '+919820011223',
         assignee: { name: 'Rajesh Sharma' },
       },
       {
         id: 'tsk-2',
-        title: 'Send demo quotation to Apex Clinic',
-        description: 'Include 18% GST and 1-year maintenance',
+        title: 'Send GST Tax Invoice to Priya Sharma (Apex Clinic)',
+        description: 'Include 18% GST and UPI QR Code',
         dueAt: new Date(Date.now() + 86400000).toISOString(),
         priority: 'medium',
         status: 'pending',
+        contactName: 'Priya Sharma (Apex Clinic)',
+        contactPhone: '+919819922334',
+        assignee: { name: 'Rajesh Sharma' },
+      },
+      {
+        id: 'tsk-3',
+        title: 'Payment follow-up for City Dental Clinic',
+        description: 'Invoice INV-948201 due today',
+        dueAt: new Date().toISOString(),
+        priority: 'high',
+        status: 'pending',
+        contactName: 'Dr. Verma (City Dental)',
+        contactPhone: '+919833445566',
         assignee: { name: 'Rajesh Sharma' },
       },
     ];

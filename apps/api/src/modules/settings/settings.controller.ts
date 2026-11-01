@@ -15,7 +15,7 @@ export class SettingsController {
   @Patch('company')
   async updateCompany(
     @CurrentTenant() tenantId: string,
-    @Body() body: { name?: string; brandColor?: string },
+    @Body() body: any,
   ) {
     return this.settingsService.updateCompany(tenantId, body);
   }

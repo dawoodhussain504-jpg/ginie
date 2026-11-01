@@ -28,11 +28,35 @@ export class SettingsService {
     };
   }
 
-  async updateCompany(tenantId: string, data: { name?: string; brandColor?: string }) {
+  async updateCompany(tenantId: string, data: any) {
     try {
+      const existing = await prisma.tenant.findUnique({ where: { id: tenantId } });
+      const currentSettings = ((existing?.settings as any) || {});
+      const newSettings = {
+        ...currentSettings,
+        ...(data.gstin !== undefined ? { gstin: data.gstin } : {}),
+        ...(data.pan !== undefined ? { pan: data.pan } : {}),
+        ...(data.address !== undefined ? { address: data.address } : {}),
+        ...(data.city !== undefined ? { city: data.city } : {}),
+        ...(data.state !== undefined ? { state: data.state } : {}),
+        ...(data.stateCode !== undefined ? { stateCode: data.stateCode } : {}),
+        ...(data.pincode !== undefined ? { pincode: data.pincode } : {}),
+        ...(data.phone !== undefined ? { phone: data.phone } : {}),
+        ...(data.email !== undefined ? { email: data.email } : {}),
+        ...(data.upiId !== undefined ? { upiId: data.upiId } : {}),
+        ...(data.upiName !== undefined ? { upiName: data.upiName } : {}),
+        ...(data.bankName !== undefined ? { bankName: data.bankName } : {}),
+        ...(data.bankAccountNumber !== undefined ? { bankAccountNumber: data.bankAccountNumber } : {}),
+        ...(data.bankIfsc !== undefined ? { bankIfsc: data.bankIfsc } : {}),
+      };
+
       return await prisma.tenant.update({
         where: { id: tenantId },
-        data,
+        data: {
+          ...(data.name ? { name: data.name } : {}),
+          ...(data.brandColor ? { brandColor: data.brandColor } : {}),
+          settings: newSettings,
+        },
       });
     } catch {
       return { id: tenantId, ...data };
