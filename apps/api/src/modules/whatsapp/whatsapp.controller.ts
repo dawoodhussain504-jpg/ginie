@@ -31,6 +31,58 @@ export class WhatsAppController {
     return this.whatsappService.unlinkSession(tenantId);
   }
 
+  @Get('anti-ban-status')
+  async getAntiBanStatus(@CurrentTenant() tenantId: string) {
+    return this.whatsappService.getAntiBanStatus(tenantId);
+  }
+
+  @Get('conversations')
+  async getConversations(@CurrentTenant() tenantId: string) {
+    return this.whatsappService.getConversations(tenantId);
+  }
+
+  @Get('conversations/:phone')
+  async getConversationThread(
+    @CurrentTenant() tenantId: string,
+    @Param('phone') phone: string,
+  ) {
+    return this.whatsappService.getConversationThread(tenantId, phone);
+  }
+
+  @Post('conversations/:phone/send')
+  async sendConversationMessage(
+    @CurrentTenant() tenantId: string,
+    @CurrentUser('id') userId: string,
+    @Param('phone') phone: string,
+    @Body() body: { message: string },
+  ) {
+    return this.whatsappService.sendMessage(tenantId, userId, {
+      phone,
+      message: body.message,
+    });
+  }
+
+  @Post('followup-check')
+  async checkFollowups(
+    @CurrentTenant() tenantId: string,
+    @Body() body: { daysInactive?: number },
+  ) {
+    return this.whatsappService.createFollowUpTasks(tenantId, body.daysInactive || 2);
+  }
+
+  @Get('templates')
+  async getTemplates(@CurrentTenant() tenantId: string) {
+    return this.whatsappService.getTemplates(tenantId);
+  }
+
+  @Post('templates')
+  async createTemplate(
+    @CurrentTenant() tenantId: string,
+    @Body() body: { name: string; body: string },
+  ) {
+    return this.whatsappService.createTemplate(tenantId, body);
+  }
+
   @Get('messages')
   async getMessages(
     @CurrentTenant() tenantId: string,
@@ -63,7 +115,7 @@ export class WhatsAppController {
     return this.whatsappService.createRule(tenantId, validated);
   }
 
-  // Webhook from Baileys bridge container (HMAC or bridge secret verified)
+  // Webhook from Baileys bridge container
   @Public()
   @Post('webhook/bridge')
   async handleBridgeWebhook(
@@ -86,7 +138,6 @@ export class WhatsAppController {
   @Public()
   @Post('webhook/cloud')
   async handleCloudWebhook(@Body() body: any) {
-    // Process inbound message event from Meta webhook
     return { status: 'received' };
   }
 }

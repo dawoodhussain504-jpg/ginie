@@ -32,33 +32,158 @@ export class DiscoveryService {
       used = 0;
     }
 
+    // Retrieve tenant plan limits
+    let total = 50;
+    let isUnlimited = false;
+
+    try {
+      const tenant = await prisma.tenant.findUnique({
+        where: { id: tenantId },
+        include: { plan: true },
+      });
+
+      if (tenant?.plan) {
+        const limits = (tenant.plan.limits as any) || {};
+        if (limits.monthlyDiscoverySearches !== undefined) {
+          const limitVal = Number(limits.monthlyDiscoverySearches);
+          if (limitVal === -1 || limitVal >= 99999) {
+            isUnlimited = true;
+            total = 999999;
+          } else {
+            total = limitVal;
+          }
+        }
+      }
+    } catch {
+      total = 50;
+    }
+
+    const remaining = isUnlimited ? 999999 : Math.max(0, total - used);
+
     return {
       used,
-      total: 999999,
-      remaining: 999999,
-      isUnlimited: true,
+      total,
+      remaining,
+      isUnlimited,
       periodStart,
     };
   }
 
-  async search(tenantId: string, userId: string, dto: DiscoverySearchDto) {
-    // 1. Master Admin Mode: Unlimited Searches (no quota restriction)
-    await this.getUsage(tenantId);
+  async getSavedSearches(tenantId: string) {
+    return prisma.discoverySearch.findMany({
+      where: {
+        tenantId,
+        status: 'completed',
+        resultCount: { gt: 0 },
+      },
+      select: {
+        id: true,
+        category: true,
+        city: true,
+        pincode: true,
+        country: true,
+        resultCount: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+    });
+  }
 
-    // 2. Create search record
+  async search(tenantId: string, userId: string, dto: DiscoverySearchDto) {
+    // 1. Quota Check
+    const usage = await this.getUsage(tenantId);
+    if (!usage.isUnlimited && usage.remaining <= 0) {
+      throw new BadRequestException(
+        `Monthly lead search limit reached (${usage.used}/${usage.total}). Please upgrade your plan in Settings to continue finding new customers.`,
+      );
+    }
+
+    // 2. Normalise search parameters
+    const normCategory = dto.category.trim();
+    const normCity = dto.city.trim();
+    const normPincode = dto.pincode?.trim() || null;
+    const normCountry = dto.country?.trim() || 'India';
+
+    // 3. Search Caching Check: Has this exact search been performed within the last 7 days?
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const cachedSearch = await prisma.discoverySearch.findFirst({
+      where: {
+        tenantId,
+        category: { equals: normCategory, mode: 'insensitive' },
+        city: { equals: normCity, mode: 'insensitive' },
+        ...(normPincode ? { pincode: normPincode } : {}),
+        status: 'completed',
+        resultCount: { gt: 0 },
+        createdAt: { gte: sevenDaysAgo },
+      },
+      include: {
+        results: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (cachedSearch && cachedSearch.results.length > 0) {
+      this.logger.log(
+        `Reusing cached search results (${cachedSearch.results.length}) from ${cachedSearch.createdAt.toISOString()}`,
+      );
+
+      // Create a new search record pointing to cached results without burning Places API calls or quota
+      const newSearch = await prisma.discoverySearch.create({
+        data: {
+          tenantId,
+          userId,
+          country: normCountry,
+          city: normCity,
+          pincode: normPincode,
+          category: normCategory,
+          status: 'completed',
+          resultCount: cachedSearch.results.length,
+        },
+      });
+
+      // Clone cached results into new search session
+      await prisma.discoveryResult.createMany({
+        data: cachedSearch.results.map((r) => ({
+          tenantId,
+          searchId: newSearch.id,
+          placeId: r.placeId,
+          name: r.name,
+          address: r.address,
+          lat: r.lat,
+          lng: r.lng,
+          phone: r.phone,
+          website: r.website,
+          email: r.email,
+          mapsUrl: r.mapsUrl,
+          rating: r.rating,
+          userRatingsTotal: r.userRatingsTotal,
+        })),
+        skipDuplicates: true,
+      });
+
+      return {
+        searchId: newSearch.id,
+        count: cachedSearch.results.length,
+        status: 'completed',
+        cached: true,
+      };
+    }
+
+    // 4. Create search record
     const searchRecord = await prisma.discoverySearch.create({
       data: {
         tenantId,
         userId,
-        country: dto.country,
-        city: dto.city,
-        pincode: dto.pincode,
-        category: dto.category,
+        country: normCountry,
+        city: normCity,
+        pincode: normPincode,
+        category: normCategory,
         status: 'running',
       },
     });
 
-    // 3. Increment usage counter
+    // 5. Increment usage counter
     const now = new Date();
     const periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
@@ -87,15 +212,15 @@ export class DiscoveryService {
       this.logger.warn('Could not update usage counter, continuing search:', e);
     }
 
-    // 4. Fetch Places from Google Places API (New) or fallback to realistic mock
+    // 6. Fetch Places from Google Places API (New) or fallback to realistic sample
     const apiKey = process.env.GOOGLE_PLACES_API_KEY;
     let placesData: any[] = [];
 
     if (apiKey && apiKey !== 'your_key_here' && apiKey !== 'your_google_places_api_key_here') {
       try {
-        const queryText = dto.pincode
-          ? `${dto.category} in ${dto.pincode} ${dto.city}, ${dto.country}`
-          : `${dto.category} in ${dto.city}, ${dto.country}`;
+        const queryText = normPincode
+          ? `${normCategory} in ${normPincode} ${normCity}, ${normCountry}`
+          : `${normCategory} in ${normCity}, ${normCountry}`;
 
         const response = await fetch('https://places.googleapis.com/v1/places:searchText', {
           method: 'POST',
@@ -116,7 +241,7 @@ export class DiscoveryService {
           placesData = (json.places || []).map((p: any) => ({
             placeId: p.id,
             name: p.displayName?.text || 'Business',
-            address: p.formattedAddress || `${dto.city}, ${dto.country}`,
+            address: p.formattedAddress || `${normCity}, ${normCountry}`,
             phone: p.nationalPhoneNumber || p.internationalPhoneNumber,
             website: p.websiteUri,
             mapsUrl: p.googleMapsUri || `https://maps.google.com/?q=${encodeURIComponent(p.displayName?.text || '')}`,
@@ -137,7 +262,7 @@ export class DiscoveryService {
       placesData = this.generateSampleResults(dto);
     }
 
-    // 5. Save results to database
+    // 7. Save results to database
     if (placesData.length > 0) {
       await prisma.discoveryResult.createMany({
         data: placesData.map((item) => ({
@@ -170,6 +295,7 @@ export class DiscoveryService {
       searchId: searchRecord.id,
       count: placesData.length,
       status: 'completed',
+      cached: false,
     };
   }
 
@@ -186,23 +312,90 @@ export class DiscoveryService {
       orderBy: { createdAt: 'desc' },
     });
 
-    // Check which ones are already imported in Leads
-    const placeIds = results.map((r) => r.placeId);
-    const existingLeads = await prisma.lead.findMany({
-      where: {
-        tenantId,
-        googlePlaceId: { in: placeIds },
-        deletedAt: null,
-      },
-      select: { googlePlaceId: true },
+    // Cross-check duplicate customers against Leads, Contacts, and Companies
+    const [existingLeads, existingContacts, existingCompanies] = await Promise.all([
+      prisma.lead.findMany({
+        where: { tenantId, deletedAt: null },
+        select: { id: true, name: true, phone: true, googlePlaceId: true },
+      }),
+      prisma.contact.findMany({
+        where: { tenantId, deletedAt: null },
+        select: { id: true, name: true, phone: true },
+      }),
+      prisma.company.findMany({
+        where: { tenantId, deletedAt: null },
+        select: { id: true, name: true },
+      }),
+    ]);
+
+    const cleanPhoneDigits = (phoneStr: string | null | undefined): string => {
+      if (!phoneStr) return '';
+      const d = phoneStr.replace(/\D/g, '');
+      return d.length > 10 ? d.slice(-10) : d;
+    };
+
+    const leadsByPlaceId = new Map<string, { id: string; name: string }>();
+    const customerByPhone = new Map<string, { type: 'Lead' | 'Contact' | 'Company'; id: string; name: string }>();
+    const customerByName = new Map<string, { type: 'Lead' | 'Contact' | 'Company'; id: string; name: string }>();
+
+    for (const l of existingLeads) {
+      if (l.googlePlaceId) leadsByPlaceId.set(l.googlePlaceId, { id: l.id, name: l.name });
+      const p = cleanPhoneDigits(l.phone);
+      if (p) customerByPhone.set(p, { type: 'Lead', id: l.id, name: l.name });
+      if (l.name) customerByName.set(l.name.toLowerCase().trim(), { type: 'Lead', id: l.id, name: l.name });
+    }
+
+    for (const c of existingContacts) {
+      const p = cleanPhoneDigits(c.phone);
+      if (p) customerByPhone.set(p, { type: 'Contact', id: c.id, name: c.name });
+      if (c.name) customerByName.set(c.name.toLowerCase().trim(), { type: 'Contact', id: c.id, name: c.name });
+    }
+
+    for (const comp of existingCompanies) {
+      if (comp.name) customerByName.set(comp.name.toLowerCase().trim(), { type: 'Company', id: comp.id, name: comp.name });
+    }
+
+    const enriched = results.map((r) => {
+      const phoneDigits = cleanPhoneDigits(r.phone);
+      const nameKey = r.name.toLowerCase().trim();
+
+      let existingMatch: { type: 'Lead' | 'Contact' | 'Company'; id: string; name: string } | null = null;
+
+      if (leadsByPlaceId.has(r.placeId)) {
+        const match = leadsByPlaceId.get(r.placeId)!;
+        existingMatch = { type: 'Lead', id: match.id, name: match.name };
+      } else if (phoneDigits && customerByPhone.has(phoneDigits)) {
+        existingMatch = customerByPhone.get(phoneDigits)!;
+      } else if (nameKey && customerByName.has(nameKey)) {
+        existingMatch = customerByName.get(nameKey)!;
+      }
+
+      // Calculate Lead Quality Tag
+      // Good = Phone + (Website OR Email)
+      // Average = Phone present
+      // Weak = Missing phone
+      let quality: 'good' | 'average' | 'weak' = 'weak';
+      const hasPhone = !!r.phone && phoneDigits.length >= 8;
+      const hasOnlinePresence = !!r.website || !!r.email;
+
+      if (hasPhone && hasOnlinePresence) {
+        quality = 'good';
+      } else if (hasPhone) {
+        quality = 'average';
+      } else {
+        quality = 'weak';
+      }
+
+      const isImported = !!existingMatch || !!r.importedLeadId;
+
+      return {
+        ...r,
+        isImported,
+        isExistingCustomer: !!existingMatch,
+        existingMatch,
+        quality,
+      };
     });
-
-    const importedPlaceIds = new Set(existingLeads.map((l) => l.googlePlaceId));
-
-    const enriched = results.map((r) => ({
-      ...r,
-      isImported: importedPlaceIds.has(r.placeId) || !!r.importedLeadId,
-    }));
 
     return {
       search,
@@ -214,7 +407,7 @@ export class DiscoveryService {
     tenantId: string,
     userId: string,
     searchId: string,
-    dto: ImportDiscoveryResultsDto,
+    dto: ImportDiscoveryResultsDto & { createDeal?: boolean },
   ) {
     const results = await prisma.discoveryResult.findMany({
       where: {
@@ -237,11 +430,21 @@ export class DiscoveryService {
       statusId = defaultStatus?.id;
     }
 
+    // Check pipeline if user requested creating Deals directly in pipeline
+    let defaultPipelineStage: any = null;
+    if (dto.createDeal) {
+      const pipeline = await prisma.pipeline.findFirst({
+        where: { tenantId, isDefault: true },
+        include: { stages: { orderBy: { orderIndex: 'asc' } } },
+      });
+      defaultPipelineStage = pipeline?.stages[0] || null;
+    }
+
     let addedCount = 0;
     let skippedCount = 0;
 
     for (const r of results) {
-      // Check duplicate
+      // Check duplicate against existing leads
       const duplicate = await prisma.lead.findFirst({
         where: {
           tenantId,
@@ -279,6 +482,25 @@ export class DiscoveryService {
         },
       });
 
+      // If requested, also create a Deal in the pipeline
+      if (defaultPipelineStage) {
+        try {
+          await prisma.deal.create({
+            data: {
+              tenantId,
+              pipelineId: defaultPipelineStage.pipelineId,
+              stageId: defaultPipelineStage.id,
+              title: `Deal: ${r.name}`,
+              value: 0,
+              currency: 'INR',
+              ownerId: dto.ownerId || userId,
+            },
+          });
+        } catch (e) {
+          this.logger.warn('Could not auto-create deal for lead:', e);
+        }
+      }
+
       // Update discovery result with importedLeadId
       await prisma.discoveryResult.update({
         where: { id: r.id },
@@ -291,7 +513,7 @@ export class DiscoveryService {
     return {
       addedCount,
       skippedCount,
-      message: `Added ${addedCount} new customer(s). ${skippedCount > 0 ? `${skippedCount} were already in your list.` : ''}`,
+      message: `Added ${addedCount} new customer(s) to Sales. ${skippedCount > 0 ? `${skippedCount} were already in your records.` : ''}`,
     };
   }
 
@@ -300,11 +522,11 @@ export class DiscoveryService {
     const cat = dto.category || 'Businesses';
 
     const sampleBusinesses = [
-      { name: `Apex ${cat} Center`, phone: '+91 98201 11223', rating: 4.8, count: 240, suffix: 'Road' },
-      { name: `Imperial ${cat} & Co.`, phone: '+91 98902 33445', rating: 4.6, count: 180, suffix: 'Plaza' },
-      { name: `Metro ${cat} Hub`, phone: '+91 98453 55667', rating: 4.5, count: 95, suffix: 'Tower' },
-      { name: `Silverline ${cat} Solutions`, phone: '+91 98114 77889', rating: 4.7, count: 310, suffix: 'Complex' },
-      { name: `Golden Arch ${cat}`, phone: '+91 98335 99001', rating: 4.3, count: 64, suffix: 'Marg' },
+      { name: `Apex ${cat} Center`, phone: '+91 98201 11223', rating: 4.8, count: 240, suffix: 'Road', hasWeb: true },
+      { name: `Imperial ${cat} & Co.`, phone: '+91 98902 33445', rating: 4.6, count: 180, suffix: 'Plaza', hasWeb: true },
+      { name: `Metro ${cat} Hub`, phone: '+91 98453 55667', rating: 4.5, count: 95, suffix: 'Tower', hasWeb: false },
+      { name: `Silverline ${cat} Solutions`, phone: '+91 98114 77889', rating: 4.7, count: 310, suffix: 'Complex', hasWeb: true },
+      { name: `Golden Arch ${cat}`, phone: null, rating: 4.3, count: 64, suffix: 'Marg', hasWeb: false },
     ];
 
     return sampleBusinesses.map((b, idx) => ({
@@ -312,7 +534,7 @@ export class DiscoveryService {
       name: b.name,
       address: `${10 + idx * 4}, Commercial ${b.suffix}, ${dto.pincode ? `${dto.pincode}, ` : ''}${city}, ${dto.country}`,
       phone: b.phone,
-      website: `https://www.${b.name.toLowerCase().replace(/[^a-z0-9]/g, '')}.in`,
+      website: b.hasWeb ? `https://www.${b.name.toLowerCase().replace(/[^a-z0-9]/g, '')}.in` : null,
       mapsUrl: `https://maps.google.com/?q=${encodeURIComponent(b.name + ' ' + city)}`,
       lat: 19.076 + idx * 0.01,
       lng: 72.877 + idx * 0.01,

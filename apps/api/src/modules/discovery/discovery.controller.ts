@@ -21,6 +21,11 @@ export class DiscoveryController {
     return this.discoveryService.getUsage(tenantId);
   }
 
+  @Get('searches')
+  async getSavedSearches(@CurrentTenant() tenantId: string) {
+    return this.discoveryService.getSavedSearches(tenantId);
+  }
+
   @Post('search')
   async search(
     @CurrentTenant() tenantId: string,
@@ -47,6 +52,9 @@ export class DiscoveryController {
     @Body() body: any,
   ) {
     const validated = ImportDiscoveryResultsSchema.parse(body);
-    return this.discoveryService.importResults(tenantId, userId, searchId, validated);
+    return this.discoveryService.importResults(tenantId, userId, searchId, {
+      ...validated,
+      createDeal: body.createDeal === true,
+    });
   }
 }

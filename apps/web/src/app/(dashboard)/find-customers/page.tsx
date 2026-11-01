@@ -14,6 +14,11 @@ import {
   Select,
   message,
   Divider,
+  Progress,
+  Tooltip,
+  Checkbox,
+  Drawer,
+  List,
 } from 'antd';
 import {
   CompassOutlined,
@@ -28,6 +33,10 @@ import {
   WhatsAppOutlined,
   CopyOutlined,
   SendOutlined,
+  HistoryOutlined,
+  ThunderboltOutlined,
+  CheckCircleOutlined,
+  FilterOutlined,
 } from '@ant-design/icons';
 import { useApp } from '@/context/AppContext';
 import { api } from '@/lib/api';
@@ -40,12 +49,16 @@ export default function FindCustomersPage() {
   const [loading, setLoading] = useState(false);
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [currentSearchId, setCurrentSearchId] = useState<string | null>(null);
+  const [isCachedResult, setIsCachedResult] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
-  const [usage, setUsage] = useState({ used: 0, total: 999999, remaining: 999999 });
+  const [usage, setUsage] = useState({ used: 0, total: 50, remaining: 50, isUnlimited: false });
   const [importModalVisible, setImportModalVisible] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [createDealInPipeline, setCreateDealInPipeline] = useState(true);
   const [statuses, setStatuses] = useState<any[]>([]);
-  const [mapModalPlace, setMapModalPlace] = useState<any | null>(null);
+  const [qualityFilter, setQualityFilter] = useState<string>('all');
+  const [savedSearches, setSavedSearches] = useState<any[]>([]);
+  const [savedDrawerOpen, setSavedDrawerOpen] = useState(false);
 
   // WhatsApp Outreach Modal State
   const [waModalVisible, setWaModalVisible] = useState(false);
@@ -56,6 +69,7 @@ export default function FindCustomersPage() {
   useEffect(() => {
     loadUsage();
     loadStatuses();
+    loadSavedSearches();
   }, []);
 
   const loadUsage = async () => {
@@ -74,22 +88,71 @@ export default function FindCustomersPage() {
     } catch {}
   };
 
+  const loadSavedSearches = async () => {
+    try {
+      const res = await api.get('/api/discovery/searches');
+      setSavedSearches(res || []);
+    } catch {}
+  };
+
   const onSearch = async (values: any) => {
     setLoading(true);
     setSelectedRowKeys([]);
+    setIsCachedResult(false);
     try {
       const res = await api.post('/api/discovery/search', values);
       setCurrentSearchId(res.searchId);
+      setIsCachedResult(!!res.cached);
 
       // Load results
       const resultsRes = await api.get(`/api/discovery/${res.searchId}`);
       setSearchResults(resultsRes.results || []);
-      message.success(t.discovery.foundResults.replace('{count}', String(resultsRes.results?.length || 0)));
+
+      if (res.cached) {
+        message.success(`⚡ 7-day cache hit! Loaded ${resultsRes.results?.length || 0} results with 0 API cost.`);
+      } else {
+        message.success(t.discovery.foundResults.replace('{count}', String(resultsRes.results?.length || 0)));
+      }
+
       loadUsage();
+      loadSavedSearches();
     } catch (err: any) {
       message.error(err.message || t.common.error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleReRunSearch = async (saved: any) => {
+    form.setFieldsValue({
+      country: saved.country || 'India',
+      city: saved.city,
+      pincode: saved.pincode,
+      category: saved.category,
+    });
+    setSavedDrawerOpen(false);
+    onSearch({
+      country: saved.country || 'India',
+      city: saved.city,
+      pincode: saved.pincode,
+      category: saved.category,
+    });
+  };
+
+  const handleSingleAddToSales = async (record: any) => {
+    if (!currentSearchId) return;
+    try {
+      const res = await api.post(`/api/discovery/${currentSearchId}/import`, {
+        resultIds: [record.id],
+        createDeal: true,
+        tags: ['Google Maps', 'Quick Add'],
+      });
+      message.success(res.message);
+      // Refresh
+      const resultsRes = await api.get(`/api/discovery/${currentSearchId}`);
+      setSearchResults(resultsRes.results || []);
+    } catch (err: any) {
+      message.error(err.message || 'Failed to add customer');
     }
   };
 
@@ -100,6 +163,7 @@ export default function FindCustomersPage() {
       const res = await api.post(`/api/discovery/${currentSearchId}/import`, {
         resultIds: selectedRowKeys,
         statusId: values.statusId,
+        createDeal: createDealInPipeline,
         tags: values.tags || ['Google Maps'],
       });
       message.success(res.message);
@@ -116,21 +180,32 @@ export default function FindCustomersPage() {
     }
   };
 
+  const handleAddAllNew = () => {
+    const unimportedIds = searchResults.filter((r) => !r.isImported).map((r) => r.id);
+    if (unimportedIds.length === 0) {
+      message.info('All leads in current results are already in your Customers list.');
+      return;
+    }
+    setSelectedRowKeys(unimportedIds);
+    setImportModalVisible(true);
+  };
+
   const handleExportCSV = () => {
     if (searchResults.length === 0) return;
-    const headers = ['Business Name', 'Address', 'Phone', 'Website', 'Rating'];
+    const headers = ['Business Name', 'Address', 'Phone', 'Website', 'Rating', 'Lead Quality'];
     const rows = searchResults.map((r) => [
       `"${r.name.replace(/"/g, '""')}"`,
       `"${(r.address || '').replace(/"/g, '""')}"`,
       `"${r.phone || ''}"`,
       `"${r.website || ''}"`,
       `"${r.rating || ''}"`,
+      `"${(r.quality || 'weak').toUpperCase()}"`,
     ]);
     const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `ginie_customers_${Date.now()}.csv`);
+    link.setAttribute('download', `ginie_leads_${Date.now()}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -183,6 +258,12 @@ export default function FindCustomersPage() {
     }
   };
 
+  // Filtered by Quality Tag
+  const filteredResults = searchResults.filter((r) => {
+    if (qualityFilter === 'all') return true;
+    return r.quality === qualityFilter;
+  });
+
   const columns = [
     {
       title: t.discovery.table.name,
@@ -192,9 +273,30 @@ export default function FindCustomersPage() {
         <div>
           <Space direction="vertical" size={2}>
             <Text strong>{text}</Text>
-            {record.isImported && (
-              <Tag color="green">{t.customers.alreadyAdded}</Tag>
-            )}
+            <Space size={4} wrap>
+              {/* Quality Tag */}
+              {record.quality === 'good' && (
+                <Tag color="success">🟢 Good (Phone + Web)</Tag>
+              )}
+              {record.quality === 'average' && (
+                <Tag color="warning">🟡 Average (Phone only)</Tag>
+              )}
+              {record.quality === 'weak' && (
+                <Tag color="default">⚪ Weak (No phone)</Tag>
+              )}
+
+              {/* Duplicate Indicator */}
+              {record.isExistingCustomer && (
+                <Tooltip title={`Matched existing ${record.existingMatch?.type || 'Customer'}: ${record.existingMatch?.name || ''}`}>
+                  <Tag color="blue" icon={<CheckCircleOutlined />}>
+                    Already in Customers ({record.existingMatch?.type || 'Match'})
+                  </Tag>
+                </Tooltip>
+              )}
+              {!record.isExistingCustomer && record.isImported && (
+                <Tag color="green">{t.customers.alreadyAdded}</Tag>
+              )}
+            </Space>
           </Space>
         </div>
       ),
@@ -259,45 +361,33 @@ export default function FindCustomersPage() {
         ),
     },
     {
-      title: 'Outreach',
-      key: 'outreach',
-      render: (_: any, record: any) =>
-        record.phone ? (
-          <Button
-            size="small"
-            type="primary"
-            icon={<WhatsAppOutlined />}
-            style={{ backgroundColor: '#25D366', borderColor: '#25D366', fontWeight: 600 }}
-            onClick={() => handleOpenWhatsAppModal(record)}
-          >
-            WhatsApp Pitch
-          </Button>
-        ) : (
-          <Text type="secondary" style={{ fontSize: 12 }}>No Phone</Text>
-        ),
-    },
-    {
-      title: t.discovery.table.googleMaps,
-      key: 'maps',
+      title: 'Action',
+      key: 'action',
       render: (_: any, record: any) => (
         <Space size="small">
-          {record.mapsUrl && (
+          {record.isImported ? (
+            <Tag color="default">Added</Tag>
+          ) : (
             <Button
               size="small"
-              type="link"
-              href={record.mapsUrl}
-              target="_blank"
-              icon={<EnvironmentOutlined />}
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => handleSingleAddToSales(record)}
             >
-              Google Maps
+              Add to Sales
             </Button>
           )}
-          <Button
-            size="small"
-            onClick={() => setMapModalPlace(record)}
-          >
-            Pin
-          </Button>
+
+          {record.phone && (
+            <Button
+              size="small"
+              icon={<WhatsAppOutlined />}
+              style={{ backgroundColor: '#25D366', borderColor: '#25D366', color: '#fff', fontWeight: 600 }}
+              onClick={() => handleOpenWhatsAppModal(record)}
+            >
+              Pitch
+            </Button>
+          )}
         </Space>
       ),
     },
@@ -305,14 +395,24 @@ export default function FindCustomersPage() {
 
   return (
     <div>
-      <div style={{ marginBottom: 24 }}>
-        <Title level={3} style={{ margin: 0 }}>
-          {t.discovery.title}
-        </Title>
-        <Text type="secondary">{t.discovery.subtitle}</Text>
+      <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
+        <div>
+          <Title level={3} style={{ margin: 0 }}>
+            {t.discovery.title}
+          </Title>
+          <Text type="secondary">{t.discovery.subtitle}</Text>
+        </div>
+        <Space>
+          <Button
+            icon={<HistoryOutlined />}
+            onClick={() => setSavedDrawerOpen(true)}
+          >
+            Saved Searches ({savedSearches.length})
+          </Button>
+        </Space>
       </div>
 
-      {/* Sovereign Admin Mode Card */}
+      {/* Plan-Wise Search Limits & Status Header */}
       <Card style={{ marginBottom: 24, borderRadius: 12 }}>
         <div
           style={{
@@ -322,16 +422,35 @@ export default function FindCustomersPage() {
             marginBottom: 20,
             paddingBottom: 16,
             borderBottom: '1px solid #f0f0f0',
+            flexWrap: 'wrap',
+            gap: 12,
           }}
         >
           <div>
-            <Tag color="gold" icon={<SafetyCertificateOutlined />} style={{ fontSize: 13, padding: '4px 12px', borderRadius: 12, fontWeight: 600 }}>
-              Master Admin Mode: Unlimited Google Searches
-            </Tag>
+            {usage.isUnlimited ? (
+              <Tag color="gold" icon={<SafetyCertificateOutlined />} style={{ fontSize: 13, padding: '4px 12px', borderRadius: 12, fontWeight: 600 }}>
+                Enterprise Plan: Unlimited Places Searches
+              </Tag>
+            ) : (
+              <Space direction="vertical" size={2}>
+                <Space>
+                  <Text strong style={{ fontSize: 13 }}>Monthly Search Quota:</Text>
+                  <Tag color={usage.remaining > 5 ? 'blue' : 'volcano'}>
+                    {usage.used} of {usage.total} used ({usage.remaining} searches left)
+                  </Tag>
+                </Space>
+                <Progress
+                  percent={Math.min(100, Math.round((usage.used / usage.total) * 100))}
+                  size="small"
+                  status={usage.remaining <= 0 ? 'exception' : 'active'}
+                  style={{ width: 220 }}
+                />
+              </Space>
+            )}
           </div>
           <div>
             <Text type="secondary" style={{ fontSize: 13 }}>
-              Total Searches Performed This Month: <strong style={{ color: brandColor }}>{usage.used}</strong>
+              Total Searches This Month: <strong style={{ color: brandColor }}>{usage.used}</strong>
             </Text>
           </div>
         </div>
@@ -379,6 +498,7 @@ export default function FindCustomersPage() {
               icon={<SearchOutlined />}
               loading={loading}
               size="large"
+              disabled={!usage.isUnlimited && usage.remaining <= 0}
             >
               {t.discovery.searchButton}
             </Button>
@@ -389,16 +509,42 @@ export default function FindCustomersPage() {
       {/* Results Table Card */}
       <Card
         title={
-          searchResults.length > 0
-            ? t.discovery.foundResults.replace('{count}', String(searchResults.length))
-            : t.discovery.title
+          <Space wrap>
+            <span>
+              {searchResults.length > 0
+                ? t.discovery.foundResults.replace('{count}', String(searchResults.length))
+                : t.discovery.title}
+            </span>
+            {isCachedResult && (
+              <Tag color="cyan" icon={<ThunderboltOutlined />}>
+                Instant Cache Hit (0 Quota Spent)
+              </Tag>
+            )}
+          </Space>
         }
         extra={
-          <Space>
+          <Space wrap>
             {searchResults.length > 0 && (
-              <Button icon={<DownloadOutlined />} onClick={handleExportCSV}>
-                {t.discovery.exportExcel}
-              </Button>
+              <>
+                <Select
+                  value={qualityFilter}
+                  onChange={setQualityFilter}
+                  style={{ width: 160 }}
+                  prefix={<FilterOutlined />}
+                  options={[
+                    { value: 'all', label: 'All Qualities' },
+                    { value: 'good', label: '🟢 Good (Phone+Web)' },
+                    { value: 'average', label: '🟡 Average (Phone)' },
+                    { value: 'weak', label: '⚪ Weak (No phone)' },
+                  ]}
+                />
+                <Button icon={<DownloadOutlined />} onClick={handleExportCSV}>
+                  {t.discovery.exportExcel}
+                </Button>
+                <Button onClick={handleAddAllNew}>
+                  Add All New to Sales
+                </Button>
+              </>
             )}
             <Button
               type="primary"
@@ -406,7 +552,7 @@ export default function FindCustomersPage() {
               disabled={selectedRowKeys.length === 0}
               onClick={() => setImportModalVisible(true)}
             >
-              {t.discovery.addToCustomers} ({selectedRowKeys.length})
+              Add Selected ({selectedRowKeys.length}) to Sales
             </Button>
           </Space>
         }
@@ -421,13 +567,53 @@ export default function FindCustomersPage() {
             }),
           }}
           columns={columns}
-          dataSource={searchResults}
+          dataSource={filteredResults}
           rowKey="id"
           loading={loading}
           locale={{ emptyText: t.discovery.empty }}
           pagination={{ pageSize: 10 }}
         />
       </Card>
+
+      {/* Saved / Recent Searches Drawer */}
+      <Drawer
+        title="Saved & Recent Searches"
+        placement="right"
+        width={360}
+        onClose={() => setSavedDrawerOpen(false)}
+        open={savedDrawerOpen}
+      >
+        <List
+          dataSource={savedSearches}
+          renderItem={(item: any) => (
+            <List.Item
+              actions={[
+                <Button
+                  key="rerun"
+                  type="link"
+                  icon={<SearchOutlined />}
+                  onClick={() => handleReRunSearch(item)}
+                >
+                  Re-run
+                </Button>,
+              ]}
+            >
+              <List.Item.Meta
+                title={<Text strong>{item.category}</Text>}
+                description={
+                  <div>
+                    <Text type="secondary">
+                      {item.city}{item.pincode ? ` (${item.pincode})` : ''}, {item.country}
+                    </Text>
+                    <br />
+                    <Tag color="blue">{item.resultCount} results found</Tag>
+                  </div>
+                }
+              />
+            </List.Item>
+          )}
+        />
+      </Drawer>
 
       {/* Direct WhatsApp Outreach Modal */}
       <Modal
@@ -462,7 +648,7 @@ export default function FindCustomersPage() {
                 onChange={handleTemplateChange}
                 style={{ width: '100%' }}
                 options={[
-                  { value: 'intro', label: '1. Introduction & Software Overview' },
+                  { value: 'intro', label: '1. Introduction & Overview' },
                   { value: 'offer', label: '2. Exclusive Local Business Offer / Discount' },
                   { value: 'quick', label: '3. Quick Inquiry on Billing / Operations' },
                 ]}
@@ -517,97 +703,45 @@ export default function FindCustomersPage() {
 
       {/* Import to Potential Customers Modal */}
       <Modal
-        title={t.discovery.addToCustomers}
+        title="Add to Sales & Customers"
         open={importModalVisible}
         onCancel={() => setImportModalVisible(false)}
         footer={null}
         destroyOnClose
       >
-        <Form
-          layout="vertical"
-          onFinish={handleImport}
-          initialValues={{ statusId: statuses[0]?.id }}
-        >
-          <Paragraph>
-            Add <strong>{selectedRowKeys.length}</strong> selected business(es) to your customer list.
+        <Form layout="vertical" onFinish={handleImport}>
+          <Paragraph type="secondary">
+            Adding <strong>{selectedRowKeys.length}</strong> business(es) to your customer database. Existing duplicates will be automatically skipped.
           </Paragraph>
 
-          <Form.Item
-            name="statusId"
-            label={t.customers.fields.status}
-            rules={[{ required: true }]}
-          >
+          <Form.Item name="statusId" label="Lead Initial Status">
             <Select
-              options={statuses.map((s) => ({
-                value: s.id,
-                label: s.name,
-              }))}
+              placeholder="Select initial lead stage (default: New Lead)"
+              options={statuses.map((s) => ({ value: s.id, label: s.name }))}
+              allowClear
             />
           </Form.Item>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 24 }}>
-            <Button onClick={() => setImportModalVisible(false)}>
-              {t.common.cancel}
-            </Button>
-            <Button type="primary" htmlType="submit" loading={importing}>
-              {t.discovery.addToCustomers}
-            </Button>
-          </div>
-        </Form>
-      </Modal>
+          <Form.Item>
+            <Checkbox
+              checked={createDealInPipeline}
+              onChange={(e) => setCreateDealInPipeline(e.target.checked)}
+            >
+              <strong>Also create Deal in Sales Pipeline (Stage 0)</strong>
+            </Checkbox>
+          </Form.Item>
 
-      {/* Map Location Preview Modal */}
-      <Modal
-        title={mapModalPlace?.name || 'Location Pin'}
-        open={!!mapModalPlace}
-        onCancel={() => setMapModalPlace(null)}
-        footer={[
-          <Button key="close" onClick={() => setMapModalPlace(null)}>
-            {t.common.cancel}
-          </Button>,
-          mapModalPlace?.mapsUrl ? (
-            <Button
-              key="maps"
-              type="primary"
-              href={mapModalPlace.mapsUrl}
-              target="_blank"
-            >
-              Open in Google Maps
-            </Button>
-          ) : null,
-        ]}
-      >
-        {mapModalPlace && (
-          <div>
-            <div
-              style={{
-                height: 220,
-                background: '#e6f4ff',
-                borderRadius: 8,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 16,
-                border: '1px solid #91caff',
-              }}
-            >
-              <EnvironmentOutlined style={{ fontSize: 36, color: brandColor, marginBottom: 8 }} />
-              <Text strong>{mapModalPlace.name}</Text>
-              <Text type="secondary" style={{ fontSize: 12 }}>
-                Lat: {mapModalPlace.lat || '19.0760'}, Lng: {mapModalPlace.lng || '72.8777'}
-              </Text>
-            </div>
-            <Paragraph>
-              <strong>Address:</strong> {mapModalPlace.address}
-            </Paragraph>
-            {mapModalPlace.phone && (
-              <Paragraph>
-                <strong>Phone:</strong> {mapModalPlace.phone}
-              </Paragraph>
-            )}
-          </div>
-        )}
+          <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
+            <Space>
+              <Button onClick={() => setImportModalVisible(false)}>
+                {t.common.cancel}
+              </Button>
+              <Button type="primary" htmlType="submit" loading={importing}>
+                Confirm & Add to Sales
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
       </Modal>
     </div>
   );
