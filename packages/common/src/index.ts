@@ -380,3 +380,94 @@ export interface AuditLogDto {
   createdAt: string;
 }
 
+
+// ========================================================
+// 15. Business Types & Onboarding (Upgrade Spec Phase 1)
+// ========================================================
+export type BusinessTypeEnum = 'shop' | 'school' | 'clinic' | 'factory' | 'services' | 'other';
+
+export const CompleteOnboardingSchema = z.object({
+  businessName: z.string().min(2, 'Business name is required'),
+  businessType: z.enum(['shop', 'school', 'clinic', 'factory', 'services', 'other']),
+  teamSize: z.string().optional().default('1-5'),
+  language: z.enum(['en', 'hi']).default('en'),
+});
+export type CompleteOnboardingDto = z.infer<typeof CompleteOnboardingSchema>;
+
+export interface BusinessTemplateStage {
+  name: string;
+  probability: number;
+  color: string;
+}
+
+export interface BusinessTemplateCustomField {
+  entityType: 'contact' | 'lead' | 'deal';
+  key: string;
+  label: string;
+  fieldType: 'text' | 'number' | 'date' | 'dropdown' | 'boolean';
+  options?: string[];
+  isRequired?: boolean;
+}
+
+export interface BusinessTemplateMessage {
+  name: string;
+  channel: 'whatsapp';
+  body: string;
+}
+
+export interface BusinessTemplate {
+  id: BusinessTypeEnum;
+  title: string;
+  titleHi: string;
+  description: string;
+  descriptionHi: string;
+  icon: string;
+  pipelineStages: BusinessTemplateStage[];
+  customFields: BusinessTemplateCustomField[];
+  messageTemplates: BusinessTemplateMessage[];
+}
+
+// ========================================================
+// 16. Customer CSV/Excel Import (Upgrade Spec Phase 1)
+// ========================================================
+export interface CustomerImportRow {
+  name: string;
+  phone?: string;
+  email?: string;
+  companyName?: string;
+  city?: string;
+  address?: string;
+  pincode?: string;
+  notes?: string;
+  tags?: string[];
+  customFields?: Record<string, any>;
+}
+
+export const ImportCustomersSchema = z.object({
+  duplicateStrategy: z.enum(['skip', 'merge', 'create']).default('skip'),
+  rows: z.array(
+    z.object({
+      name: z.string().min(1, 'Name is required'),
+      phone: z.string().optional(),
+      email: z.string().optional(),
+      companyName: z.string().optional(),
+      city: z.string().optional(),
+      address: z.string().optional(),
+      pincode: z.string().optional(),
+      notes: z.string().optional(),
+      tags: z.array(z.string()).optional(),
+      customFields: z.record(z.any()).optional(),
+    }),
+  ),
+});
+export type ImportCustomersDto = z.infer<typeof ImportCustomersSchema>;
+
+export interface ImportResultSummary {
+  totalProcessed: number;
+  addedCount: number;
+  duplicateCount: number;
+  errorCount: number;
+  errors: Array<{ row: number; name: string; error: string }>;
+}
+
+export * from './templates/business-types.data';

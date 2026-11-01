@@ -1,3 +1,4 @@
+import { CompleteOnboardingDto } from '@ginie/common';
 import { Controller, Get, Patch, Post, Body } from '@nestjs/common';
 import { SettingsService } from './settings.service';
 import { CurrentTenant } from '../../common/current-user.decorator';
@@ -62,5 +63,18 @@ export class SettingsController {
       chatId: body.chatId,
       phone: body.phone,
     });
+  }
+
+  @Get('onboarding/templates')
+  async getTemplates() {
+    return this.settingsService.getBusinessTemplates();
+  }
+
+  @Post('onboarding/complete')
+  async completeOnboarding(
+    @CurrentTenant() tenantId: string,
+    @Body() dto: CompleteOnboardingDto,
+  ) {
+    return this.settingsService.completeOnboarding(tenantId, dto);
   }
 }

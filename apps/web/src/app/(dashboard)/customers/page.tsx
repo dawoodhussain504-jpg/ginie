@@ -6,762 +6,409 @@ import {
   Table,
   Button,
   Input,
-  Select,
-  Space,
+  Tabs,
   Tag,
+  Space,
   Typography,
-  Drawer,
   Modal,
   Form,
-  Timeline,
-  Popconfirm,
   message,
 } from 'antd';
 import {
   UsergroupAddOutlined,
   SearchOutlined,
   PlusOutlined,
-  DownloadOutlined,
   UploadOutlined,
-  DeleteOutlined,
   PhoneOutlined,
   MailOutlined,
-  ArrowRightOutlined,
-  ThunderboltOutlined,
-  FireOutlined,
-  CopyOutlined,
   WhatsAppOutlined,
-  RobotOutlined,
+  ShopOutlined,
+  ClockCircleOutlined,
 } from '@ant-design/icons';
 import { useApp } from '@/context/AppContext';
 import { api } from '@/lib/api';
 import { formatDateIndian } from '@ginie/i18n';
+import { useSearchParams, useRouter } from 'next/navigation';
+import CustomerTimelineDrawer from '@/components/CustomerTimelineDrawer';
+import CustomerImportModal from '@/components/CustomerImportModal';
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
 
 export default function CustomersPage() {
   const { t, brandColor } = useApp();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  const initialTab = searchParams.get('tab') === 'companies' ? 'companies' : 'people';
+  const [activeTab, setActiveTab] = useState(initialTab);
+
   const [loading, setLoading] = useState(false);
-  const [customers, setCustomers] = useState<any[]>([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
+  const [contacts, setContacts] = useState<any[]>([]);
+  const [companies, setCompanies] = useState<any[]>([]);
   const [search, setSearch] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState<string | undefined>();
-  const [statuses, setStatuses] = useState<any[]>([]);
-  const [addModalVisible, setAddModalVisible] = useState(false);
-  const [drawerCustomer, setDrawerCustomer] = useState<any | null>(null);
-  const [noteContent, setNoteContent] = useState('');
+
+  // Modals & Drawers state
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
+  const [timelineDrawerOpen, setTimelineDrawerOpen] = useState(false);
+  const [importModalOpen, setImportModalOpen] = useState(false);
+  const [addCustomerOpen, setAddCustomerOpen] = useState(false);
   const [addForm] = Form.useForm();
-
-  // AI Features State
-  const [scoringCustomer, setScoringCustomer] = useState(false);
-  const [smartReplyTone, setSmartReplyTone] = useState<'friendly' | 'professional' | 'urgent' | 'persuasive'>('friendly');
-  const [draftedReply, setDraftedReply] = useState('');
-  const [drafting, setDrafting] = useState(false);
-  const [callNotesRaw, setCallNotesRaw] = useState('');
-  const [callSummaryResult, setCallSummaryResult] = useState<any | null>(null);
-  const [summarizing, setSummarizing] = useState(false);
-
-  // WhatsApp Outreach State
-  const [waModalVisible, setWaModalVisible] = useState(false);
-  const [waRecipient, setWaRecipient] = useState<any | null>(null);
-  const [waMessageText, setWaMessageText] = useState('');
-  const [sendingWa, setSendingWa] = useState(false);
-
-  const handleOpenWhatsAppModal = (customer: any) => {
-    setWaRecipient(customer);
-    const firstName = customer.name?.split(' ')[0] || 'there';
-    const comp = customer.companyName || 'your business';
-    const defaultPitch = `Namaste ${firstName} ji, hope you are having a wonderful day! I came across ${comp} and wanted to reach out regarding our operational software and business solutions. Would you be open to a quick 2-minute overview?`;
-    setWaMessageText(defaultPitch);
-    setWaModalVisible(true);
-  };
-
-  const handleTemplateChange = (templateKey: string) => {
-    if (!waRecipient) return;
-    const firstName = waRecipient.name?.split(' ')[0] || 'there';
-    const comp = waRecipient.companyName || 'your business';
-    if (templateKey === 'intro') {
-      setWaMessageText(`Namaste ${firstName} ji, hope you are having a wonderful day! I came across ${comp} and wanted to reach out regarding our operational software and business solutions. Would you be open to a quick 2-minute overview?`);
-    } else if (templateKey === 'offer') {
-      setWaMessageText(`Hello ${firstName}, we are running a special 15% discount this week on our digital solutions for ${comp}. Can I send across a quick sample quote for your review?`);
-    } else if (templateKey === 'followup') {
-      setWaMessageText(`Hi ${firstName}, hope you are doing well! Following up on our previous discussion regarding ${comp}. Please let me know if you would like to proceed or have any questions.`);
-    }
-  };
-
-  const handleLaunchWhatsApp = () => {
-    if (!waRecipient?.phone) return;
-    let cleanPhone = waRecipient.phone.replace(/[^0-9]/g, '');
-    if (cleanPhone.length === 10) cleanPhone = '91' + cleanPhone;
-    window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(waMessageText)}`, '_blank');
-  };
-
-  const handleSendViaBridge = async () => {
-    if (!waRecipient?.phone || !waMessageText.trim()) return;
-    setSendingWa(true);
-    let cleanPhone = waRecipient.phone.replace(/[^0-9]/g, '');
-    if (cleanPhone.length === 10) cleanPhone = '91' + cleanPhone;
-    try {
-      await api.post('/api/whatsapp/messages', {
-        phone: cleanPhone,
-        message: waMessageText,
-        contactId: waRecipient.id,
-      });
-      message.success('Message queued and dispatched via WhatsApp Bridge!');
-      setWaModalVisible(false);
-    } catch {
-      handleLaunchWhatsApp();
-    } finally {
-      setSendingWa(false);
-    }
-  };
-
-  const handleScoreCustomer = async (id: string) => {
-    setScoringCustomer(true);
-    try {
-      const token = localStorage.getItem('ginie_token');
-      const res = await fetch(`http://localhost:4000/api/ai/score-customer/${id}`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setDrawerCustomer((prev: any) => ({
-          ...prev,
-          score: data.score,
-          aiScoreCategory: data.category.toLowerCase(),
-          aiScoreReason: data.reason,
-        }));
-        setCustomers((prev) =>
-          prev.map((c) => (c.id === id ? { ...c, score: data.score, aiScoreCategory: data.category.toLowerCase() } : c)),
-        );
-        message.success(`Interest evaluated: ${data.category} (${data.score}/100)`);
-      }
-    } catch {
-      message.success('Interest evaluated: Moderate Interest (65/100)');
-    } finally {
-      setScoringCustomer(false);
-    }
-  };
-
-  const handleDraftReply = async (id: string) => {
-    setDrafting(true);
-    try {
-      const token = localStorage.getItem('ginie_token');
-      const res = await fetch('http://localhost:4000/api/ai/draft-message', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          customerId: id,
-          channel: 'whatsapp',
-          tone: smartReplyTone,
-          goal: 'following up on our previous discussion',
-        }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setDraftedReply(data.message);
-      }
-    } catch {
-      setDraftedReply(`Hi ${drawerCustomer?.name?.split(' ')[0] || 'there'}! Hope you are having a wonderful week. Just following up on our previous conversation. Feel free to message here whenever convenient!`);
-    } finally {
-      setDrafting(false);
-    }
-  };
-
-  const handleSummarizeCallNotes = async (id: string) => {
-    if (!callNotesRaw.trim()) return;
-    setSummarizing(true);
-    try {
-      const token = localStorage.getItem('ginie_token');
-      const res = await fetch('http://localhost:4000/api/ai/summarize-call', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          customerId: id,
-          rawNotes: callNotesRaw,
-        }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setCallSummaryResult(data);
-        handleOpenDrawer(drawerCustomer);
-        message.success('Call notes summarized and saved!');
-      }
-    } catch {
-      setCallSummaryResult({
-        summary: callNotesRaw,
-        sentiment: 'Positive',
-        keyTakeaways: ['Customer inquired about pricing and service details', 'Follow-up requested'],
-        nextRecommendedAction: 'Send official price quotation within 24 hours',
-      });
-    } finally {
-      setSummarizing(false);
-    }
-  };
+  const [submittingAdd, setSubmittingAdd] = useState(false);
 
   useEffect(() => {
-    loadStatuses();
-    loadCustomers();
-  }, [page, search, selectedStatus]);
+    loadData();
+  }, []);
 
-  const loadStatuses = async () => {
-    try {
-      const res = await api.get('/api/leads/statuses');
-      setStatuses(res || []);
-    } catch {}
-  };
-
-  const loadCustomers = async () => {
+  const loadData = async () => {
     setLoading(true);
     try {
-      const queryParams = new URLSearchParams({
-        page: String(page),
-        pageSize: '10',
-        ...(search ? { search } : {}),
-        ...(selectedStatus ? { statusId: selectedStatus } : {}),
-      });
-      const res = await api.get(`/api/leads?${queryParams}`);
-      setCustomers(res.items || []);
-      setTotal(res.total || 0);
+      const [contactsRes, companiesRes] = await Promise.all([
+        api.get('/api/contacts'),
+        api.get('/api/companies'),
+      ]);
+      setContacts(contactsRes || []);
+      setCompanies(companiesRes || []);
     } catch (err: any) {
-      message.error(err.message || t.common.error);
+      message.error(err.message || 'Failed to load customer data');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCreateCustomer = async (values: any) => {
+  const handleCreateCustomer = async () => {
     try {
-      await api.post('/api/leads', values);
-      message.success(t.common.success);
-      setAddModalVisible(false);
+      const values = await addForm.validateFields();
+      setSubmittingAdd(true);
+      await api.post('/api/contacts', values);
+      message.success('Customer added successfully!');
+      setAddCustomerOpen(false);
       addForm.resetFields();
-      loadCustomers();
+      loadData();
     } catch (err: any) {
-      message.error(err.message || t.common.error);
+      message.error(err.message || 'Failed to create customer');
+    } finally {
+      setSubmittingAdd(false);
     }
   };
 
-  const handleDeleteCustomer = async (id: string) => {
-    try {
-      await api.delete(`/api/leads/${id}`);
-      message.success(t.customers.moveToBin);
-      loadCustomers();
-      if (drawerCustomer?.id === id) setDrawerCustomer(null);
-    } catch (err: any) {
-      message.error(err.message || t.common.error);
-    }
-  };
+  const filteredContacts = contacts.filter((c) => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return (
+      (c.name && c.name.toLowerCase().includes(q)) ||
+      (c.phone && c.phone.toLowerCase().includes(q)) ||
+      (c.email && c.email.toLowerCase().includes(q)) ||
+      (c.company?.name && c.company.name.toLowerCase().includes(q))
+    );
+  });
 
-  const handleOpenDrawer = async (record: any) => {
-    try {
-      const full = await api.get(`/api/leads/${record.id}`);
-      setDrawerCustomer(full);
-    } catch {
-      setDrawerCustomer(record);
-    }
-  };
+  const filteredCompanies = companies.filter((c) => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return (
+      (c.name && c.name.toLowerCase().includes(q)) ||
+      (c.city && c.city.toLowerCase().includes(q)) ||
+      (c.industry && c.industry.toLowerCase().includes(q))
+    );
+  });
 
-  const handleAddNote = async () => {
-    if (!drawerCustomer || !noteContent.trim()) return;
-    try {
-      await api.post(`/api/leads/${drawerCustomer.id}/activities`, {
-        type: 'note',
-        content: noteContent,
-      });
-      setNoteContent('');
-      handleOpenDrawer(drawerCustomer);
-      message.success(t.common.success);
-    } catch (err: any) {
-      message.error(err.message || t.common.error);
-    }
-  };
-
-  const handleExportCSV = () => {
-    if (customers.length === 0) return;
-    const headers = ['Name', 'Company', 'Phone', 'Email', 'City', 'Status', 'Date Added'];
-    const rows = customers.map((c) => [
-      `"${c.name}"`,
-      `"${c.companyName || ''}"`,
-      `"${c.phone || ''}"`,
-      `"${c.email || ''}"`,
-      `"${c.city || ''}"`,
-      `"${c.status?.name || 'New'}"`,
-      `"${formatDateIndian(c.createdAt)}"`,
-    ]);
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
-    const link = document.createElement('a');
-    link.href = encodeURI(csvContent);
-    link.download = `potential_customers_${Date.now()}.csv`;
-    link.click();
-  };
-
-  const columns = [
+  const contactColumns = [
     {
-      title: t.customers.fields.name,
+      title: 'Customer Name',
       dataIndex: 'name',
       key: 'name',
-      render: (text: string, record: any) => (
-        <a onClick={() => handleOpenDrawer(record)} style={{ fontWeight: 600 }}>
-          {text}
-          {record.companyName && (
+      render: (name: string, record: any) => (
+        <div
+          style={{ cursor: 'pointer' }}
+          onClick={() => {
+            setSelectedCustomerId(record.id);
+            setTimelineDrawerOpen(true);
+          }}
+        >
+          <Text strong style={{ color: brandColor, fontSize: 14 }}>
+            {name}
+          </Text>
+          {record.designation && (
             <Text type="secondary" style={{ display: 'block', fontSize: 12 }}>
-              {record.companyName}
+              {record.designation}
             </Text>
           )}
-        </a>
+        </div>
       ),
     },
     {
-      title: t.customers.fields.phone,
-      dataIndex: 'phone',
-      key: 'phone',
-      render: (phone: string) =>
-        phone ? (
-          <a href={`tel:${phone}`}>
-            <PhoneOutlined /> {phone}
-          </a>
+      title: 'Company',
+      dataIndex: 'company',
+      key: 'company',
+      render: (comp: any) =>
+        comp?.name ? (
+          <Space>
+            <ShopOutlined style={{ color: '#8c8c8c' }} />
+            <Text>{comp.name}</Text>
+          </Space>
         ) : (
-          '—'
+          <Text type="secondary">—</Text>
         ),
     },
     {
-      title: t.customers.fields.email,
+      title: 'Phone & Quick Connect',
+      dataIndex: 'phone',
+      key: 'phone',
+      render: (phone: string) => {
+        if (!phone) return <Text type="secondary">—</Text>;
+        const digits = phone.replace(/[^0-9]/g, '');
+        const cleanWa = digits.length === 10 ? `91${digits}` : digits;
+        return (
+          <Space size={8}>
+            <Text>{phone}</Text>
+            <Button
+              type="text"
+              size="small"
+              icon={<PhoneOutlined style={{ color: '#1677ff' }} />}
+              href={`tel:${phone}`}
+            />
+            <Button
+              type="text"
+              size="small"
+              icon={<WhatsAppOutlined style={{ color: '#52c41a' }} />}
+              href={`https://wa.me/${cleanWa}`}
+              target="_blank"
+            />
+          </Space>
+        );
+      },
+    },
+    {
+      title: 'Email',
       dataIndex: 'email',
       key: 'email',
       render: (email: string) =>
         email ? (
-          <a href={`mailto:${email}`}>
-            <MailOutlined /> {email}
+          <a href={`mailto:${email}`} style={{ color: '#595959' }}>
+            <MailOutlined style={{ marginRight: 6 }} />
+            {email}
           </a>
         ) : (
-          '—'
+          <Text type="secondary">—</Text>
         ),
     },
     {
-      title: t.customers.fields.city,
-      dataIndex: 'city',
-      key: 'city',
-      render: (city: string) => city || '—',
-    },
-    {
-      title: t.customers.fields.status,
-      dataIndex: 'status',
-      key: 'status',
-      render: (status: any) => (
-        <Tag color={status?.color || 'blue'}>{status?.name || 'New'}</Tag>
-      ),
-    },
-    {
-      title: t.ai?.interestLevel || 'Interest Level',
-      key: 'score',
-      render: (_: any, record: any) => {
-        const cat = record.aiScoreCategory || (record.score >= 70 ? 'hot' : record.score >= 40 ? 'warm' : 'cold');
-        if (cat === 'hot') return <Tag color="error" icon={<FireOutlined />}>High Interest</Tag>;
-        if (cat === 'warm') return <Tag color="warning">Moderate</Tag>;
-        return <Tag color="default">Low</Tag>;
-      },
-    },
-    {
-      title: t.customers.fields.created,
-      dataIndex: 'createdAt',
-      key: 'createdAt',
-      render: (date: string) => formatDateIndian(date),
-    },
-    {
-      title: t.customers.fields.actions,
-      key: 'actions',
+      title: 'Timeline (360°)',
+      key: 'action',
       render: (_: any, record: any) => (
-        <Space>
-          <Button size="small" onClick={() => handleOpenDrawer(record)}>
-            View
-          </Button>
-          <Popconfirm
-            title={t.customers.deleteConfirm}
-            onConfirm={() => handleDeleteCustomer(record.id)}
-            okText={t.common.delete}
-            cancelText={t.common.cancel}
-          >
-            <Button size="small" danger icon={<DeleteOutlined />} />
-          </Popconfirm>
-        </Space>
+        <Button
+          size="small"
+          icon={<ClockCircleOutlined />}
+          onClick={() => {
+            setSelectedCustomerId(record.id);
+            setTimelineDrawerOpen(true);
+          }}
+        >
+          Activity Stream
+        </Button>
       ),
     },
   ];
 
+  const companyColumns = [
+    {
+      title: 'Company Name',
+      dataIndex: 'name',
+      key: 'name',
+      render: (name: string) => <Text strong>{name}</Text>,
+    },
+    {
+      title: 'Industry',
+      dataIndex: 'industry',
+      key: 'industry',
+      render: (ind: string) => (ind ? <Tag color="blue">{ind}</Tag> : <Text type="secondary">—</Text>),
+    },
+    {
+      title: 'City / Location',
+      dataIndex: 'city',
+      key: 'city',
+      render: (city: string, record: any) =>
+        city || record.customFields?.city ? (
+          <Text>{city || record.customFields?.city}</Text>
+        ) : (
+          <Text type="secondary">—</Text>
+        ),
+    },
+    {
+      title: 'Key Contacts',
+      dataIndex: 'contacts',
+      key: 'contacts',
+      render: (conts: any[]) =>
+        conts && conts.length > 0 ? (
+          <Space wrap>
+            {conts.map((c: any, i: number) => (
+              <Tag key={i} color="cyan">
+                {c.name}
+              </Tag>
+            ))}
+          </Space>
+        ) : (
+          <Text type="secondary">0 contacts</Text>
+        ),
+    },
+  ];
+
   return (
-    <div>
+    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '16px' }}>
+      {/* Header bar */}
       <div
         style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          marginBottom: 24,
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
         }}
       >
         <div>
-          <Title level={3} style={{ margin: 0 }}>
-            {t.customers.title}
+          <Title level={2} style={{ margin: 0 }}>
+            <UsergroupAddOutlined style={{ marginRight: 10, color: brandColor }} />
+            Customers & Accounts
           </Title>
-          <Text type="secondary">{t.customers.subtitle}</Text>
+          <Text type="secondary">
+            Manage all client contacts, accounts, and 360° chronological activity timelines.
+          </Text>
         </div>
 
-        <Space>
-          <Button icon={<DownloadOutlined />} onClick={handleExportCSV}>
-            {t.customers.downloadExcel}
+        <Space wrap>
+          <Button
+            icon={<UploadOutlined />}
+            onClick={() => setImportModalOpen(true)}
+          >
+            Import Excel / CSV
           </Button>
+
           <Button
             type="primary"
             icon={<PlusOutlined />}
-            size="large"
-            onClick={() => setAddModalVisible(true)}
+            onClick={() => setAddCustomerOpen(true)}
           >
-            {t.customers.addButton}
+            Add Customer
           </Button>
         </Space>
       </div>
 
-      <Card style={{ borderRadius: 12 }}>
-        {/* Search & Filter Toolbar */}
-        <div style={{ display: 'flex', gap: 16, marginBottom: 20 }}>
-          <Input
-            placeholder={t.customers.searchPlaceholder}
-            prefix={<SearchOutlined />}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{ maxWidth: 360 }}
-            allowClear
-          />
-          <Select
-            placeholder={t.customers.fields.status}
-            allowClear
-            value={selectedStatus}
-            onChange={setSelectedStatus}
-            style={{ width: 180 }}
-            options={statuses.map((s) => ({ value: s.id, label: s.name }))}
-          />
-        </div>
-
-        <Table
-          dataSource={customers}
-          columns={columns}
-          rowKey="id"
-          loading={loading}
-          pagination={{
-            current: page,
-            pageSize: 10,
-            total,
-            onChange: (p) => setPage(p),
+      {/* Main Card with Tabs: People vs Companies */}
+      <Card style={{ borderRadius: 14 }}>
+        <Tabs
+          activeKey={activeTab}
+          onChange={(key) => {
+            setActiveTab(key);
+            router.push(`/customers?tab=${key}`);
           }}
-          locale={{ emptyText: t.customers.empty }}
+          tabBarExtraContent={
+            <Input
+              placeholder="Search name, phone, email, firm..."
+              prefix={<SearchOutlined style={{ color: '#8c8c8c' }} />}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{ width: 280 }}
+              allowClear
+            />
+          }
+          items={[
+            {
+              key: 'people',
+              label: (
+                <span style={{ fontSize: 15, fontWeight: 600 }}>
+                  👤 People / Contacts ({filteredContacts.length})
+                </span>
+              ),
+              children: (
+                <Table
+                  dataSource={filteredContacts}
+                  columns={contactColumns}
+                  rowKey="id"
+                  loading={loading}
+                  pagination={{ pageSize: 10 }}
+                  style={{ marginTop: 8 }}
+                />
+              ),
+            },
+            {
+              key: 'companies',
+              label: (
+                <span style={{ fontSize: 15, fontWeight: 600 }}>
+                  🏢 Companies / Accounts ({filteredCompanies.length})
+                </span>
+              ),
+              children: (
+                <Table
+                  dataSource={filteredCompanies}
+                  columns={companyColumns}
+                  rowKey="id"
+                  loading={loading}
+                  pagination={{ pageSize: 10 }}
+                  style={{ marginTop: 8 }}
+                />
+              ),
+            },
+          ]}
         />
       </Card>
 
-      {/* Add Potential Customer Modal */}
+      {/* Customer 360 Timeline Drawer */}
+      <CustomerTimelineDrawer
+        customerId={selectedCustomerId}
+        open={timelineDrawerOpen}
+        onClose={() => {
+          setTimelineDrawerOpen(false);
+          setSelectedCustomerId(null);
+        }}
+      />
+
+      {/* Import Customers Modal */}
+      <CustomerImportModal
+        open={importModalOpen}
+        onClose={() => setImportModalOpen(false)}
+        onSuccess={() => loadData()}
+      />
+
+      {/* Add Customer Modal */}
       <Modal
-        title={t.customers.addButton}
-        open={addModalVisible}
-        onCancel={() => setAddModalVisible(false)}
-        footer={null}
-        destroyOnClose
+        title="Add New Customer"
+        open={addCustomerOpen}
+        onCancel={() => setAddCustomerOpen(false)}
+        onOk={handleCreateCustomer}
+        confirmLoading={submittingAdd}
+        okText="Save Customer"
       >
-        <Form form={addForm} layout="vertical" onFinish={handleCreateCustomer}>
+        <Form form={addForm} layout="vertical">
           <Form.Item
             name="name"
-            label={t.customers.fields.name}
-            rules={[{ required: true, message: t.common.pleaseCheckField }]}
+            label="Full Name"
+            rules={[{ required: true, message: 'Please enter customer name' }]}
           >
             <Input placeholder="e.g. Ramesh Patel" />
           </Form.Item>
 
-          <Form.Item name="companyName" label={t.customers.fields.company}>
-            <Input placeholder="e.g. Patel Healthcare" />
+          <Form.Item name="phone" label="Phone Number (+91)">
+            <Input placeholder="e.g. +91 98201 11223 or 9820111223" />
           </Form.Item>
 
-          <Form.Item name="phone" label={t.customers.fields.phone}>
-            <Input placeholder="+91 98200 00000" />
+          <Form.Item name="email" label="Email Address">
+            <Input placeholder="e.g. ramesh@example.com" />
           </Form.Item>
 
-          <Form.Item name="email" label={t.customers.fields.email}>
-            <Input placeholder="ramesh@example.com" />
+          <Form.Item name="companyName" label="Company / Business Name">
+            <Input placeholder="e.g. Patel Engineering" />
           </Form.Item>
 
-          <Form.Item name="city" label={t.customers.fields.city}>
-            <Input placeholder="e.g. Ahmedabad" />
+          <Form.Item name="designation" label="Designation / Role">
+            <Input placeholder="e.g. Managing Director, Purchase Manager" />
           </Form.Item>
 
-          <Form.Item name="statusId" label={t.customers.fields.status}>
-            <Select
-              placeholder="Select status"
-              options={statuses.map((s) => ({ value: s.id, label: s.name }))}
-            />
+          <Form.Item name="notes" label="Initial Notes">
+            <Input.TextArea rows={3} placeholder="Any notes from call or meeting..." />
           </Form.Item>
-
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 24 }}>
-            <Button onClick={() => setAddModalVisible(false)}>{t.common.cancel}</Button>
-            <Button type="primary" htmlType="submit">
-              {t.customers.addButton}
-            </Button>
-          </div>
         </Form>
       </Modal>
-
-      {/* Customer Detail Drawer with Activity Timeline */}
-      <Drawer
-        title={drawerCustomer?.name || 'Customer Details'}
-        placement="right"
-        width={480}
-        onClose={() => setDrawerCustomer(null)}
-        open={!!drawerCustomer}
-      >
-        {drawerCustomer && (
-          <div>
-            <div style={{ marginBottom: 20 }}>
-              <Title level={4} style={{ margin: 0 }}>
-                {drawerCustomer.name}
-              </Title>
-              {drawerCustomer.companyName && (
-                <Text type="secondary" style={{ fontSize: 14 }}>
-                  {drawerCustomer.companyName}
-                </Text>
-              )}
-              <div style={{ marginTop: 8 }}>
-                <Tag color={drawerCustomer.status?.color || 'blue'}>
-                  {drawerCustomer.status?.name || 'New'}
-                </Tag>
-                {drawerCustomer.city && <Tag>{drawerCustomer.city}</Tag>}
-              </div>
-            </div>
-
-            <Card size="small" style={{ marginBottom: 24, background: '#fafafa' }}>
-              <Paragraph style={{ margin: '4px 0' }}>
-                <PhoneOutlined style={{ marginRight: 8 }} />
-                {drawerCustomer.phone ? (
-                  <a href={`tel:${drawerCustomer.phone}`}>{drawerCustomer.phone}</a>
-                ) : (
-                  'No phone'
-                )}
-              </Paragraph>
-              <Paragraph style={{ margin: '4px 0' }}>
-                <MailOutlined style={{ marginRight: 8 }} />
-                {drawerCustomer.email ? (
-                  <a href={`mailto:${drawerCustomer.email}`}>{drawerCustomer.email}</a>
-                ) : (
-                  'No email'
-                )}
-              </Paragraph>
-            </Card>
-
-            {/* Smart Assistant (AI Intelligence) */}
-            <Card
-              size="small"
-              style={{
-                marginBottom: 24,
-                borderRadius: 12,
-                border: '1px solid #d9d9d9',
-                background: 'linear-gradient(180deg, #f0f7ff 0%, #ffffff 100%)',
-              }}
-              title={
-                <Space>
-                  <RobotOutlined style={{ color: brandColor }} />
-                  <Text strong>{t.ai?.title || 'Smart Assistant'}</Text>
-                </Space>
-              }
-              extra={
-                <Button
-                  size="small"
-                  type="link"
-                  icon={<ThunderboltOutlined />}
-                  loading={scoringCustomer}
-                  onClick={() => handleScoreCustomer(drawerCustomer.id)}
-                >
-                  Score Interest
-                </Button>
-              }
-            >
-              {/* Interest Level Display */}
-              <div style={{ marginBottom: 16 }}>
-                <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>
-                  {t.ai?.interestLevel || 'Customer interest level'}:
-                </Text>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                  <Tag
-                    color={
-                      drawerCustomer.aiScoreCategory === 'hot'
-                        ? 'error'
-                        : drawerCustomer.aiScoreCategory === 'warm'
-                        ? 'warning'
-                        : 'default'
-                    }
-                    style={{ fontWeight: 600 }}
-                  >
-                    {drawerCustomer.aiScoreCategory === 'hot'
-                      ? 'High Interest (Hot)'
-                      : drawerCustomer.aiScoreCategory === 'warm'
-                      ? 'Moderate (Warm)'
-                      : 'Low (Cold)'}
-                  </Tag>
-                  <Text strong style={{ fontSize: 13 }}>
-                    {drawerCustomer.score || 65} / 100
-                  </Text>
-                </div>
-                {drawerCustomer.aiScoreReason && (
-                  <Text type="secondary" style={{ fontSize: 12 }}>
-                    {drawerCustomer.aiScoreReason}
-                  </Text>
-                )}
-              </div>
-
-              {/* Smart Reply Generator */}
-              <div style={{ marginBottom: 16 }}>
-                <Text strong style={{ fontSize: 13, display: 'block', marginBottom: 6 }}>
-                  {t.ai?.draftReply || 'Smart reply generator'}:
-                </Text>
-                <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
-                  <Select
-                    size="small"
-                    value={smartReplyTone}
-                    onChange={(val) => setSmartReplyTone(val)}
-                    style={{ width: 140 }}
-                  >
-                    <Select.Option value="friendly">Friendly</Select.Option>
-                    <Select.Option value="professional">Professional</Select.Option>
-                    <Select.Option value="urgent">Urgent</Select.Option>
-                    <Select.Option value="persuasive">Persuasive</Select.Option>
-                  </Select>
-                  <Button
-                    size="small"
-                    type="primary"
-                    style={{ backgroundColor: brandColor }}
-                    loading={drafting}
-                    onClick={() => handleDraftReply(drawerCustomer.id)}
-                  >
-                    Draft Message
-                  </Button>
-                </div>
-
-                {draftedReply && (
-                  <div style={{ background: '#fff', border: '1px solid #e8e8e8', borderRadius: 8, padding: 8 }}>
-                    <Paragraph style={{ fontSize: 12, marginBottom: 8, whiteSpace: 'pre-wrap' }}>
-                      {draftedReply}
-                    </Paragraph>
-                    <Space size="small">
-                      <Button
-                        size="small"
-                        icon={<CopyOutlined />}
-                        onClick={() => {
-                          navigator.clipboard.writeText(draftedReply);
-                          message.success('Message copied to clipboard!');
-                        }}
-                      >
-                        Copy
-                      </Button>
-                      {drawerCustomer.phone && (
-                        <Button
-                          size="small"
-                          type="primary"
-                          style={{ backgroundColor: '#25D366', borderColor: '#25D366' }}
-                          icon={<WhatsAppOutlined />}
-                          onClick={() => {
-                            const cleanPhone = drawerCustomer.phone.replace(/[^0-9]/g, '');
-                            window.open(
-                              `https://wa.me/${cleanPhone}?text=${encodeURIComponent(draftedReply)}`,
-                              '_blank',
-                            );
-                          }}
-                        >
-                          Send WhatsApp
-                        </Button>
-                      )}
-                    </Space>
-                  </div>
-                )}
-              </div>
-
-              {/* Summarize Call Notes */}
-              <div>
-                <Text strong style={{ fontSize: 13, display: 'block', marginBottom: 6 }}>
-                  {t.ai?.summarizeCall || 'Summarize call notes'}:
-                </Text>
-                <Input.TextArea
-                  rows={2}
-                  placeholder="Paste rough call discussion notes..."
-                  value={callNotesRaw}
-                  onChange={(e) => setCallNotesRaw(e.target.value)}
-                  style={{ marginBottom: 6, fontSize: 12 }}
-                />
-                <Button
-                  size="small"
-                  loading={summarizing}
-                  disabled={!callNotesRaw.trim()}
-                  onClick={() => handleSummarizeCallNotes(drawerCustomer.id)}
-                >
-                  Extract Key Takeaways
-                </Button>
-                {callSummaryResult && (
-                  <div style={{ marginTop: 8, background: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: 8, padding: 8 }}>
-                    <Text strong style={{ fontSize: 12, color: '#389e0d', display: 'block' }}>
-                      Key Discussion Takeaways:
-                    </Text>
-                    <Paragraph style={{ fontSize: 12, margin: '4px 0' }}>
-                      {callSummaryResult.summary}
-                    </Paragraph>
-                    <Text type="secondary" style={{ fontSize: 11, display: 'block' }}>
-                      Next recommended step: {callSummaryResult.nextRecommendedAction}
-                    </Text>
-                  </div>
-                )}
-              </div>
-            </Card>
-
-            {/* Activity History Timeline */}
-            <Title level={5}>{t.customers.timeline.title}</Title>
-
-            <div style={{ marginBottom: 20 }}>
-              <Input.TextArea
-                rows={3}
-                placeholder={t.customers.timeline.notePlaceholder}
-                value={noteContent}
-                onChange={(e) => setNoteContent(e.target.value)}
-              />
-              <Button
-                type="primary"
-                size="small"
-                style={{ marginTop: 8 }}
-                onClick={handleAddNote}
-                disabled={!noteContent.trim()}
-              >
-                {t.customers.timeline.saveNote}
-              </Button>
-            </div>
-
-            <Timeline
-              items={(drawerCustomer.activities || []).map((act: any) => ({
-                color: act.type === 'note' ? 'blue' : 'green',
-                children: (
-                  <div>
-                    <Text strong style={{ fontSize: 13 }}>
-                      {act.content}
-                    </Text>
-                    <br />
-                    <Text type="secondary" style={{ fontSize: 11 }}>
-                      {formatDateIndian(act.createdAt)} • {act.user?.name || 'Team member'}
-                    </Text>
-                  </div>
-                ),
-              }))}
-            />
-          </div>
-        )}
-      </Drawer>
     </div>
   );
 }

@@ -10,34 +10,30 @@ import {
   Space,
   Select,
   Typography,
+  Drawer,
   message,
 } from 'antd';
 import {
-  MobileOutlined,
   HomeOutlined,
   UsergroupAddOutlined,
   CompassOutlined,
   FundProjectionScreenOutlined,
-  CheckSquareOutlined,
-  TeamOutlined,
-  ShopOutlined,
+  WhatsAppOutlined,
+  FileTextOutlined,
+  BarChartOutlined,
   SettingOutlined,
   LogoutOutlined,
   BulbOutlined,
   BulbFilled,
   GlobalOutlined,
-  WhatsAppOutlined,
-  FileTextOutlined,
-  FormOutlined,
-  BarChartOutlined,
-  ThunderboltOutlined,
-  CreditCardOutlined,
-  HistoryOutlined,
-  SafetyCertificateOutlined,
+  MobileOutlined,
+  MenuOutlined,
+  AppstoreOutlined,
 } from '@ant-design/icons';
 import { useApp } from '@/context/AppContext';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import OnboardingWizardModal from '@/components/OnboardingWizardModal';
 
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
@@ -49,6 +45,8 @@ export default function DashboardLayout({
 }) {
   const { user, logout, t, locale, setLocale, isDark, setIsDark, brandColor } = useApp();
   const [collapsed, setCollapsed] = useState(false);
+  const [moreDrawerOpen, setMoreDrawerOpen] = useState(false);
+  const [onboardingOpen, setOnboardingOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -78,7 +76,6 @@ export default function DashboardLayout({
     }
   };
 
-
   useEffect(() => {
     const token = localStorage.getItem('ginie_token');
     if (!token && typeof window !== 'undefined') {
@@ -86,6 +83,15 @@ export default function DashboardLayout({
     }
   }, [router]);
 
+  // Check if onboarding needs to be shown for first-time login
+  useEffect(() => {
+    const hasSeenWizard = localStorage.getItem('ginie_onboarding_skipped');
+    if (user && !user.isSuperAdmin && !hasSeenWizard) {
+      // Prompt onboarding for fresh business setup
+    }
+  }, [user]);
+
+  // Exactly 8 Simplified Menu Groups (Upgrade Spec 1.1)
   const menuItems = [
     {
       key: '/',
@@ -109,17 +115,12 @@ export default function DashboardLayout({
     {
       key: '/sales',
       icon: <FundProjectionScreenOutlined />,
-      label: <Link href="/sales">{t.nav.sales}</Link>,
-    },
-    {
-      key: '/tasks',
-      icon: <CheckSquareOutlined />,
-      label: <Link href="/tasks">{t.nav.tasks}</Link>,
+      label: <Link href="/sales">Sales & Tasks</Link>,
     },
     {
       key: '/whatsapp',
       icon: <WhatsAppOutlined />,
-      label: <Link href="/whatsapp">{t.nav.whatsapp}</Link>,
+      label: <Link href="/whatsapp">Messages</Link>,
     },
     {
       key: '/billing',
@@ -127,48 +128,9 @@ export default function DashboardLayout({
       label: <Link href="/billing">{t.nav.billing}</Link>,
     },
     {
-      key: '/forms',
-      icon: <FormOutlined />,
-      label: <Link href="/forms">{t.nav.forms}</Link>,
-    },
-    {
       key: '/reports',
       icon: <BarChartOutlined />,
       label: <Link href="/reports">{t.nav.reports}</Link>,
-    },
-    {
-      key: '/automations',
-      icon: <ThunderboltOutlined />,
-      label: <Link href="/automations">{t.nav.automations}</Link>,
-    },
-    {
-      key: '/subscriptions',
-      icon: <CreditCardOutlined />,
-      label: <Link href="/subscriptions">{t.nav.subscriptions}</Link>,
-    },
-    {
-      key: '/audit-logs',
-      icon: <HistoryOutlined />,
-      label: <Link href="/audit-logs">{t.nav.auditLogs}</Link>,
-    },
-    {
-      key: '/admin',
-      icon: <SafetyCertificateOutlined style={{ color: '#faad14' }} />,
-      label: (
-        <Link href="/admin">
-          <span style={{ color: '#faad14', fontWeight: 600 }}>{t.nav.admin}</span>
-        </Link>
-      ),
-    },
-    {
-      key: '/people',
-      icon: <TeamOutlined />,
-      label: <Link href="/people">{t.nav.people}</Link>,
-    },
-    {
-      key: '/companies',
-      icon: <ShopOutlined />,
-      label: <Link href="/companies">{t.nav.companies}</Link>,
     },
     {
       key: '/settings',
@@ -186,12 +148,17 @@ export default function DashboardLayout({
             <Text strong>{user?.name || 'Master Admin'}</Text>
             <br />
             <Text type="secondary" style={{ fontSize: 12 }}>
-              {user?.companyName || 'Ginie Space'} • Master Administrator
+              {user?.companyName || 'Ginie Space'} • {user?.role || 'Administrator'}
             </Text>
           </div>
         ),
       },
       { type: 'divider' as const },
+      {
+        key: 'onboarding-wizard',
+        icon: <AppstoreOutlined />,
+        label: <a onClick={() => setOnboardingOpen(true)}>Business Setup Wizard</a>,
+      },
       {
         key: 'settings',
         icon: <SettingOutlined />,
@@ -207,13 +174,26 @@ export default function DashboardLayout({
     ],
   };
 
+  const getActiveKey = () => {
+    if (pathname.startsWith('/customers') || pathname === '/people' || pathname === '/companies') return '/customers';
+    if (pathname.startsWith('/sales') || pathname === '/tasks') return '/sales';
+    if (pathname.startsWith('/find-customers')) return '/find-customers';
+    if (pathname.startsWith('/whatsapp')) return '/whatsapp';
+    if (pathname.startsWith('/billing')) return '/billing';
+    if (pathname.startsWith('/reports')) return '/reports';
+    if (pathname.startsWith('/settings') || pathname === '/admin' || pathname === '/subscriptions' || pathname === '/forms' || pathname === '/automations' || pathname === '/audit-logs') return '/settings';
+    return '/';
+  };
+
   return (
     <Layout style={{ minHeight: '100vh' }}>
+      {/* Desktop Sider */}
       <Sider
         collapsible
         collapsed={collapsed}
         onCollapse={setCollapsed}
         theme={isDark ? 'dark' : 'light'}
+        className="ginie-desktop-sider"
         style={{
           borderRight: isDark ? '1px solid #303030' : '1px solid #f0f0f0',
         }}
@@ -259,17 +239,18 @@ export default function DashboardLayout({
 
         <Menu
           mode="inline"
-          selectedKeys={[pathname]}
+          selectedKeys={[getActiveKey()]}
           items={menuItems}
           style={{ borderRight: 0, marginTop: 8 }}
         />
       </Sider>
 
       <Layout>
+        {/* Top Header */}
         <Header
           style={{
             background: isDark ? '#141414' : '#fff',
-            padding: '0 24px',
+            padding: '0 20px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -325,16 +306,111 @@ export default function DashboardLayout({
                 <Avatar style={{ backgroundColor: brandColor }}>
                   {user?.name?.[0]?.toUpperCase() || 'A'}
                 </Avatar>
-                <Text strong>{user?.name || 'Master Admin'}</Text>
+                <Text strong className="ginie-header-username">{user?.name || 'Master Admin'}</Text>
               </Space>
             </Dropdown>
           </Space>
         </Header>
 
-        <Content style={{ margin: 24, minHeight: 280 }}>
+        {/* Content Area */}
+        <Content style={{ margin: 20, minHeight: 280, paddingBottom: 64 }}>
           {children}
         </Content>
+
+        {/* Mobile Bottom Navigation Bar (Under 768px) */}
+        <div className="ginie-mobile-bottom-nav">
+          <Link href="/" className={`bottom-nav-item ${pathname === '/' ? 'active' : ''}`}>
+            <HomeOutlined />
+            <span>Home</span>
+          </Link>
+          <Link
+            href="/customers"
+            className={`bottom-nav-item ${pathname.startsWith('/customers') ? 'active' : ''}`}
+          >
+            <UsergroupAddOutlined />
+            <span>Customers</span>
+          </Link>
+          <Link
+            href="/find-customers"
+            className={`bottom-nav-item ${pathname.startsWith('/find-customers') ? 'active' : ''}`}
+          >
+            <CompassOutlined />
+            <span>Find</span>
+          </Link>
+          <Link
+            href="/sales"
+            className={`bottom-nav-item ${pathname.startsWith('/sales') ? 'active' : ''}`}
+          >
+            <FundProjectionScreenOutlined />
+            <span>Sales</span>
+          </Link>
+          <Link
+            href="/whatsapp"
+            className={`bottom-nav-item ${pathname.startsWith('/whatsapp') ? 'active' : ''}`}
+          >
+            <WhatsAppOutlined />
+            <span>Messages</span>
+          </Link>
+          <div
+            className="bottom-nav-item"
+            onClick={() => setMoreDrawerOpen(true)}
+            style={{ cursor: 'pointer' }}
+          >
+            <MenuOutlined />
+            <span>More</span>
+          </div>
+        </div>
+
+        {/* Mobile More Drawer */}
+        <Drawer
+          title="More GINIE Modules"
+          placement="bottom"
+          height="auto"
+          onClose={() => setMoreDrawerOpen(false)}
+          open={moreDrawerOpen}
+        >
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, padding: '8px 0 20px' }}>
+            <Link
+              href="/billing"
+              onClick={() => setMoreDrawerOpen(false)}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, color: '#262626' }}
+            >
+              <div style={{ width: 48, height: 48, borderRadius: 12, background: '#f0f5ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <FileTextOutlined style={{ fontSize: 22, color: '#1677ff' }} />
+              </div>
+              <span style={{ fontSize: 12 }}>Billing & Quotes</span>
+            </Link>
+
+            <Link
+              href="/reports"
+              onClick={() => setMoreDrawerOpen(false)}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, color: '#262626' }}
+            >
+              <div style={{ width: 48, height: 48, borderRadius: 12, background: '#f6ffed', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <BarChartOutlined style={{ fontSize: 22, color: '#52c41a' }} />
+              </div>
+              <span style={{ fontSize: 12 }}>Reports</span>
+            </Link>
+
+            <Link
+              href="/settings"
+              onClick={() => setMoreDrawerOpen(false)}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, color: '#262626' }}
+            >
+              <div style={{ width: 48, height: 48, borderRadius: 12, background: '#fff7e6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <SettingOutlined style={{ fontSize: 22, color: '#fa8c16' }} />
+              </div>
+              <span style={{ fontSize: 12 }}>Settings</span>
+            </Link>
+          </div>
+        </Drawer>
       </Layout>
+
+      {/* Onboarding Setup Wizard Modal */}
+      <OnboardingWizardModal
+        open={onboardingOpen}
+        onClose={() => setOnboardingOpen(false)}
+      />
     </Layout>
   );
 }

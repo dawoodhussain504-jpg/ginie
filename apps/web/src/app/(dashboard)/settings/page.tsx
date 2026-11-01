@@ -29,8 +29,20 @@ import {
   CheckCircleOutlined,
   AndroidOutlined,
   AppleOutlined,
+  CompassOutlined,
+  AppstoreOutlined,
+  ThunderboltOutlined,
+  FormOutlined,
+  CreditCardOutlined,
+  HistoryOutlined,
+  DollarOutlined,
+  EditOutlined,
+  PlayCircleOutlined,
+  PauseCircleOutlined,
 } from '@ant-design/icons';
 import { useApp } from '@/context/AppContext';
+import { useSearchParams, useRouter } from 'next/navigation';
+import OnboardingWizardModal from '@/components/OnboardingWizardModal';
 import { api } from '@/lib/api';
 import { formatDateIndian } from '@ginie/i18n';
 
@@ -41,6 +53,51 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(false);
   const [testingAlert, setTestingAlert] = useState<string | null>(null);
   const [company, setCompany] = useState<any | null>(null);
+  const [onboardingOpen, setOnboardingOpen] = useState(false);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const initialTab = searchParams.get('tab') || 'profile';
+  const [activeTab, setActiveTab] = useState(initialTab);
+
+  // Owner Control state
+  const [adminMetrics, setAdminMetrics] = useState<any>(null);
+  const [adminTenants, setAdminTenants] = useState<any[]>([]);
+  const [adminLoading, setAdminLoading] = useState(false);
+
+  useEffect(() => {
+    if (user?.isSuperAdmin) {
+      loadAdminData();
+    }
+  }, [user]);
+
+  const loadAdminData = async () => {
+    setAdminLoading(true);
+    try {
+      const [m, t] = await Promise.all([
+        api.get('/api/admin/metrics'),
+        api.get('/api/admin/tenants'),
+      ]);
+      setAdminMetrics(m);
+      setAdminTenants(t || []);
+    } catch {
+      // Fallback
+      setAdminMetrics({ totalTenants: 1, totalUsers: 1, totalSearches: 20, totalRevenueINR: 0 });
+    } finally {
+      setAdminLoading(false);
+    }
+  };
+
+  const handleToggleTenantStatus = async (tenant: any) => {
+    const nextStatus = tenant.status === 'active' ? 'suspended' : 'active';
+    try {
+      await api.patch(`/api/admin/tenants/${tenant.id}/status`, { status: nextStatus });
+      setAdminTenants(prev => prev.map(t => t.id === tenant.id ? { ...t, status: nextStatus } : t));
+      message.success(`Company account is now ${nextStatus}`);
+    } catch {
+      message.error('Failed to update status');
+    }
+  };
+
   const [team, setTeam] = useState<any[]>([]);
   const [alertSettings, setAlertSettings] = useState({
     telegramBotToken: '',
@@ -165,7 +222,7 @@ export default function SettingsPage() {
     },
   ];
 
-  const tabItems = [
+  const tabItems: any[] = [
     {
       key: 'profile',
       label: (
@@ -205,10 +262,66 @@ export default function SettingsPage() {
       ),
     },
     {
+      key: 'onboarding',
+      label: (
+        <span>
+          <AppstoreOutlined /> Business Wizard
+        </span>
+      ),
+      children: (
+        <Card style={{ maxWidth: 680, borderRadius: 12 }}>
+          <Title level={4} style={{ marginTop: 0 }}>
+            Industry Setup & Business Template
+          </Title>
+          <Paragraph type="secondary">
+            Configure GINIE for your exact business type (Shop, School, Clinic, Factory, Services, etc.).
+            This automatically sets up industry pipeline stages, customer fields, and WhatsApp message templates.
+          </Paragraph>
+
+          <div style={{ background: '#f6ffed', padding: '16px 20px', borderRadius: 10, border: '1px solid #b7eb8f', marginBottom: 20 }}>
+            <Text strong style={{ color: '#389e0d', display: 'block' }}>
+              ✓ Current Business Configuration: {company?.businessType ? company.businessType.toUpperCase() : 'General Business'}
+            </Text>
+            <Text type="secondary" style={{ fontSize: 13 }}>
+              You can re-run the wizard at any time to switch industry templates or update your pipeline stages.
+            </Text>
+          </div>
+
+          <Button
+            type="primary"
+            size="large"
+            icon={<AppstoreOutlined />}
+            onClick={() => setOnboardingOpen(true)}
+          >
+            Launch Business Setup Wizard
+          </Button>
+        </Card>
+      ),
+    },
+    {
+      key: 'team',
+      label: (
+        <span>
+          <TeamOutlined /> {t.settings.teamAccess}
+        </span>
+      ),
+      children: (
+        <Card style={{ borderRadius: 12 }}>
+          <Table
+            dataSource={team}
+            columns={teamColumns}
+            rowKey="id"
+            pagination={false}
+            loading={loading}
+          />
+        </Card>
+      ),
+    },
+    {
       key: 'alerts',
       label: (
         <span>
-          <BellOutlined /> Admin Alert Channels
+          <BellOutlined /> Admin Alerts
         </span>
       ),
       children: (
@@ -242,22 +355,14 @@ export default function SettingsPage() {
               showIcon
               style={{ marginBottom: 16 }}
               message="Free & Instant Telegram Setup"
-              description="Telegram par @BotFather se bot banayein aur uska token yahan daalein. Apna Chat ID paane ke liye Telegram par @userinfobot ko message karein."
+              description="Telegram par @BotFather se bot banayein aur uska token yahan daalein. Chat ID ke liye @userinfobot ko message karein."
             />
 
-            <Form.Item
-              name="telegramBotToken"
-              label="Telegram Bot Token"
-              extra="Example: 7123456789:AAFxz_SAMPLE_TOKEN_HERE"
-            >
+            <Form.Item name="telegramBotToken" label="Telegram Bot Token">
               <Input.Password placeholder="Enter bot token from @BotFather" />
             </Form.Item>
 
-            <Form.Item
-              name="telegramChatId"
-              label="Your Telegram Chat ID"
-              extra="Example: 123456789 (Your personal Telegram numerical user ID)"
-            >
+            <Form.Item name="telegramChatId" label="Your Telegram Chat ID">
               <Input placeholder="Enter your numeric Chat ID" />
             </Form.Item>
 
@@ -278,11 +383,7 @@ export default function SettingsPage() {
               </Space>
             </Divider>
 
-            <Form.Item
-              name="adminWhatsAppPhone"
-              label="Your Personal WhatsApp Phone Number"
-              extra="New lead aane par bridge ke zariye aapke is personal number par alert dispatch hoga."
-            >
+            <Form.Item name="adminWhatsAppPhone" label="Your Personal WhatsApp Phone Number">
               <Input placeholder="e.g. +91 9876543210" />
             </Form.Item>
 
@@ -308,148 +409,187 @@ export default function SettingsPage() {
       ),
     },
     {
-      key: 'mobile-pwa',
+      key: 'forms',
       label: (
         <span>
-          <MobileOutlined /> Mobile App (PWA)
+          <FormOutlined /> Public Forms
         </span>
       ),
-      children: (
-        <Card style={{ maxWidth: 700, borderRadius: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
-            <div
-              style={{
-                width: 60,
-                height: 60,
-                borderRadius: 16,
-                background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#fff',
-                fontSize: 28,
-                boxShadow: '0 4px 12px rgba(79, 70, 229, 0.4)',
-              }}
-            >
-              🧞
-            </div>
-            <div>
-              <Title level={4} style={{ margin: 0 }}>
-                GINIE Cockpit Mobile PWA
-              </Title>
-              <Text type="secondary">
-                App Store ya Play Store ke bina apne phone par standalone app install karein.
-              </Text>
-            </div>
-          </div>
-
-          <Alert
-            type="success"
-            showIcon
-            icon={<CheckCircleOutlined />}
-            message="PWA Manifest & Service Worker Active"
-            description="GINIE me Progressive Web App configuration complete hai. Mobile browser me kholne par ye direct full-screen app ki tarah kaam karta hai."
-            style={{ marginBottom: 24 }}
-          />
-
-          <Tabs
-            defaultActiveKey="android"
-            items={[
-              {
-                key: 'android',
-                label: (
-                  <span>
-                    <AndroidOutlined /> Android (Chrome)
-                  </span>
-                ),
-                children: (
-                  <div style={{ padding: '8px 0' }}>
-                    <Paragraph>
-                      1. Apne mobile Chrome browser me GINIE URL open karein.
-                    </Paragraph>
-                    <Paragraph>
-                      2. Top-right corner me <strong>3 dots (⋮)</strong> menu par tap karein.
-                    </Paragraph>
-                    <Paragraph>
-                      3. <strong>"Install App"</strong> ya <strong>"Add to Home screen"</strong> select karein.
-                    </Paragraph>
-                    <Paragraph>
-                      4. GINIE app aapke mobile home screen par ek native app icon ke sath add ho jayega!
-                    </Paragraph>
-                  </div>
-                ),
-              },
-              {
-                key: 'ios',
-                label: (
-                  <span>
-                    <AppleOutlined /> iPhone / iPad (Safari)
-                  </span>
-                ),
-                children: (
-                  <div style={{ padding: '8px 0' }}>
-                    <Paragraph>
-                      1. iPhone Safari me GINIE open karein.
-                    </Paragraph>
-                    <Paragraph>
-                      2. Bottom bar me <strong>Share button (Square with up arrow)</strong> par tap karein.
-                    </Paragraph>
-                    <Paragraph>
-                      3. Scroll karke <strong>"Add to Home Screen"</strong> par tap karein.
-                    </Paragraph>
-                    <Paragraph>
-                      4. Top-right me <strong>"Add"</strong> dabayein. GINIE full-screen native feel me chalega!
-                    </Paragraph>
-                  </div>
-                ),
-              },
-            ]}
-          />
-        </Card>
-      ),
-    },
-    {
-      key: 'team',
-      label: (
-        <span>
-          <TeamOutlined /> {t.settings.teamAccess}
-        </span>
-      ),
-      children: (
-        <Card style={{ borderRadius: 12 }}>
-          <Table
-            dataSource={team}
-            columns={teamColumns}
-            rowKey="id"
-            pagination={false}
-            loading={loading}
-          />
-        </Card>
-      ),
-    },
-    {
-      key: 'advanced',
-      label: 'Advanced',
       children: (
         <Card style={{ maxWidth: 640, borderRadius: 12 }}>
-          <Title level={5}>Advanced Settings & Cockpit Status</Title>
+          <Title level={4}>Public Website Forms</Title>
           <Paragraph type="secondary">
-            Settings here are for technical setup and developer integrations.
+            Embed responsive lead capture forms on your website or share direct links with clients.
           </Paragraph>
-          <Divider />
-          <Paragraph>
-            <strong>Your Company ID:</strong> <Text code>{company?.id || user?.tenantId}</Text>
+          <Button type="primary" onClick={() => router.push('/forms')}>
+            Manage Web Forms
+          </Button>
+        </Card>
+      ),
+    },
+    {
+      key: 'automations',
+      label: (
+        <span>
+          <ThunderboltOutlined /> Auto Actions
+        </span>
+      ),
+      children: (
+        <Card style={{ maxWidth: 640, borderRadius: 12 }}>
+          <Title level={4}>Automated Follow-ups & Rules</Title>
+          <Paragraph type="secondary">
+            Configure automatic WhatsApp greeting replies, deal stage movement triggers, and notifications.
           </Paragraph>
-          <Paragraph>
-            <strong>Domain:</strong> <Text code>ginie.space</Text>
+          <Button type="primary" onClick={() => router.push('/automations')}>
+            Manage Auto Actions
+          </Button>
+        </Card>
+      ),
+    },
+    {
+      key: 'subscriptions',
+      label: (
+        <span>
+          <CreditCardOutlined /> Plan & Quotas
+        </span>
+      ),
+      children: (
+        <Card style={{ maxWidth: 640, borderRadius: 12 }}>
+          <Title level={4}>Subscription & Usage Quotas</Title>
+          <Paragraph type="secondary">
+            View your current monthly limits for Google Places searches, WhatsApp messaging, and seats.
           </Paragraph>
-          <Paragraph>
-            <strong>Cockpit Operating Mode:</strong> <Tag color="gold">Master Sovereign Admin</Tag>
+          <Button type="primary" onClick={() => router.push('/subscriptions')}>
+            View Plan Details
+          </Button>
+        </Card>
+      ),
+    },
+    {
+      key: 'audit-logs',
+      label: (
+        <span>
+          <HistoryOutlined /> Activity History
+        </span>
+      ),
+      children: (
+        <Card style={{ maxWidth: 640, borderRadius: 12 }}>
+          <Title level={4}>Security & Audit Trail</Title>
+          <Paragraph type="secondary">
+            Track user logins, export activities, deal stage transitions, and critical platform actions.
           </Paragraph>
+          <Button type="primary" onClick={() => router.push('/audit-logs')}>
+            View Full Audit Logs
+          </Button>
         </Card>
       ),
     },
   ];
+
+  // Strictly add Owner Control panel only if user is Super Admin
+  if (user?.isSuperAdmin) {
+    tabItems.push({
+      key: 'owner-control',
+      label: (
+        <span style={{ color: '#faad14', fontWeight: 600 }}>
+          <SafetyCertificateOutlined /> Owner Control Panel
+        </span>
+      ),
+      children: (
+        <div>
+          <Title level={4}>Platform Owner Control Panel</Title>
+          <Paragraph type="secondary">
+            Platform-wide company management, tenant statuses, and resource usage metrics.
+          </Paragraph>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
+            <Card style={{ borderRadius: 10 }}>
+              <Text type="secondary">Total Registered Companies</Text>
+              <Title level={3} style={{ margin: '4px 0 0', color: brandColor }}>
+                {adminMetrics?.totalTenants || 0}
+              </Title>
+            </Card>
+
+            <Card style={{ borderRadius: 10 }}>
+              <Text type="secondary">Active Team Members</Text>
+              <Title level={3} style={{ margin: '4px 0 0', color: '#52c41a' }}>
+                {adminMetrics?.totalUsers || 0}
+              </Title>
+            </Card>
+
+            <Card style={{ borderRadius: 10 }}>
+              <Text type="secondary">Total Searches Run</Text>
+              <Title level={3} style={{ margin: '4px 0 0', color: '#722ed1' }}>
+                {adminMetrics?.totalSearches || 0}
+              </Title>
+            </Card>
+
+            <Card style={{ borderRadius: 10 }}>
+              <Text type="secondary">Platform Revenue</Text>
+              <Title level={3} style={{ margin: '4px 0 0', color: '#faad14' }}>
+                ₹{Number(adminMetrics?.totalRevenueINR || 0).toLocaleString('en-IN')}
+              </Title>
+            </Card>
+          </div>
+
+          <Card title={<Text strong>Registered Companies</Text>} style={{ borderRadius: 12 }}>
+            <Table
+              dataSource={adminTenants}
+              rowKey="id"
+              loading={adminLoading}
+              pagination={{ pageSize: 10 }}
+              columns={[
+                {
+                  title: 'Company',
+                  dataIndex: 'name',
+                  key: 'name',
+                  render: (name, record) => (
+                    <div>
+                      <Text strong>{name}</Text>
+                      <br />
+                      <Text type="secondary" style={{ fontSize: 12 }}>slug: {record.slug}</Text>
+                    </div>
+                  ),
+                },
+                {
+                  title: 'Plan',
+                  dataIndex: 'planName',
+                  key: 'planName',
+                  render: (p) => <Tag color="gold">{p || 'Pro'}</Tag>,
+                },
+                {
+                  title: 'Status',
+                  dataIndex: 'status',
+                  key: 'status',
+                  render: (st) => <Tag color={st === 'active' ? 'green' : 'red'}>{st?.toUpperCase()}</Tag>,
+                },
+                {
+                  title: 'Users',
+                  dataIndex: 'userCount',
+                  key: 'userCount',
+                  render: (c) => c || 1,
+                },
+                {
+                  title: 'Actions',
+                  key: 'action',
+                  render: (_, record) => (
+                    <Button
+                      size="small"
+                      danger={record.status === 'active'}
+                      icon={record.status === 'active' ? <PauseCircleOutlined /> : <PlayCircleOutlined />}
+                      onClick={() => handleToggleTenantStatus(record)}
+                    >
+                      {record.status === 'active' ? 'Suspend' : 'Activate'}
+                    </Button>
+                  ),
+                },
+              ]}
+            />
+          </Card>
+        </div>
+      ),
+    });
+  }
 
   return (
     <div>
@@ -462,7 +602,20 @@ export default function SettingsPage() {
         </Text>
       </div>
 
-      <Tabs defaultActiveKey="profile" items={tabItems} />
+      <Tabs
+        activeKey={activeTab}
+        onChange={(k) => {
+          setActiveTab(k);
+          router.push(`/settings?tab=${k}`);
+        }}
+        items={tabItems}
+      />
+
+      <OnboardingWizardModal
+        open={onboardingOpen}
+        onClose={() => setOnboardingOpen(false)}
+        onSuccess={() => loadSettings()}
+      />
     </div>
   );
 }

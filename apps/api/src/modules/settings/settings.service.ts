@@ -1,3 +1,4 @@
+import { BUSINESS_TEMPLATES, CompleteOnboardingDto } from '@ginie/common';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { prisma } from '@ginie/database';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -123,5 +124,114 @@ export class SettingsService {
       return { success: false, message: 'Notifications service unavailable' };
     }
     return this.notificationsService.sendTestAlert(channel, config);
+  }
+
+  getBusinessTemplates() {
+    return BUSINESS_TEMPLATES;
+  }
+
+  async completeOnboarding(tenantId: string, dto: CompleteOnboardingDto) {
+    const template = BUSINESS_TEMPLATES[dto.businessType] || BUSINESS_TEMPLATES.other;
+
+    const tenant = await prisma.tenant.update({
+      where: { id: tenantId },
+      data: {
+        name: dto.businessName,
+        businessType: dto.businessType,
+        onboardingCompleted: true,
+        settings: {
+          teamSize: dto.teamSize,
+          language: dto.language,
+        },
+      },
+    });
+
+    if (template.pipelineStages && template.pipelineStages.length > 0) {
+      let pipeline = await prisma.pipeline.findFirst({
+        where: { tenantId, isDefault: true },
+      });
+      if (!pipeline) {
+        pipeline = await prisma.pipeline.create({
+          data: {
+            tenantId,
+            name: `${dto.businessName} Pipeline`,
+            isDefault: true,
+          },
+        });
+      }
+
+      const existingStages = await prisma.pipelineStage.findMany({
+        where: { pipelineId: pipeline.id },
+      });
+
+      if (existingStages.length === 0) {
+        for (let i = 0; i < template.pipelineStages.length; i++) {
+          const st = template.pipelineStages[i];
+          await prisma.pipelineStage.create({
+            data: {
+              tenantId,
+              pipelineId: pipeline.id,
+              name: st.name,
+              probability: st.probability,
+              color: st.color,
+              orderIndex: i,
+            },
+          });
+        }
+      }
+    }
+
+    if (template.customFields && template.customFields.length > 0) {
+      for (const cf of template.customFields) {
+        await prisma.customFieldDefinition.upsert({
+          where: {
+            tenantId_entityType_key: {
+              tenantId,
+              entityType: cf.entityType,
+              key: cf.key,
+            },
+          },
+          update: {
+            label: cf.label,
+            fieldType: cf.fieldType,
+            options: cf.options || [],
+            isRequired: cf.isRequired || false,
+          },
+          create: {
+            tenantId,
+            entityType: cf.entityType,
+            key: cf.key,
+            label: cf.label,
+            fieldType: cf.fieldType,
+            options: cf.options || [],
+            isRequired: cf.isRequired || false,
+          },
+        });
+      }
+    }
+
+    if (template.messageTemplates && template.messageTemplates.length > 0) {
+      for (const mt of template.messageTemplates) {
+        const existing = await prisma.messageTemplate.findFirst({
+          where: { tenantId, name: mt.name },
+        });
+        if (!existing) {
+          await prisma.messageTemplate.create({
+            data: {
+              tenantId,
+              channel: mt.channel,
+              name: mt.name,
+              body: mt.body,
+            },
+          });
+        }
+      }
+    }
+
+    return {
+      success: true,
+      tenant,
+      template,
+    };
   }
 }
