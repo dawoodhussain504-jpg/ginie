@@ -14,6 +14,11 @@ import {
   Collapse,
   Badge,
   Divider,
+  Slider,
+  Modal,
+  Select,
+  Tooltip,
+  Input,
 } from 'antd';
 import {
   WhatsAppOutlined,
@@ -37,6 +42,12 @@ import {
   RocketFilled,
   LockOutlined,
   GlobalOutlined,
+  PhoneOutlined,
+  CloseOutlined,
+  MessageOutlined,
+  CalculatorOutlined,
+  DollarCircleOutlined,
+  CustomerServiceOutlined,
 } from '@ant-design/icons';
 
 const { Title, Text, Paragraph } = Typography;
@@ -47,6 +58,199 @@ export default function MarketingLandingPage() {
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [activeIndustry, setActiveIndustry] = useState('clinics');
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
+
+  // Interactive Live Demo Playground State
+  const [demoCity, setDemoCity] = useState('Mumbai');
+  const [demoCategory, setDemoCategory] = useState('clinics');
+  const [demoWhatsAppModal, setDemoWhatsAppModal] = useState(false);
+  const [selectedDemoLead, setSelectedDemoLead] = useState<any>(null);
+
+  // ROI Calculator State
+  const [monthlyInquiries, setMonthlyInquiries] = useState(120);
+  const [avgTicketSize, setAvgTicketSize] = useState(2500);
+
+  // Live Activity Ticker State
+  const [currentTickerIdx, setCurrentTickerIdx] = useState(0);
+  const [tickerVisible, setTickerVisible] = useState(true);
+
+  // Ticker rotation effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTickerIdx((prev: number) => (prev + 1) % 5);
+    }, 7000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const liveTickerEvents = [
+    { name: 'Rajesh Sharma', city: 'Jaipur', action: 'created a Free CRM Workspace', time: '2m ago', color: '#10b981' },
+    { name: 'Royal Auto Spares', city: 'Pune', action: 'unlocked Google Maps Lead Discovery', time: '5m ago', color: '#2563eb' },
+    { name: 'Dr. Vikram Verma Dental', city: 'Patna', action: 'sent 18 WhatsApp appointment reminders', time: '9m ago', color: '#0ea5e9' },
+    { name: 'FitZone Academy', city: 'Ahmedabad', action: 'collected ₹14,500 via UPI QR Code', time: '14m ago', color: '#f59e0b' },
+    { name: 'Apex Logistics & Freight', city: 'Indore', action: 'added 4 sales team members', time: '18m ago', color: '#8b5cf6' },
+  ];
+
+  const sampleLeadsData: Record<string, any[]> = {
+    clinics: [
+      {
+        name: 'Apex Dental Care & Implant Studio',
+        area: 'Bandra West',
+        rating: 4.9,
+        reviews: 142,
+        phone: '+91 98201 44210',
+        quality: 'good',
+        pitch: (city: string) =>
+          `Namaste Dr. Sharma! I came across Apex Dental Care on Google Maps in ${city}. We help dental clinics automate patient appointment reminders and 5-star Google review links over WhatsApp. Can I share a quick 1-minute video demo?`,
+      },
+      {
+        name: 'SmileCraft Multispeciality Dental',
+        area: 'Andheri East',
+        rating: 4.8,
+        reviews: 98,
+        phone: '+91 98192 78310',
+        quality: 'good',
+        pitch: (city: string) =>
+          `Hello! Reaching out from GINIE regarding patient management for SmileCraft in ${city}. How are you currently managing automated WhatsApp follow-ups after dental treatments? Happy to show you our 100% free system!`,
+      },
+      {
+        name: 'City Care Polyclinic & Diagnostic',
+        area: 'Dadar Central',
+        rating: 4.7,
+        reviews: 64,
+        phone: '+91 98670 99214',
+        quality: 'average',
+        pitch: (city: string) =>
+          `Hi Dr. Patil, noticed City Care Polyclinic on Google Maps. We provide a zero-cost WhatsApp appointment booking & billing system for clinics across ${city}. Would you like to test it out?`,
+      },
+    ],
+    gyms: [
+      {
+        name: 'IronCore Strength & Crossfit Gym',
+        area: 'Indiranagar / Metro Road',
+        rating: 4.9,
+        reviews: 210,
+        phone: '+91 97410 88290',
+        quality: 'good',
+        pitch: (city: string) =>
+          `Namaste! Came across IronCore Gym in ${city}. We help gym owners collect 95%+ member fee renewals on time using automatic WhatsApp alerts with direct UPI QR codes. Can I share details?`,
+      },
+      {
+        name: 'FitPulse 24/7 Wellness Club',
+        area: 'Koramangala / Commercial St',
+        rating: 4.8,
+        reviews: 135,
+        phone: '+91 98450 33912',
+        quality: 'good',
+        pitch: (city: string) =>
+          `Hello Coach! Are you losing member renewals due to manual phone calling? GINIE sends automated WhatsApp payment reminders with UPI QR codes 3 days before expiry. Take a look at our free tool!`,
+      },
+      {
+        name: 'PowerZone Fitness Studio',
+        area: 'Whitefield Main Market',
+        rating: 4.6,
+        reviews: 78,
+        phone: '+91 99001 55219',
+        quality: 'average',
+        pitch: (city: string) =>
+          `Hi PowerZone Team! Reaching out regarding your fitness inquiries in ${city}. GINIE automates member attendance, GST receipts, and WhatsApp marketing campaigns for free!`,
+      },
+    ],
+    hardware: [
+      {
+        name: 'Shree Balaji Sanitary & Hardware Mart',
+        area: 'Loha Mandi / Industrial Area',
+        rating: 4.9,
+        reviews: 168,
+        phone: '+91 94140 66201',
+        quality: 'good',
+        pitch: (city: string) =>
+          `Namaste Balaji Hardware! We noticed your store in ${city}. We provide a smart GST billing & quotation generator that sends bills with dynamic UPI QR codes directly to customers on WhatsApp. Free to use!`,
+      },
+      {
+        name: 'Royal Electricals & Modular Fittings',
+        area: 'Station Road Market',
+        rating: 4.8,
+        reviews: 84,
+        phone: '+91 98290 77144',
+        quality: 'good',
+        pitch: (city: string) =>
+          `Hello Sharma ji! Want to find 50+ local building contractors and electricians in ${city} via Google Maps? GINIE finds them in 1-click and lets you send WhatsApp rate lists instantly!`,
+      },
+      {
+        name: 'Gupta Pipe & Plumbing Traders',
+        area: 'Old City Bypass',
+        rating: 4.6,
+        reviews: 52,
+        phone: '+91 94133 88120',
+        quality: 'average',
+        pitch: (city: string) =>
+          `Namaste! Managing trader khata and outstanding udhaar in ${city}? GINIE sends automated WhatsApp payment reminders with your UPI QR code so you get paid faster!`,
+      },
+    ],
+    cafes: [
+      {
+        name: 'The Roasted Bean Artisanal Cafe',
+        area: 'Connaught Place / Civil Lines',
+        rating: 4.9,
+        reviews: 340,
+        phone: '+91 98110 55214',
+        quality: 'good',
+        pitch: (city: string) =>
+          `Namaste Cafe Team! Reaching out in ${city}. Did you know you can collect 3x more 5-star Google reviews from your diners automatically over WhatsApp after their bill payment? Check out GINIE for free!`,
+      },
+      {
+        name: 'Urban Crust Pizza & Bakery',
+        area: 'South Ext / Park Street',
+        rating: 4.8,
+        reviews: 195,
+        phone: '+91 98100 44920',
+        quality: 'good',
+        pitch: (city: string) =>
+          `Hello! How is Urban Crust managing birthday offers and WhatsApp marketing for loyal foodies in ${city}? GINIE offers a 100% free CRM with WhatsApp broadcast engine!`,
+      },
+      {
+        name: 'Chai Shai Bistro & Snacks',
+        area: 'Boring Road / University Gate',
+        rating: 4.7,
+        reviews: 112,
+        phone: '+91 93340 77190',
+        quality: 'good',
+        pitch: (city: string) =>
+          `Hi there! Manage counter billing, GST receipts with UPI QR code, and customer contact directory in 1 simple app. GINIE is completely free forever for cafes!`,
+      },
+    ],
+    realestate: [
+      {
+        name: 'Prime Landmark Realty & Advisory',
+        area: 'Gachibowli / High Street',
+        rating: 4.9,
+        reviews: 156,
+        phone: '+91 98480 33100',
+        quality: 'good',
+        pitch: (city: string) =>
+          `Namaste! Found Prime Realty in ${city}. Are you tired of losing 99acres and Magicbricks buyer leads? GINIE sends instant automated WhatsApp brochures and tracks deal stages visually!`,
+      },
+      {
+        name: 'Heritage Homes & Property Consultants',
+        area: 'Malviya Nagar / Scheme 10',
+        rating: 4.8,
+        reviews: 87,
+        phone: '+91 98280 66290',
+        quality: 'good',
+        pitch: (city: string) =>
+          `Hello! Wanted to check how your sales team in ${city} manages client property site visits? GINIE gives you a visual Kanban sales pipeline and WhatsApp scheduling for free!`,
+      },
+      {
+        name: 'Sunrise Estates & Developers',
+        area: 'Airport Road Hub',
+        rating: 4.7,
+        reviews: 49,
+        phone: '+91 98350 22180',
+        quality: 'good',
+        pitch: (city: string) =>
+          `Namaste! GINIE helps real estate agents in ${city} discover new local commercial businesses and shop owners on Google Maps for leasing and sales. Try it out!`,
+      },
+    ],
+  };
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -685,6 +889,244 @@ export default function MarketingLandingPage() {
         </div>
       </section>
 
+      {/* ─── INTERACTIVE LEAD DISCOVERY PLAYGROUND ────────────────────── */}
+      <section
+        id="discovery-simulator"
+        style={{
+          padding: '64px 20px',
+          background: 'linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)',
+          borderTop: '1px solid #e2e8f0',
+          borderBottom: '1px solid #e2e8f0',
+        }}
+      >
+        <div style={{ maxWidth: 1080, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 32 }}>
+            <span
+              style={{
+                fontSize: 12,
+                fontWeight: 800,
+                color: '#2563eb',
+                textTransform: 'uppercase',
+                letterSpacing: '1px',
+                background: '#eff6ff',
+                padding: '4px 14px',
+                borderRadius: 20,
+                border: '1px solid #bfdbfe',
+              }}
+            >
+              Live Interactive Simulator
+            </span>
+            <Title level={2} style={{ fontSize: 'clamp(24px, 3.5vw, 36px)', fontWeight: 800, marginTop: 12, marginBottom: 8 }}>
+              Experience GINIE: Test-Drive Local Lead Search
+            </Title>
+            <Paragraph style={{ color: '#64748b', fontSize: 16, maxWidth: 680, margin: '0 auto' }}>
+              Apna city aur category select karke dekhein kaise GINIE seconds me verified local businesses, unke phone numbers aur 1-click WhatsApp pitch taiyaar karta hai:
+            </Paragraph>
+          </div>
+
+          {/* City & Category Selectors */}
+          <Card
+            style={{
+              borderRadius: 20,
+              boxShadow: '0 10px 30px rgba(0,0,0,0.06)',
+              border: '1.5px solid #cbd5e1',
+              marginBottom: 32,
+              background: '#ffffff',
+            }}
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+              {/* City Selection Pills */}
+              <div>
+                <Text strong style={{ fontSize: 13, color: '#475569', display: 'block', marginBottom: 10 }}>
+                  1. SELECT CITY:
+                </Text>
+                <Space wrap size={[8, 8]}>
+                  {['Mumbai', 'Delhi NCR', 'Patna', 'Jaipur', 'Bengaluru', 'Ahmedabad'].map((c) => (
+                    <Button
+                      key={c}
+                      type={demoCity === c ? 'primary' : 'default'}
+                      onClick={() => setDemoCity(c)}
+                      style={{
+                        borderRadius: 20,
+                        fontWeight: 600,
+                        background: demoCity === c ? '#2563eb' : '#f8fafc',
+                        borderColor: demoCity === c ? '#2563eb' : '#cbd5e1',
+                      }}
+                    >
+                      📍 {c}
+                    </Button>
+                  ))}
+                </Space>
+              </div>
+
+              {/* Category Selection Pills */}
+              <div>
+                <Text strong style={{ fontSize: 13, color: '#475569', display: 'block', marginBottom: 10 }}>
+                  2. SELECT TARGET BUSINESS CATEGORY:
+                </Text>
+                <Space wrap size={[8, 8]}>
+                  {[
+                    { id: 'clinics', label: '🩺 Doctors & Dental Clinics' },
+                    { id: 'gyms', label: '💪 Gyms & Fitness Centers' },
+                    { id: 'hardware', label: '🔧 Hardware & Sanitary' },
+                    { id: 'cafes', label: '☕ Cafes & Restaurants' },
+                    { id: 'realestate', label: '🏢 Real Estate Agents' },
+                  ].map((cat) => (
+                    <Button
+                      key={cat.id}
+                      type={demoCategory === cat.id ? 'primary' : 'default'}
+                      onClick={() => setDemoCategory(cat.id)}
+                      style={{
+                        borderRadius: 20,
+                        fontWeight: 600,
+                        background: demoCategory === cat.id ? '#10b981' : '#f8fafc',
+                        borderColor: demoCategory === cat.id ? '#10b981' : '#cbd5e1',
+                        color: demoCategory === cat.id ? '#fff' : '#334155',
+                      }}
+                    >
+                      {cat.label}
+                    </Button>
+                  ))}
+                </Space>
+              </div>
+            </div>
+          </Card>
+
+          {/* Sample Search Results Cards */}
+          <div style={{ marginBottom: 28 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <Space>
+                <Tag color="blue" style={{ fontWeight: 600, fontSize: 13, padding: '4px 10px' }}>
+                  Live Scraped Results in {demoCity}
+                </Tag>
+                <span style={{ fontSize: 13, color: '#64748b' }}>Showing 3 sample leads from Google Maps</span>
+              </Space>
+              <Tag color="green" icon={<CheckCircleFilled />}>
+                Verified Numbers
+              </Tag>
+            </div>
+
+            <Row gutter={[16, 16]}>
+              {(sampleLeadsData[demoCategory] || sampleLeadsData.clinics).map((lead: any, idx: number) => (
+                <Col xs={24} md={8} key={idx}>
+                  <Card
+                    hoverable
+                    style={{
+                      borderRadius: 16,
+                      height: '100%',
+                      border: '1.5px solid #e2e8f0',
+                      display: 'flex',
+                      flexDirection: 'column',
+                    }}
+                  >
+                    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+                          <Text strong style={{ fontSize: 16, color: '#0f172a' }}>
+                            {lead.name}
+                          </Text>
+                          <Tag color={lead.quality === 'good' ? 'success' : 'warning'} style={{ margin: 0, fontSize: 11 }}>
+                            {lead.quality === 'good' ? '🟢 Verified' : '🟡 Active'}
+                          </Tag>
+                        </div>
+
+                        <div style={{ fontSize: 13, color: '#64748b', marginBottom: 12 }}>
+                          📍 {lead.area}, {demoCity}
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+                          <StarFilled style={{ color: '#faad14', fontSize: 14 }} />
+                          <strong style={{ fontSize: 14 }}>{lead.rating}</strong>
+                          <span style={{ color: '#94a3b8', fontSize: 12 }}>({lead.reviews} Google reviews)</span>
+                        </div>
+
+                        <div
+                          style={{
+                            background: '#f8fafc',
+                            padding: '8px 12px',
+                            borderRadius: 8,
+                            fontSize: 13,
+                            marginBottom: 16,
+                            border: '1px solid #f1f5f9',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                          }}
+                        >
+                          <Space>
+                            <PhoneOutlined style={{ color: '#16a34a' }} />
+                            <Text strong code>{lead.phone}</Text>
+                          </Space>
+                          <Tag color="cyan">Direct Mobile</Tag>
+                        </div>
+                      </div>
+
+                      <Button
+                        type="primary"
+                        icon={<WhatsAppOutlined />}
+                        block
+                        onClick={() => {
+                          setSelectedDemoLead({
+                            ...lead,
+                            city: demoCity,
+                            pitchText: lead.pitch(demoCity),
+                          });
+                          setDemoWhatsAppModal(true);
+                        }}
+                        style={{
+                          background: '#25D366',
+                          borderColor: '#25D366',
+                          fontWeight: 700,
+                          height: 42,
+                          borderRadius: 10,
+                        }}
+                      >
+                        Test WhatsApp Pitch ➔
+                      </Button>
+                    </div>
+                  </Card>
+                </Col>
+              ))}
+            </Row>
+          </div>
+
+          {/* Interactive CTA Banner */}
+          <div
+            style={{
+              textAlign: 'center',
+              padding: '24px',
+              borderRadius: 16,
+              background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+              border: '1.5px dashed #93c5fd',
+            }}
+          >
+            <Title level={4} style={{ margin: '0 0 8px', color: '#1e3a8a' }}>
+              Want to export 500+ local leads in your city directly into your CRM?
+            </Title>
+            <Paragraph type="secondary" style={{ margin: '0 0 16px', fontSize: 14 }}>
+              Core CRM is 100% Free Forever. Unlock unlimited Google Maps Discovery for just ₹599/month anytime.
+            </Paragraph>
+            <Button
+              type="primary"
+              size="large"
+              icon={<RocketFilled />}
+              onClick={() => router.push('/register')}
+              style={{
+                height: 48,
+                padding: '0 32px',
+                borderRadius: 10,
+                fontWeight: 700,
+                background: '#2563eb',
+                borderColor: '#2563eb',
+                boxShadow: '0 4px 14px rgba(37, 99, 235, 0.35)',
+              }}
+            >
+              Create Free Account & Search My City ➔
+            </Button>
+          </div>
+        </div>
+      </section>
+
       {/* ─── 2. WHY TRADITIONAL CRMs FAIL IN INDIA ────────────────────── */}
       <section style={{ padding: '80px 20px', background: '#ffffff', borderTop: '1px solid #f1f5f9' }}>
         <div style={{ maxWidth: 1080, margin: '0 auto' }}>
@@ -770,6 +1212,164 @@ export default function MarketingLandingPage() {
                   ))}
                 </ul>
               </Card>
+            </Col>
+          </Row>
+        </div>
+      </section>
+
+      {/* ─── ROI & PROFIT CALCULATOR ────────────────────────────────────── */}
+      <section style={{ padding: '70px 20px', background: '#0f172a', color: '#fff' }}>
+        <div style={{ maxWidth: 1040, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 40 }}>
+            <span
+              style={{
+                fontSize: 12,
+                fontWeight: 800,
+                color: '#38bdf8',
+                textTransform: 'uppercase',
+                letterSpacing: '1px',
+                background: 'rgba(56, 189, 248, 0.1)',
+                padding: '4px 14px',
+                borderRadius: 20,
+                border: '1px solid rgba(56, 189, 248, 0.3)',
+              }}
+            >
+              Interactive Profit Estimator
+            </span>
+            <Title level={2} style={{ fontSize: 'clamp(26px, 4vw, 40px)', fontWeight: 800, color: '#fff', marginTop: 12 }}>
+              Calculate How Much Revenue You Are Losing Every Month
+            </Title>
+            <Paragraph style={{ color: '#94a3b8', fontSize: 16, maxWidth: 680, margin: '0 auto' }}>
+              Bina CRM ke lagbhag 35% customer inquiries follow-up na hone ki wajah se thandi pad jati hain. Dekhein GINIE aapki kitni bachat aur extra munafa karata hai:
+            </Paragraph>
+          </div>
+
+          <Row gutter={[32, 32]} align="middle">
+            {/* Left Column: Sliders */}
+            <Col xs={24} md={12}>
+              <div style={{ background: '#1e293b', padding: 28, borderRadius: 20, border: '1px solid #334155' }}>
+                <div style={{ marginBottom: 28 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <Text strong style={{ color: '#f8fafc', fontSize: 15 }}>
+                      Monthly Inquiries / Customers:
+                    </Text>
+                    <span style={{ fontSize: 22, fontWeight: 800, color: '#38bdf8' }}>
+                      {monthlyInquiries} inquiries
+                    </span>
+                  </div>
+                  <Slider
+                    min={20}
+                    max={500}
+                    step={10}
+                    value={monthlyInquiries}
+                    onChange={setMonthlyInquiries}
+                    tooltip={{ open: false }}
+                  />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#64748b' }}>
+                    <span>20 (Solo practice)</span>
+                    <span>250 (Mid-size)</span>
+                    <span>500+ (High volume)</span>
+                  </div>
+                </div>
+
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <Text strong style={{ color: '#f8fafc', fontSize: 15 }}>
+                      Average Order / Ticket Size:
+                    </Text>
+                    <span style={{ fontSize: 22, fontWeight: 800, color: '#10b981' }}>
+                      ₹{avgTicketSize.toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                  <Space wrap style={{ marginTop: 8 }}>
+                    {[
+                      { label: '₹1,000 (Retail/Gym)', val: 1000 },
+                      { label: '₹2,500 (Clinic/Coaching)', val: 2500 },
+                      { label: '₹5,000 (Wholesale/Agency)', val: 5000 },
+                      { label: '₹15,000 (High-Ticket)', val: 15000 },
+                    ].map((tier) => (
+                      <Button
+                        key={tier.val}
+                        size="small"
+                        type={avgTicketSize === tier.val ? 'primary' : 'default'}
+                        onClick={() => setAvgTicketSize(tier.val)}
+                        style={{
+                          borderRadius: 8,
+                          fontWeight: 600,
+                          background: avgTicketSize === tier.val ? '#10b981' : '#0f172a',
+                          borderColor: avgTicketSize === tier.val ? '#10b981' : '#475569',
+                          color: '#fff',
+                        }}
+                      >
+                        {tier.label}
+                      </Button>
+                    ))}
+                  </Space>
+                </div>
+              </div>
+            </Col>
+
+            {/* Right Column: Calculated Gains */}
+            <Col xs={24} md={12}>
+              <div
+                style={{
+                  background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(37, 99, 235, 0.15) 100%)',
+                  padding: 32,
+                  borderRadius: 20,
+                  border: '1.5px solid #10b981',
+                }}
+              >
+                <div style={{ marginBottom: 24 }}>
+                  <Text style={{ color: '#94a3b8', fontSize: 13, textTransform: 'uppercase', letterSpacing: 1 }}>
+                    Estimated Extra Revenue Recovered
+                  </Text>
+                  <div style={{ fontSize: 'clamp(36px, 5vw, 48px)', fontWeight: 900, color: '#10b981', lineHeight: 1.1, marginTop: 4 }}>
+                    +₹{Math.round(monthlyInquiries * 0.35 * 0.35 * avgTicketSize).toLocaleString('en-IN')}
+                    <span style={{ fontSize: 16, fontWeight: 500, color: '#cbd5e1' }}> / month</span>
+                  </div>
+                  <Text style={{ color: '#cbd5e1', fontSize: 13, marginTop: 6, display: 'block' }}>
+                    *Based on recovering ~{Math.round(monthlyInquiries * 0.35 * 0.35)} dropped leads with instant automated WhatsApp follow-ups.
+                  </Text>
+                </div>
+
+                <Row gutter={16} style={{ marginBottom: 24 }}>
+                  <Col span={12}>
+                    <div style={{ background: '#1e293b', padding: 12, borderRadius: 10 }}>
+                      <div style={{ color: '#94a3b8', fontSize: 11 }}>Time Saved / Month</div>
+                      <div style={{ fontSize: 20, fontWeight: 800, color: '#38bdf8' }}>
+                        ~{Math.round(monthlyInquiries * 0.2)} Hours
+                      </div>
+                    </div>
+                  </Col>
+                  <Col span={12}>
+                    <div style={{ background: '#1e293b', padding: 12, borderRadius: 10 }}>
+                      <div style={{ color: '#94a3b8', fontSize: 11 }}>GINIE Core CRM Cost</div>
+                      <div style={{ fontSize: 20, fontWeight: 800, color: '#10b981' }}>
+                        ₹0 (100% Free)
+                      </div>
+                    </div>
+                  </Col>
+                </Row>
+
+                <Button
+                  type="primary"
+                  size="large"
+                  block
+                  icon={<RocketFilled />}
+                  onClick={() => router.push('/register')}
+                  style={{
+                    height: 48,
+                    background: '#10b981',
+                    borderColor: '#10b981',
+                    fontWeight: 800,
+                    fontSize: 16,
+                    borderRadius: 10,
+                    boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)',
+                  }}
+                >
+                  Start Free CRM & Recover Lost Leads ➔
+                </Button>
+              </div>
             </Col>
           </Row>
         </div>
@@ -1536,33 +2136,182 @@ export default function MarketingLandingPage() {
         </div>
       </footer>
 
-      {/* ─── 10. FLOATING WHATSAPP HELP BUBBLE ───────────────────────────── */}
-      <a
-        href="https://wa.me/918797186001?text=Hi%20GINIE%20Support,%20I%20have%20a%20question%20about%20GINIE%20CRM."
-        target="_blank"
-        rel="noopener noreferrer"
+      {/* ─── 10. FLOATING WHATSAPP FOUNDER CHAT & WIDGETS ────────────────── */}
+      {/* Live Social Proof Activity Ticker (Bottom-Left) */}
+      {tickerVisible && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: 24,
+            left: 24,
+            zIndex: 998,
+            background: '#ffffff',
+            borderRadius: 14,
+            padding: '12px 16px',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.12)',
+            border: '1px solid #e2e8f0',
+            maxWidth: 340,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+          }}
+        >
+          <div
+            style={{
+              width: 10,
+              height: 10,
+              borderRadius: 5,
+              background: liveTickerEvents[currentTickerIdx].color,
+              boxShadow: `0 0 8px ${liveTickerEvents[currentTickerIdx].color}`,
+              flexShrink: 0,
+            }}
+          />
+          <div style={{ flex: 1, fontSize: 13, lineHeight: 1.4 }}>
+            <strong>{liveTickerEvents[currentTickerIdx].name}</strong> ({liveTickerEvents[currentTickerIdx].city}){' '}
+            <span style={{ color: '#475569' }}>{liveTickerEvents[currentTickerIdx].action}</span>
+            <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>
+              {liveTickerEvents[currentTickerIdx].time}
+            </div>
+          </div>
+          <Button
+            type="text"
+            size="small"
+            icon={<CloseOutlined style={{ fontSize: 11, color: '#94a3b8' }} />}
+            onClick={() => setTickerVisible(false)}
+            style={{ padding: 0, width: 20, height: 20 }}
+          />
+        </div>
+      )}
+
+      {/* Floating Founder WhatsApp Chat (Bottom-Right) */}
+      <div
         style={{
           position: 'fixed',
           bottom: 24,
           right: 24,
           zIndex: 999,
-          width: 58,
-          height: 58,
-          borderRadius: 29,
-          background: '#25D366',
-          boxShadow: '0 8px 24px rgba(37, 211, 102, 0.45)',
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: '#ffffff',
-          fontSize: 32,
-          textDecoration: 'none',
-          transition: 'transform 0.2s ease',
+          flexDirection: 'column',
+          alignItems: 'flex-end',
+          gap: 8,
         }}
-        title="Chat with GINIE Support on WhatsApp"
       >
-        <WhatsAppOutlined />
-      </a>
+        <div
+          style={{
+            background: '#0f172a',
+            color: '#ffffff',
+            padding: '6px 14px',
+            borderRadius: 20,
+            fontSize: 12,
+            fontWeight: 600,
+            boxShadow: '0 4px 14px rgba(0,0,0,0.2)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            border: '1px solid #334155',
+          }}
+        >
+          <span style={{ width: 8, height: 8, borderRadius: 4, background: '#25D366', display: 'inline-block' }} />
+          <span>Chat with Founder Dawood</span>
+        </div>
+
+        <a
+          href="https://wa.me/918797186001?text=Namaste%20Dawood,%20mujhe%20GINIE%20CRM%20ke%20baare%20me%20jaankari%20chahiye."
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            width: 58,
+            height: 58,
+            borderRadius: 29,
+            background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)',
+            boxShadow: '0 8px 24px rgba(37, 211, 102, 0.45)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#ffffff',
+            fontSize: 32,
+            textDecoration: 'none',
+            transition: 'transform 0.2s ease',
+          }}
+          title="Chat directly with Founder Dawood on WhatsApp"
+        >
+          <WhatsAppOutlined />
+        </a>
+      </div>
+
+      {/* Demo WhatsApp Pitch Modal */}
+      <Modal
+        title={
+          <Space>
+            <WhatsAppOutlined style={{ color: '#25D366', fontSize: 22 }} />
+            <span style={{ fontWeight: 700, fontSize: 16 }}>Live WhatsApp Outreach Preview</span>
+          </Space>
+        }
+        open={demoWhatsAppModal}
+        onCancel={() => setDemoWhatsAppModal(false)}
+        footer={null}
+        width={540}
+        destroyOnClose
+      >
+        {selectedDemoLead && (
+          <div>
+            <div style={{ background: '#f8fafc', padding: 12, borderRadius: 10, marginBottom: 16, border: '1px solid #e2e8f0' }}>
+              <div style={{ fontWeight: 700, fontSize: 15, color: '#0f172a' }}>{selectedDemoLead.name}</div>
+              <div style={{ fontSize: 12, color: '#64748b' }}>📍 {selectedDemoLead.area}, {selectedDemoLead.city} &bull; {selectedDemoLead.phone}</div>
+            </div>
+
+            <Text strong style={{ fontSize: 13, color: '#475569', display: 'block', marginBottom: 6 }}>
+              AI-Personalized WhatsApp Outreach Pitch:
+            </Text>
+            <Input.TextArea
+              rows={4}
+              value={selectedDemoLead.pitchText}
+              readOnly
+              style={{ background: '#f1f5f9', color: '#1e293b', fontSize: 14, marginBottom: 16 }}
+            />
+
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <Button
+                type="primary"
+                icon={<WhatsAppOutlined />}
+                block
+                onClick={() => {
+                  let cleanPhone = selectedDemoLead.phone.replace(/[^0-9]/g, '');
+                  window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(selectedDemoLead.pitchText)}`, '_blank');
+                }}
+                style={{
+                  height: 44,
+                  background: '#25D366',
+                  borderColor: '#25D366',
+                  fontWeight: 700,
+                  fontSize: 15,
+                }}
+              >
+                Launch Live WhatsApp Test ➔
+              </Button>
+
+              <Button
+                type="default"
+                block
+                icon={<RocketFilled style={{ color: '#2563eb' }} />}
+                onClick={() => {
+                  setDemoWhatsAppModal(false);
+                  router.push('/register');
+                }}
+                style={{
+                  height: 44,
+                  fontWeight: 700,
+                  fontSize: 14,
+                  borderColor: '#2563eb',
+                  color: '#2563eb',
+                }}
+              >
+                Create Free CRM Account to Reach 100+ Leads ➔
+              </Button>
+            </Space>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
