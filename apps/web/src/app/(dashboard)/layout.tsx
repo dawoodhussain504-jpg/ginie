@@ -149,6 +149,15 @@ export default function DashboardLayout({
       label: <Link href="/sales">Sales & Tasks</Link>,
     },
     {
+      key: '/erp',
+      icon: <AppstoreOutlined />,
+      label: (
+        <Link href="/erp">
+          <span style={{ fontWeight: 600 }}>ERP & Operations</span>
+        </Link>
+      ),
+    },
+    {
       key: '/whatsapp',
       icon: <WhatsAppOutlined />,
       label: <Link href="/whatsapp">Messages</Link>,
@@ -542,7 +551,17 @@ export default function DashboardLayout({
           onClose={() => setMoreDrawerOpen(false)}
           open={moreDrawerOpen}
         >
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, padding: '8px 0 20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, padding: '8px 0 20px' }}>
+            <Link
+              href="/erp"
+              onClick={() => setMoreDrawerOpen(false)}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, color: '#262626' }}
+            >
+              <div style={{ width: 48, height: 48, borderRadius: 12, background: '#f5f3ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <AppstoreOutlined style={{ fontSize: 22, color: '#722ed1' }} />
+              </div>
+              <span style={{ fontSize: 12 }}>ERP Modules</span>
+            </Link>
             <Link
               href="/billing"
               onClick={() => setMoreDrawerOpen(false)}
