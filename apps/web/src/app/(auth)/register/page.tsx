@@ -10,6 +10,7 @@ import {
   PhoneOutlined,
   GlobalOutlined,
   CheckCircleOutlined,
+  WhatsAppOutlined,
 } from '@ant-design/icons';
 import { useApp } from '@/context/AppContext';
 import { api } from '@/lib/api';
@@ -195,9 +196,53 @@ export default function RegisterPage() {
                 {locale === 'hi' ? 'साइन इन करें' : 'Sign In'}
               </Link>
             </Text>
+            <div style={{ marginTop: 12 }}>
+              <a
+                href="https://wa.me/918797186001?text=Hello%20Team%20GINIE%2C%20I%20need%20assistance%20with%20registration"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  color: '#64748b',
+                  fontSize: 12,
+                  fontWeight: 500,
+                  textDecoration: 'none',
+                }}
+              >
+                <WhatsAppOutlined style={{ color: '#25D366', fontSize: 14 }} />
+                <span>{locale === 'hi' ? 'मदद चाहिए? Chat with GINIE' : 'Need help? Chat with GINIE'}</span>
+              </a>
+            </div>
           </div>
         </Form>
       </Card>
+
+      {/* Floating "Chat with GINIE" WhatsApp Support Button */}
+      <div style={{ position: 'fixed', bottom: 20, right: 20, zIndex: 100 }}>
+        <a
+          href="https://wa.me/918797186001?text=Hello%20Team%20GINIE%2C%20I%20need%20assistance%20with%20registration"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 8,
+            background: '#25D366',
+            color: '#ffffff',
+            padding: '10px 18px',
+            borderRadius: 24,
+            fontSize: 13,
+            fontWeight: 600,
+            boxShadow: '0 8px 20px rgba(37, 211, 102, 0.35)',
+            textDecoration: 'none',
+          }}
+        >
+          <WhatsAppOutlined style={{ fontSize: 18 }} />
+          <span>Chat with GINIE</span>
+        </a>
+      </div>
     </div>
   );
 }

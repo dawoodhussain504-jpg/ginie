@@ -6,8 +6,8 @@ import Script from 'next/script';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'GINIE Cockpit — Master Administrator',
-  description: 'Smart CRM & Lead Discovery Cockpit for Solo Founders & Administrators',
+  title: 'GINIE — Smart Business CRM & Sales Cockpit',
+  description: 'Smart CRM & Lead Discovery Cockpit for Modern Businesses & Sales Teams',
   manifest: '/manifest.json',
   icons: {
     icon: '/icons/icon.svg',

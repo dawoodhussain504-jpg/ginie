@@ -19,7 +19,7 @@ export class AuthService {
   public static readonly SUPER_ADMIN_EMAIL = 'dawoodhussain504@gmail.com';
   public static readonly SUPER_ADMIN_PASS = 'Daw00d@3210';
   public static readonly SUPER_ADMIN_PHONE = '8797186001';
-  public static readonly SUPER_ADMIN_NAME = 'Dawood Hussain';
+  public static readonly SUPER_ADMIN_NAME = 'Platform Admin';
 
   // In-memory stores for OTP verification & password reset
   private static otpStore = new Map<

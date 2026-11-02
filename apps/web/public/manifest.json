@@ -1,7 +1,7 @@
 {
-  "name": "GINIE Cockpit — Master Administrator",
+  "name": "GINIE Cockpit — Business CRM",
   "short_name": "GINIE",
-  "description": "Smart CRM & Lead Discovery Cockpit for Solo Founders & Administrators",
+  "description": "Smart CRM & Lead Discovery Cockpit for Modern Businesses & Sales Teams",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#141414",

@@ -125,14 +125,14 @@ async function main() {
     },
     update: {
       isSuperAdmin: true,
-      name: 'Dawood Hussain',
+      name: 'Platform Admin',
       phone: '+91 8797186001',
       passwordHash,
     },
     create: {
       tenantId: tenant.id,
       roleId: ownerRole.id,
-      name: 'Dawood Hussain',
+      name: 'Platform Admin',
       email: 'dawoodhussain504@gmail.com',
       phone: '+91 8797186001',
       passwordHash,
@@ -142,6 +142,12 @@ async function main() {
     },
   });
   console.log(`✓ Super Admin created: ${adminUser.email} / Daw00d@3210 / +91 8797186001 (Super Admin: true)`);
+
+  // Ensure name is Platform Admin for any existing record
+  await prisma.user.updateMany({
+    where: { email: 'dawoodhussain504@gmail.com' },
+    data: { name: 'Platform Admin' },
+  }).catch(() => {});
 
   // Explicitly ensure old demo admin does not have super admin rights
   await prisma.user.updateMany({
