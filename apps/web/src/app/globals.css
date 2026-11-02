@@ -25,6 +25,10 @@ body {
 }
 
 @media (max-width: 768px) {
+  .marketing-nav-desktop {
+    display: none !important;
+  }
+
   .ginie-desktop-sider {
     display: none !important;
   }

@@ -30,7 +30,7 @@ export default function RegisterPage() {
     try {
       const res = await api.post('/api/auth/register', values);
       login(res.tokens.accessToken, res.user);
-      router.push('/');
+      router.push('/dashboard');
     } catch (err: any) {
       setErrorMessage(err.message || 'Registration failed. Please check your details.');
     } finally {

@@ -104,7 +104,7 @@ export default function LoginPage() {
       if (res.user?.isSuperAdmin) {
         router.push('/admin');
       } else {
-        router.push('/');
+        router.push('/dashboard');
       }
     } catch (err: any) {
       setErrorMessage(err.message || t.auth.loginFailed);
@@ -178,7 +178,7 @@ export default function LoginPage() {
       if (res.user?.isSuperAdmin) {
         router.push('/admin');
       } else {
-        router.push('/');
+        router.push('/dashboard');
       }
     } catch (err: any) {
       setErrorMessage(err.message || 'Verification failed. Please check the code.');

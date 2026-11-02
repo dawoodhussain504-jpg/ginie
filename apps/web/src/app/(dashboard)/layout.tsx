@@ -125,9 +125,9 @@ export default function DashboardLayout({
   // Exactly 8 Simplified Menu Groups (Upgrade Spec 1.1)
   const menuItems = [
     {
-      key: '/',
+      key: '/dashboard',
       icon: <HomeOutlined />,
-      label: <Link href="/">{t.nav.home}</Link>,
+      label: <Link href="/dashboard">{t.nav.home}</Link>,
     },
     {
       key: '/customers',
@@ -262,6 +262,7 @@ export default function DashboardLayout({
 
   const getActiveKey = () => {
     if (pathname === '/admin') return '/admin';
+    if (pathname === '/dashboard') return '/dashboard';
     if (pathname.startsWith('/customers') || pathname === '/people' || pathname === '/companies') return '/customers';
     if (pathname.startsWith('/sales') || pathname === '/tasks') return '/sales';
     if (pathname.startsWith('/find-customers')) return '/find-customers';
@@ -269,7 +270,7 @@ export default function DashboardLayout({
     if (pathname.startsWith('/billing')) return '/billing';
     if (pathname.startsWith('/reports')) return '/reports';
     if (pathname.startsWith('/settings') || pathname === '/subscriptions' || pathname === '/forms' || pathname === '/automations' || pathname === '/audit-logs') return '/settings';
-    return '/';
+    return '/dashboard';
   };
 
   return (
@@ -370,7 +371,7 @@ export default function DashboardLayout({
                 <Button
                   size="middle"
                   icon={<HomeOutlined />}
-                  onClick={() => router.push('/')}
+                  onClick={() => router.push('/dashboard')}
                   style={{
                     fontWeight: 600,
                     borderRadius: 8,
@@ -491,7 +492,7 @@ export default function DashboardLayout({
 
         {/* Mobile Bottom Navigation Bar (Under 768px) */}
         <div className="ginie-mobile-bottom-nav">
-          <Link href="/" className={`bottom-nav-item ${pathname === '/' ? 'active' : ''}`}>
+          <Link href="/dashboard" className={`bottom-nav-item ${pathname === '/dashboard' ? 'active' : ''}`}>
             <HomeOutlined />
             <span>Home</span>
           </Link>

@@ -254,7 +254,7 @@ export default function AdminMasterConsolePage() {
         // Login as client
         login(res.accessToken, res.user);
         message.success(`Switched context to "${record.name}". You are now viewing their CRM.`);
-        router.push('/');
+        router.push('/dashboard');
       }
     } catch (err: any) {
       message.error(err.message || 'Failed to switch to client workspace.');
@@ -298,7 +298,7 @@ export default function AdminMasterConsolePage() {
           title="Super Admin Access Only"
           subTitle="Aapke account ke paas Platform Master Console ka access nahi hai. Ye page sirf platform owner ke liye reserved hai."
           extra={
-            <Button type="primary" icon={<HomeOutlined />} onClick={() => router.push('/')}>
+            <Button type="primary" icon={<HomeOutlined />} onClick={() => router.push('/dashboard')}>
               Go to My CRM Workspace
             </Button>
           }
@@ -473,7 +473,7 @@ export default function AdminMasterConsolePage() {
           <Button
             type="primary"
             icon={<HomeOutlined />}
-            onClick={() => router.push('/')}
+            onClick={() => router.push('/dashboard')}
             style={{
               height: 40,
               fontWeight: 600,
