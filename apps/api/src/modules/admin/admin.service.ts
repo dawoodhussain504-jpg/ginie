@@ -348,4 +348,208 @@ export class AdminService {
       return [];
     }
   }
+
+  // ─── Platform UPI & Discovery Subscription Management ────────────────────
+
+  async getPlatformUpiSettings() {
+    const superAdminTenant =
+      (await prisma.tenant.findFirst({
+        where: {
+          users: { some: { isSuperAdmin: true } },
+        },
+      })) || (await prisma.tenant.findFirst());
+
+    const settings: any = superAdminTenant?.settings || {};
+    return {
+      upiId: settings.platformUpi?.upiId || '8797186001@paytm',
+      payeeName: settings.platformUpi?.payeeName || 'GINIE Space Platform Admin',
+      qrCodeUrl: settings.platformUpi?.qrCodeUrl || '',
+      amount: settings.platformUpi?.amount || 599,
+      instructions:
+        settings.platformUpi?.instructions ||
+        'Scan QR code using GPay, PhonePe, or Paytm. Pay ₹599 and upload screenshot with 12-digit UTR number.',
+    };
+  }
+
+  async updatePlatformUpiSettings(data: {
+    upiId: string;
+    payeeName?: string;
+    qrCodeUrl: string;
+    amount?: number;
+    instructions?: string;
+  }) {
+    const superAdminTenant =
+      (await prisma.tenant.findFirst({
+        where: {
+          users: { some: { isSuperAdmin: true } },
+        },
+      })) || (await prisma.tenant.findFirst());
+
+    if (!superAdminTenant) {
+      throw new BadRequestException('Master tenant not found.');
+    }
+
+    const currentSettings = (superAdminTenant.settings as any) || {};
+    const updatedSettings = {
+      ...currentSettings,
+      platformUpi: {
+        upiId: (data.upiId || '').trim(),
+        payeeName: (data.payeeName || 'GINIE Space Platform Admin').trim(),
+        qrCodeUrl: data.qrCodeUrl || '',
+        amount: data.amount || 599,
+        instructions: data.instructions || 'Scan QR using any UPI App & upload payment screenshot.',
+        updatedAt: new Date().toISOString(),
+      },
+    };
+
+    await prisma.tenant.update({
+      where: { id: superAdminTenant.id },
+      data: { settings: updatedSettings },
+    });
+
+    return {
+      success: true,
+      message: 'Platform UPI QR and payment settings updated successfully.',
+      settings: updatedSettings.platformUpi,
+    };
+  }
+
+  async listDiscoveryRequests() {
+    const tenants = await prisma.tenant.findMany({
+      where: { deletedAt: null },
+      include: {
+        users: {
+          where: { deletedAt: null },
+          take: 1,
+          select: { name: true, email: true, phone: true },
+        },
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+
+    return tenants
+      .map((t) => {
+        const settings: any = t.settings || {};
+        const disc: any = settings.discoveryPlan || {};
+        const owner = t.users[0] || {};
+
+        let active = false;
+        let remainingDays = 0;
+        if (disc.status === 'active' && disc.expiresAt) {
+          const diffMs = new Date(disc.expiresAt).getTime() - Date.now();
+          if (diffMs > 0) {
+            active = true;
+            remainingDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+          }
+        }
+
+        return {
+          tenantId: t.id,
+          tenantName: t.name,
+          slug: t.slug,
+          ownerName: owner.name || 'Owner',
+          ownerPhone: owner.phone || '',
+          ownerEmail: owner.email || '',
+          status: disc.status || 'inactive',
+          active,
+          remainingDays,
+          expiresAt: disc.expiresAt || null,
+          utr: disc.utr || null,
+          screenshot: disc.screenshot || null,
+          submittedAt: disc.submittedAt || null,
+          approvedAt: disc.approvedAt || null,
+          amount: disc.amount || 599,
+        };
+      })
+      .filter((r) => r.status === 'pending' || r.status === 'active' || r.submittedAt);
+  }
+
+  async approveDiscoveryRequest(tenantId: string, days = 30) {
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+      include: {
+        users: { where: { deletedAt: null }, take: 1 },
+      },
+    });
+
+    if (!tenant) {
+      throw new NotFoundException('Tenant not found.');
+    }
+
+    const currentSettings = (tenant.settings as any) || {};
+    const currentDisc = currentSettings.discoveryPlan || {};
+
+    const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+
+    const updatedDisc = {
+      ...currentDisc,
+      status: 'active',
+      expiresAt: expiresAt.toISOString(),
+      approvedAt: new Date().toISOString(),
+      amount: 599,
+    };
+
+    await prisma.tenant.update({
+      where: { id: tenantId },
+      data: {
+        settings: {
+          ...currentSettings,
+          discoveryPlan: updatedDisc,
+        },
+      },
+    });
+
+    // Notify via WhatsApp if owner has phone
+    const owner = tenant.users[0];
+    if (owner?.phone) {
+      try {
+        const cleanNumber = owner.phone.replace(/\D/g, '');
+        const fullNumber = cleanNumber.length === 10 ? '91' + cleanNumber : cleanNumber;
+        const bridge = new BridgeProvider('admin-master');
+        await bridge.sendText(
+          fullNumber,
+          `🎉 *GINIE Lead Discovery Activated!*\n\nNamaste ${owner.name || 'Partner'},\n\nYour payment of *₹599* has been verified and approved!\n\n✨ *Plan Details:*\n• Service: Google Maps Lead Discovery\n• Status: *Active (30 Days)*\n• Valid Till: *${expiresAt.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric' })}*\n\nAap ab apne GINIE Cockpit me *Find Customers* tab use karke unlimited verified leads nikaal sakte hain!\n\n🚀 Dashboard: https://ginie.space/find-customers`,
+        );
+      } catch (err: any) {
+        this.logger.warn(`Could not send discovery approval WhatsApp: ${err.message}`);
+      }
+    }
+
+    return {
+      success: true,
+      message: `Discovery plan approved for 30 days till ${expiresAt.toDateString()}`,
+      discoveryPlan: updatedDisc,
+    };
+  }
+
+  async rejectDiscoveryRequest(tenantId: string, reason?: string) {
+    const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
+    if (!tenant) throw new NotFoundException('Tenant not found.');
+
+    const currentSettings = (tenant.settings as any) || {};
+    const currentDisc = currentSettings.discoveryPlan || {};
+
+    const updatedDisc = {
+      ...currentDisc,
+      status: 'inactive',
+      rejectionReason: reason || 'Payment screenshot or UTR could not be verified.',
+      rejectedAt: new Date().toISOString(),
+    };
+
+    await prisma.tenant.update({
+      where: { id: tenantId },
+      data: {
+        settings: {
+          ...currentSettings,
+          discoveryPlan: updatedDisc,
+        },
+      },
+    });
+
+    return {
+      success: true,
+      message: 'Discovery payment request marked as rejected.',
+      discoveryPlan: updatedDisc,
+    };
+  }
 }

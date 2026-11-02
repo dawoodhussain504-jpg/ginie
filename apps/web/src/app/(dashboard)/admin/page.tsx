@@ -23,6 +23,8 @@ import {
   Spin,
   Row,
   Col,
+  Image,
+  QRCode,
 } from 'antd';
 import {
   SafetyCertificateOutlined,
@@ -51,6 +53,9 @@ import {
   AuditOutlined,
   ApiOutlined,
   CheckOutlined,
+  CloseOutlined,
+  UploadOutlined,
+  DollarCircleOutlined,
 } from '@ant-design/icons';
 import { useApp } from '@/context/AppContext';
 import { useRouter } from 'next/navigation';
@@ -100,11 +105,29 @@ export default function AdminMasterConsolePage() {
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [healthLoading, setHealthLoading] = useState(false);
 
+  // Discovery & UPI Settings State
+  const [platformUpi, setPlatformUpi] = useState({
+    upiId: '8797186001@paytm',
+    payeeName: 'GINIE Space Platform Admin',
+    qrCodeUrl: '',
+    amount: 599,
+    instructions: 'Scan UPI QR code, pay ₹599, and upload payment screenshot with 12-digit UTR number.',
+  });
+  const [savingUpi, setSavingUpi] = useState(false);
+  const [discoveryRequests, setDiscoveryRequests] = useState<any[]>([]);
+  const [loadingDiscovery, setLoadingDiscovery] = useState(false);
+  const [approvingTenantId, setApprovingTenantId] = useState<string | null>(null);
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [rejectingTenantId, setRejectingTenantId] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [rejecting, setRejecting] = useState(false);
+
   useEffect(() => {
     if (user && user.isSuperAdmin) {
       loadAdminData();
       loadBridgeStatus();
       loadHealthAndAudit();
+      loadUpiAndDiscovery();
     }
   }, [user]);
 
@@ -115,7 +138,97 @@ export default function AdminMasterConsolePage() {
       const interval = setInterval(loadBridgeStatus, 12000);
       return () => clearInterval(interval);
     }
+    if (activeTab === 'discovery') {
+      loadUpiAndDiscovery();
+    }
   }, [activeTab]);
+
+  const loadUpiAndDiscovery = async () => {
+    setLoadingDiscovery(true);
+    try {
+      const [upiRes, reqsRes] = await Promise.all([
+        api.get('/api/admin/upi-settings').catch(() => null),
+        api.get('/api/admin/discovery-requests').catch(() => []),
+      ]);
+      if (upiRes) {
+        setPlatformUpi((prev) => ({
+          ...prev,
+          ...upiRes,
+        }));
+      }
+      if (reqsRes) setDiscoveryRequests(reqsRes);
+    } catch (err) {
+      console.error('Failed to load UPI or discovery requests:', err);
+    } finally {
+      setLoadingDiscovery(false);
+    }
+  };
+
+  const handleQrUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 3 * 1024 * 1024) {
+      message.error('QR image 3MB se kam honi chahiye.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setPlatformUpi((prev) => ({
+        ...prev,
+        qrCodeUrl: event.target?.result as string,
+      }));
+      message.success('Custom QR code preview update ho gaya. "Save UPI Settings" par click karein.');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSaveUpiSettings = async () => {
+    if (!platformUpi.upiId.trim()) {
+      message.error('UPI ID zaroori hai (e.g. 8797186001@paytm)');
+      return;
+    }
+    setSavingUpi(true);
+    try {
+      await api.post('/api/admin/upi-settings', platformUpi);
+      message.success('Platform UPI QR & Payment settings saved successfully!');
+    } catch (err: any) {
+      message.error(err.message || 'Failed to save UPI settings');
+    } finally {
+      setSavingUpi(false);
+    }
+  };
+
+  const handleApproveDiscovery = async (tenantId: string) => {
+    setApprovingTenantId(tenantId);
+    try {
+      const res = await api.post(`/api/admin/discovery-requests/${tenantId}/approve`, { days: 30 });
+      message.success(res.message || 'Discovery plan approved and activated for 30 days!');
+      loadUpiAndDiscovery();
+    } catch (err: any) {
+      message.error(err.message || 'Failed to approve request');
+    } finally {
+      setApprovingTenantId(null);
+    }
+  };
+
+  const handleRejectDiscovery = async () => {
+    if (!rejectingTenantId) return;
+    setRejecting(true);
+    try {
+      const res = await api.post(`/api/admin/discovery-requests/${rejectingTenantId}/reject`, {
+        reason: rejectReason.trim() || 'Payment screenshot or UTR could not be verified.',
+      });
+      message.success(res.message || 'Discovery request marked as rejected.');
+      setRejectModalOpen(false);
+      setRejectingTenantId(null);
+      setRejectReason('');
+      loadUpiAndDiscovery();
+    } catch (err: any) {
+      message.error(err.message || 'Failed to reject request');
+    } finally {
+      setRejecting(false);
+    }
+  };
 
   const loadAdminData = async () => {
     setLoading(true);
@@ -859,6 +972,337 @@ export default function AdminMasterConsolePage() {
             ),
           },
           {
+            key: 'discovery',
+            label: (
+              <Space>
+                <QrcodeOutlined style={{ color: '#2563eb' }} />
+                <span style={{ fontWeight: 600 }}>Discovery Plans & UPI</span>
+                {discoveryRequests.filter((r) => r.plan?.status === 'pending').length > 0 && (
+                  <Badge
+                    count={discoveryRequests.filter((r) => r.plan?.status === 'pending').length}
+                    style={{ backgroundColor: '#f59e0b' }}
+                  />
+                )}
+              </Space>
+            ),
+            children: (
+              <div>
+                <Row gutter={[24, 24]}>
+                  {/* Left Column: Platform UPI QR Settings */}
+                  <Col xs={24} lg={9}>
+                    <Card
+                      title={
+                        <Space>
+                          <QrcodeOutlined style={{ color: '#2563eb' }} />
+                          <span style={{ fontWeight: 700 }}>Platform UPI QR & Payment Info</span>
+                        </Space>
+                      }
+                      style={{ borderRadius: 12 }}
+                    >
+                      <Paragraph type="secondary" style={{ fontSize: 13, marginBottom: 16 }}>
+                        Jab bhi koi client Google Maps discovery tab me UPI paywall dekhega, ye QR code aur UPI details dikhengi:
+                      </Paragraph>
+
+                      <div style={{ textAlign: 'center', marginBottom: 20 }}>
+                        <div
+                          style={{
+                            display: 'inline-block',
+                            padding: 12,
+                            background: '#fff',
+                            borderRadius: 14,
+                            border: '2px solid #e2e8f0',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.06)',
+                            marginBottom: 12,
+                          }}
+                        >
+                          {platformUpi.qrCodeUrl ? (
+                            <Image
+                              src={platformUpi.qrCodeUrl}
+                              alt="Platform QR Code"
+                              width={200}
+                              height={200}
+                              style={{ objectFit: 'contain', borderRadius: 8 }}
+                            />
+                          ) : (
+                            <QRCode
+                              value={`upi://pay?pa=${platformUpi.upiId}&pn=${encodeURIComponent(
+                                platformUpi.payeeName,
+                              )}&am=${platformUpi.amount}&cu=INR`}
+                              size={200}
+                            />
+                          )}
+                        </div>
+
+                        <div>
+                          <label
+                            style={{
+                              display: 'inline-block',
+                              padding: '6px 14px',
+                              background: '#f1f5f9',
+                              border: '1px solid #cbd5e1',
+                              borderRadius: 8,
+                              cursor: 'pointer',
+                              fontWeight: 600,
+                              fontSize: 13,
+                              color: '#334155',
+                            }}
+                          >
+                            <UploadOutlined style={{ marginRight: 6 }} />
+                            {platformUpi.qrCodeUrl ? 'Change QR Image (JPG/PNG)' : 'Upload Custom QR Image (JPG/PNG)'}
+                            <input
+                              type="file"
+                              accept="image/png,image/jpeg,image/jpg,image/webp"
+                              style={{ display: 'none' }}
+                              onChange={handleQrUpload}
+                            />
+                          </label>
+                          {platformUpi.qrCodeUrl && (
+                            <Button
+                              type="link"
+                              danger
+                              size="small"
+                              style={{ display: 'block', margin: '4px auto 0' }}
+                              onClick={() => setPlatformUpi((p) => ({ ...p, qrCodeUrl: '' }))}
+                            >
+                              Reset to Dynamic QR
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+
+                      <Form layout="vertical">
+                        <Form.Item label="UPI ID (VPA)" required>
+                          <Input
+                            placeholder="e.g. 8797186001@paytm"
+                            value={platformUpi.upiId}
+                            onChange={(e) => setPlatformUpi((p) => ({ ...p, upiId: e.target.value.trim() }))}
+                          />
+                        </Form.Item>
+
+                        <Form.Item label="Payee Name">
+                          <Input
+                            placeholder="e.g. GINIE Space Platform Admin"
+                            value={platformUpi.payeeName}
+                            onChange={(e) => setPlatformUpi((p) => ({ ...p, payeeName: e.target.value }))}
+                          />
+                        </Form.Item>
+
+                        <Row gutter={12}>
+                          <Col span={12}>
+                            <Form.Item label="Price (₹ / Month)">
+                              <Input
+                                type="number"
+                                prefix="₹"
+                                value={platformUpi.amount}
+                                onChange={(e) => setPlatformUpi((p) => ({ ...p, amount: Number(e.target.value) || 599 }))}
+                              />
+                            </Form.Item>
+                          </Col>
+                          <Col span={12}>
+                            <Form.Item label="Validity (Days)">
+                              <Input value="30 Days" disabled />
+                            </Form.Item>
+                          </Col>
+                        </Row>
+
+                        <Form.Item label="Instructions shown to Tenants">
+                          <Input.TextArea
+                            rows={2}
+                            value={platformUpi.instructions}
+                            onChange={(e) => setPlatformUpi((p) => ({ ...p, instructions: e.target.value }))}
+                          />
+                        </Form.Item>
+
+                        <Button
+                          type="primary"
+                          icon={<CheckOutlined />}
+                          loading={savingUpi}
+                          onClick={handleSaveUpiSettings}
+                          block
+                          style={{
+                            height: 40,
+                            background: '#2563eb',
+                            borderColor: '#2563eb',
+                            fontWeight: 700,
+                          }}
+                        >
+                          Save UPI Settings
+                        </Button>
+                      </Form>
+                    </Card>
+                  </Col>
+
+                  {/* Right Column: Discovery Payment Approvals Table */}
+                  <Col xs={24} lg={15}>
+                    <Card
+                      title={
+                        <Space>
+                          <DollarCircleOutlined style={{ color: '#16a34a' }} />
+                          <span style={{ fontWeight: 700 }}>Discovery Payment Approvals Queue</span>
+                          <Badge
+                            count={discoveryRequests.filter((r) => r.plan?.status === 'pending').length}
+                            overflowCount={99}
+                            style={{ backgroundColor: '#f59e0b' }}
+                          />
+                        </Space>
+                      }
+                      extra={
+                        <Button icon={<SyncOutlined />} onClick={loadUpiAndDiscovery} loading={loadingDiscovery}>
+                          Refresh
+                        </Button>
+                      }
+                      style={{ borderRadius: 12 }}
+                      bodyStyle={{ padding: 0 }}
+                    >
+                      <Table
+                        columns={[
+                          {
+                            title: 'Business & Contact',
+                            key: 'business',
+                            render: (_: any, r: any) => (
+                              <div>
+                                <Text strong style={{ fontSize: 14 }}>{r.name}</Text>
+                                <div style={{ fontSize: 12, color: '#64748b' }}>
+                                  {r.owner?.name || 'Owner'} • {r.owner?.phone || 'No phone'}
+                                </div>
+                                <div style={{ fontSize: 11, color: '#94a3b8' }}>
+                                  {r.owner?.email}
+                                </div>
+                              </div>
+                            ),
+                          },
+                          {
+                            title: 'UTR & Amount',
+                            key: 'utr',
+                            render: (_: any, r: any) => (
+                              <div>
+                                <Tag color="green" style={{ fontWeight: 600 }}>
+                                  ₹{r.plan?.amount || 599}
+                                </Tag>
+                                <div style={{ marginTop: 4 }}>
+                                  {r.plan?.utr ? (
+                                    <Text copyable={{ text: r.plan.utr }} code strong style={{ fontSize: 12 }}>
+                                      {r.plan.utr}
+                                    </Text>
+                                  ) : (
+                                    <Text type="secondary" style={{ fontSize: 12 }}>No UTR</Text>
+                                  )}
+                                </div>
+                                {r.plan?.notes && (
+                                  <div style={{ fontSize: 11, color: '#64748b', fontStyle: 'italic', marginTop: 2 }}>
+                                    "{r.plan.notes}"
+                                  </div>
+                                )}
+                              </div>
+                            ),
+                          },
+                          {
+                            title: 'Screenshot',
+                            key: 'screenshot',
+                            render: (_: any, r: any) =>
+                              r.plan?.screenshot ? (
+                                <Image
+                                  src={r.plan.screenshot}
+                                  alt="Payment Proof"
+                                  width={56}
+                                  height={56}
+                                  style={{ objectFit: 'cover', borderRadius: 6, border: '1px solid #e2e8f0' }}
+                                />
+                              ) : (
+                                <Text type="secondary" style={{ fontSize: 12 }}>None</Text>
+                              ),
+                          },
+                          {
+                            title: 'Status & Expiry',
+                            key: 'status',
+                            render: (_: any, r: any) => {
+                              const s = r.plan?.status;
+                              if (s === 'active') {
+                                return (
+                                  <Space direction="vertical" size={2}>
+                                    <Tag color="success">🟢 Active</Tag>
+                                    <Text type="secondary" style={{ fontSize: 11 }}>
+                                      {r.plan?.remainingDays}d left ({r.plan?.expiresAt ? new Date(r.plan.expiresAt).toLocaleDateString('en-IN') : ''})
+                                    </Text>
+                                  </Space>
+                                );
+                              }
+                              if (s === 'pending') {
+                                return (
+                                  <Space direction="vertical" size={2}>
+                                    <Tag color="warning">⏳ Pending Review</Tag>
+                                    <Text type="secondary" style={{ fontSize: 11 }}>
+                                      {r.plan?.submittedAt ? new Date(r.plan.submittedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : ''}
+                                    </Text>
+                                  </Space>
+                                );
+                              }
+                              if (s === 'rejected') {
+                                return (
+                                  <Space direction="vertical" size={2}>
+                                    <Tag color="error">❌ Rejected</Tag>
+                                    {r.plan?.rejectionReason && (
+                                      <Text type="secondary" style={{ fontSize: 11 }}>
+                                        {r.plan.rejectionReason}
+                                      </Text>
+                                    )}
+                                  </Space>
+                                );
+                              }
+                              return <Tag color="default">Inactive</Tag>;
+                            },
+                          },
+                          {
+                            title: 'Actions',
+                            key: 'actions',
+                            render: (_: any, r: any) => (
+                              <Space wrap>
+                                <Button
+                                  type="primary"
+                                  size="small"
+                                  icon={<CheckOutlined />}
+                                  loading={approvingTenantId === r.id}
+                                  onClick={() => handleApproveDiscovery(r.id)}
+                                  style={{
+                                    background: '#16a34a',
+                                    borderColor: '#16a34a',
+                                    fontWeight: 600,
+                                    fontSize: 12,
+                                  }}
+                                >
+                                  {r.plan?.status === 'active' ? 'Extend +30d' : 'Approve (30d)'}
+                                </Button>
+                                {r.plan?.status !== 'rejected' && (
+                                  <Button
+                                    danger
+                                    size="small"
+                                    icon={<CloseOutlined />}
+                                    onClick={() => {
+                                      setRejectingTenantId(r.id);
+                                      setRejectReason('');
+                                      setRejectModalOpen(true);
+                                    }}
+                                    style={{ fontSize: 12 }}
+                                  >
+                                    Reject
+                                  </Button>
+                                )}
+                              </Space>
+                            ),
+                          },
+                        ]}
+                        dataSource={discoveryRequests}
+                        rowKey="id"
+                        loading={loadingDiscovery}
+                        pagination={{ pageSize: 8 }}
+                      />
+                    </Card>
+                  </Col>
+                </Row>
+              </div>
+            ),
+          },
+          {
             key: 'tenants',
             label: (
               <Space>
@@ -1121,6 +1565,30 @@ export default function AdminMasterConsolePage() {
             <Input placeholder="Default: Ginie@123" />
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* ─── Modal 3: Reject Discovery Payment ────────────────────────────── */}
+      <Modal
+        title="Reject Discovery Plan Payment"
+        open={rejectModalOpen}
+        onOk={handleRejectDiscovery}
+        confirmLoading={rejecting}
+        onCancel={() => {
+          setRejectModalOpen(false);
+          setRejectingTenantId(null);
+        }}
+        okText="Confirm Reject"
+        okButtonProps={{ danger: true }}
+      >
+        <Paragraph type="secondary" style={{ fontSize: 13 }}>
+          Kripya rejection ka reason enter karein. Ye reason client ko unke Discovery tab me dikhaya jayega:
+        </Paragraph>
+        <Input.TextArea
+          rows={3}
+          placeholder="e.g. UTR number not matching bank statement, or invalid screenshot uploaded."
+          value={rejectReason}
+          onChange={(e) => setRejectReason(e.target.value)}
+        />
       </Modal>
     </div>
   );

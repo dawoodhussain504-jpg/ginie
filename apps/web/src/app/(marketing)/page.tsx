@@ -1076,84 +1076,57 @@ export default function MarketingLandingPage() {
       {/* ─── 5. PRICING SECTION ─────────────────────────────────────────── */}
       <section id="pricing" style={{ padding: '80px 20px', background: '#f8fafc' }}>
         <div style={{ maxWidth: 1080, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 40 }}>
+          <div style={{ textAlign: 'center', marginBottom: 44 }}>
             <span
               style={{
                 fontSize: 12,
                 fontWeight: 800,
-                color: '#2563eb',
+                color: '#16a34a',
                 textTransform: 'uppercase',
                 letterSpacing: '1px',
+                background: '#dcfce7',
+                padding: '4px 14px',
+                borderRadius: 20,
               }}
             >
-              Honest & Transparent
+              100% Free Core CRM + Impulse Add-on
             </span>
-            <Title level={2} style={{ fontSize: 'clamp(26px, 4vw, 40px)', fontWeight: 800, marginTop: 8 }}>
-              Simple Plans in INR. No Hidden Dollar Conversions.
+            <Title level={2} style={{ fontSize: 'clamp(26px, 4vw, 40px)', fontWeight: 800, marginTop: 12 }}>
+              GINIE Core CRM is Completely Free. Forever.
             </Title>
-            <Paragraph style={{ color: '#64748b', fontSize: 17, maxWidth: 650, margin: '0 auto' }}>
-              Every plan includes a 14-day free trial. Cancel anytime with 1 click.
+            <Paragraph style={{ color: '#64748b', fontSize: 17, maxWidth: 680, margin: '0 auto' }}>
+              CRM, Sales Pipeline, Deals, WhatsApp Outreach aur Billing ke liye zero charges. Sirf jab aapko naye customers dhoondhne ke liye Google Maps data chahiye, tab simple ₹599/mo UPI add-on lein.
             </Paragraph>
-
-            {/* Monthly / Yearly Toggle */}
-            <div style={{ marginTop: 24 }}>
-              <Space
-                style={{
-                  background: '#e2e8f0',
-                  padding: 4,
-                  borderRadius: 30,
-                }}
-              >
-                <Button
-                  type={billingCycle === 'monthly' ? 'primary' : 'text'}
-                  onClick={() => setBillingCycle('monthly')}
-                  style={{
-                    borderRadius: 20,
-                    fontWeight: 600,
-                    background: billingCycle === 'monthly' ? '#2563eb' : 'transparent',
-                  }}
-                >
-                  Monthly Billing
-                </Button>
-                <Button
-                  type={billingCycle === 'yearly' ? 'primary' : 'text'}
-                  onClick={() => setBillingCycle('yearly')}
-                  style={{
-                    borderRadius: 20,
-                    fontWeight: 600,
-                    background: billingCycle === 'yearly' ? '#2563eb' : 'transparent',
-                  }}
-                >
-                  Yearly Billing (Save 20%) 🎁
-                </Button>
-              </Space>
-            </div>
           </div>
 
-          <Row gutter={[24, 24]} align="stretch">
-            {/* Plan 1: Starter */}
-            <Col xs={24} md={8}>
+          <Row gutter={[24, 24]} align="stretch" justify="center">
+            {/* Tier 1: 100% Free Forever Core CRM */}
+            <Col xs={24} md={12} lg={10}>
               <Card
                 style={{
                   borderRadius: 20,
                   height: '100%',
-                  border: '1px solid #cbd5e1',
+                  border: '1.5px solid #cbd5e1',
                   display: 'flex',
                   flexDirection: 'column',
+                  background: '#ffffff',
                 }}
               >
                 <div style={{ marginBottom: 20 }}>
-                  <Text strong style={{ fontSize: 18, color: '#0f172a' }}>
-                    Starter Plan
+                  <Tag color="blue" style={{ fontWeight: 700, fontSize: 12, padding: '2px 10px', marginBottom: 8 }}>
+                    LIFETIME FREE
+                  </Tag>
+                  <Text strong style={{ fontSize: 22, color: '#0f172a', display: 'block' }}>
+                    GINIE Core CRM
                   </Text>
                   <div style={{ color: '#64748b', fontSize: 13, marginTop: 4 }}>
-                    Ideal for Solo Founders & Individual Doctors
+                    Ideal for Shopkeepers, Traders, Agencies, Clinics & Consultants
                   </div>
                   <div style={{ marginTop: 16 }}>
-                    <span style={{ fontSize: 36, fontWeight: 900, color: '#0f172a' }}>
-                      ₹{billingCycle === 'monthly' ? '999' : '799'}
+                    <span style={{ fontSize: 44, fontWeight: 900, color: '#0f172a' }}>
+                      ₹0
                     </span>
-                    <span style={{ color: '#64748b', fontSize: 14 }}> / month</span>
+                    <span style={{ color: '#64748b', fontSize: 16 }}> / forever free</span>
                   </div>
                 </div>
 
@@ -1161,15 +1134,17 @@ export default function MarketingLandingPage() {
 
                 <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px', display: 'flex', flexDirection: 'column', gap: 12, flex: 1 }}>
                   {[
-                    '1 Staff Login',
-                    '200 Google Maps Lead Credits / mo',
-                    'WhatsApp Web Outreach Engine',
-                    'Basic Sales Pipeline Kanban',
-                    'GST Invoicing & Quotes',
-                    'Email & Community Support',
+                    'Full Lead & Customer Management Directory',
+                    'Visual Kanban Sales Pipeline with Custom Deal Stages',
+                    '1-Click Direct WhatsApp Outreach to Customers',
+                    'GST Quotations, Invoices & Dynamic UPI QR Codes',
+                    'Daily Cockpit Tasks ("Aaj Ka Kaam")',
+                    'Customer CSV Import & Export',
+                    'Multi-User Team Collaboration',
+                    'Zero Credit Card Required • Instant Free Signup',
                   ].map((feat, idx) => (
                     <li key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: '#334155' }}>
-                      <CheckOutlined style={{ color: '#10b981' }} />
+                      <CheckCircleFilled style={{ color: '#16a34a' }} />
                       <span>{feat}</span>
                     </li>
                   ))}
@@ -1180,44 +1155,49 @@ export default function MarketingLandingPage() {
                   size="large"
                   onClick={() => router.push('/register')}
                   style={{
-                    borderRadius: 10,
+                    borderRadius: 12,
                     fontWeight: 700,
-                    height: 44,
+                    height: 48,
                     borderColor: '#2563eb',
                     color: '#2563eb',
+                    fontSize: 15,
                   }}
                 >
-                  Start 14-Day Free Trial
+                  Create Free CRM Account ➔
                 </Button>
               </Card>
             </Col>
 
-            {/* Plan 2: Pro Growth (Highlighted) */}
-            <Col xs={24} md={8}>
-              <Badge.Ribbon text="MOST POPULAR" color="green">
+            {/* Tier 2: Google Maps Lead Discovery (Impulse Add-on) */}
+            <Col xs={24} md={12} lg={10}>
+              <Badge.Ribbon text="GROWTH ADD-ON" color="blue">
                 <Card
                   style={{
                     borderRadius: 20,
                     height: '100%',
-                    border: '2px solid #10b981',
-                    boxShadow: '0 12px 30px rgba(16, 185, 129, 0.2)',
+                    border: '2px solid #2563eb',
+                    boxShadow: '0 12px 30px rgba(37, 99, 235, 0.15)',
                     display: 'flex',
                     flexDirection: 'column',
                     position: 'relative',
+                    background: '#ffffff',
                   }}
                 >
                   <div style={{ marginBottom: 20 }}>
-                    <Text strong style={{ fontSize: 18, color: '#0f172a' }}>
-                      Pro Business
+                    <Tag color="cyan" style={{ fontWeight: 700, fontSize: 12, padding: '2px 10px', marginBottom: 8 }}>
+                      POWERED BY GOOGLE MAPS
+                    </Tag>
+                    <Text strong style={{ fontSize: 22, color: '#0f172a', display: 'block' }}>
+                      Find Customers (Lead Discovery)
                     </Text>
                     <div style={{ color: '#64748b', fontSize: 13, marginTop: 4 }}>
-                      For Growing Clinics, Gyms, Academies & Agencies
+                      Unlock Unlimited Local B2B Leads in Your City & Area
                     </div>
                     <div style={{ marginTop: 16 }}>
-                      <span style={{ fontSize: 36, fontWeight: 900, color: '#10b981' }}>
-                        ₹{billingCycle === 'monthly' ? '2,499' : '1,999'}
+                      <span style={{ fontSize: 44, fontWeight: 900, color: '#2563eb' }}>
+                        ₹599
                       </span>
-                      <span style={{ color: '#64748b', fontSize: 14 }}> / month</span>
+                      <span style={{ color: '#64748b', fontSize: 16 }}> / month (Flat UPI)</span>
                     </div>
                   </div>
 
@@ -1225,16 +1205,16 @@ export default function MarketingLandingPage() {
 
                   <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px', display: 'flex', flexDirection: 'column', gap: 12, flex: 1 }}>
                     {[
-                      'Up to 5 Team Members',
-                      '1,000 Google Maps Lead Credits / mo',
-                      'Anti-Disconnect WhatsApp Bridge',
-                      'Automated WhatsApp Follow-up sequences',
-                      'Dynamic UPI QR Payment Generator',
-                      'Customer CSV Import & Export',
-                      'Priority VIP WhatsApp Support',
+                      'Live Google Maps Places Search in Any City / Pincode',
+                      'Verified Shopkeeper, Doctor & Business Mobile Numbers',
+                      'Direct WhatsApp Outreach Pitches & Pre-written Templates',
+                      '1-Click Direct Import into CRM Pipeline & Deal Stages',
+                      'Instant UPI QR Code Scan Payment (PhonePe, GPay, Paytm)',
+                      'Fast Verification & Activation by Platform Admin',
+                      'No auto-debit hassle — Pay only when you need new leads',
                     ].map((feat, idx) => (
                       <li key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: '#0f172a', fontWeight: 500 }}>
-                        <CheckCircleFilled style={{ color: '#10b981' }} />
+                        <CheckCircleFilled style={{ color: '#2563eb' }} />
                         <span>{feat}</span>
                       </li>
                     ))}
@@ -1244,88 +1224,21 @@ export default function MarketingLandingPage() {
                     type="primary"
                     block
                     size="large"
-                    onClick={() => router.push('/register')}
+                    onClick={() => router.push(isLoggedIn ? '/find-customers' : '/register')}
                     style={{
-                      borderRadius: 10,
+                      borderRadius: 12,
                       fontWeight: 800,
                       height: 48,
-                      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                      borderColor: '#059669',
-                      boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)',
+                      fontSize: 15,
+                      background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                      borderColor: '#1d4ed8',
+                      boxShadow: '0 4px 14px rgba(37, 99, 235, 0.35)',
                     }}
                   >
-                    Start 14-Day Free Trial ➔
+                    {isLoggedIn ? 'Go to Find Customers (₹599) ➔' : 'Get Started Free & Unlock Leads ➔'}
                   </Button>
                 </Card>
               </Badge.Ribbon>
-            </Col>
-
-            {/* Plan 3: Enterprise */}
-            <Col xs={24} md={8}>
-              <Card
-                style={{
-                  borderRadius: 20,
-                  height: '100%',
-                  border: '1px solid #cbd5e1',
-                  display: 'flex',
-                  flexDirection: 'column',
-                }}
-              >
-                <div style={{ marginBottom: 20 }}>
-                  <Text strong style={{ fontSize: 18, color: '#0f172a' }}>
-                    Enterprise Sovereign
-                  </Text>
-                  <div style={{ color: '#64748b', fontSize: 13, marginTop: 4 }}>
-                    For Multi-Branch Businesses & Franchises
-                  </div>
-                  <div style={{ marginTop: 16 }}>
-                    <span style={{ fontSize: 36, fontWeight: 900, color: '#0f172a' }}>
-                      ₹{billingCycle === 'monthly' ? '4,999' : '3,999'}
-                    </span>
-                    <span style={{ color: '#64748b', fontSize: 14 }}> / month</span>
-                  </div>
-                </div>
-
-                <Divider style={{ margin: '16px 0' }} />
-
-                <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px', display: 'flex', flexDirection: 'column', gap: 12, flex: 1 }}>
-                  {[
-                    'Unlimited Team Members',
-                    'Unlimited Google Maps Leads',
-                    'Dedicated Baileys WhatsApp Container',
-                    'Multi-Branch Tenant Separation',
-                    'Custom Brand Colors & Domain',
-                    '1-on-1 Onboarding with Founder',
-                    '24/7 Dedicated Account Manager',
-                  ].map((feat, idx) => (
-                    <li key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: '#334155' }}>
-                      <CheckOutlined style={{ color: '#10b981' }} />
-                      <span>{feat}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <a
-                  href="https://wa.me/918797186001?text=Hi%20GINIE%20Team!%20I%20am%20interested%20in%20the%20Enterprise%20Sovereign%20Plan."
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ textDecoration: 'none' }}
-                >
-                  <Button
-                    block
-                    size="large"
-                    style={{
-                      borderRadius: 10,
-                      fontWeight: 700,
-                      height: 44,
-                      borderColor: '#0f172a',
-                      color: '#0f172a',
-                    }}
-                  >
-                    Contact for Enterprise
-                  </Button>
-                </a>
-              </Card>
             </Col>
           </Row>
         </div>

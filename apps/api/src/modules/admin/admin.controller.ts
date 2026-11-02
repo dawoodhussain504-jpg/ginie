@@ -109,4 +109,46 @@ export class AdminController {
   async getAuditLogs() {
     return this.adminService.getAuditLogs();
   }
+
+  // ─── Platform UPI & Discovery Subscriptions ──────────────────────────────
+
+  @Get('upi-settings')
+  async getPlatformUpiSettings() {
+    return this.adminService.getPlatformUpiSettings();
+  }
+
+  @Post('upi-settings')
+  async updatePlatformUpiSettings(
+    @Body()
+    body: {
+      upiId: string;
+      payeeName?: string;
+      qrCodeUrl: string;
+      amount?: number;
+      instructions?: string;
+    },
+  ) {
+    return this.adminService.updatePlatformUpiSettings(body);
+  }
+
+  @Get('discovery-requests')
+  async listDiscoveryRequests() {
+    return this.adminService.listDiscoveryRequests();
+  }
+
+  @Post('discovery-requests/:id/approve')
+  async approveDiscoveryRequest(
+    @Param('id') id: string,
+    @Body() body: { days?: number },
+  ) {
+    return this.adminService.approveDiscoveryRequest(id, body?.days || 30);
+  }
+
+  @Post('discovery-requests/:id/reject')
+  async rejectDiscoveryRequest(
+    @Param('id') id: string,
+    @Body() body: { reason?: string },
+  ) {
+    return this.adminService.rejectDiscoveryRequest(id, body?.reason);
+  }
 }

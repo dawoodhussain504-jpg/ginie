@@ -16,6 +16,22 @@ import { CurrentUser, CurrentTenant } from '../../common/current-user.decorator'
 export class DiscoveryController {
   constructor(private readonly discoveryService: DiscoveryService) {}
 
+  @Get('plan-status')
+  async getPlanStatus(
+    @CurrentTenant() tenantId: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.discoveryService.getPlanStatus(tenantId, userId);
+  }
+
+  @Post('submit-payment')
+  async submitPayment(
+    @CurrentTenant() tenantId: string,
+    @Body() body: { utr: string; screenshot: string; notes?: string },
+  ) {
+    return this.discoveryService.submitPayment(tenantId, body);
+  }
+
   @Get('usage')
   async getUsage(@CurrentTenant() tenantId: string) {
     return this.discoveryService.getUsage(tenantId);

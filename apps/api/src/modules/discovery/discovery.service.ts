@@ -14,6 +14,118 @@ import {
 export class DiscoveryService {
   private readonly logger = new Logger(DiscoveryService.name);
 
+  async getPlanStatus(tenantId: string, userId?: string) {
+    if (userId) {
+      const user = await prisma.user.findUnique({ where: { id: userId } });
+      if (user?.isSuperAdmin) {
+        return {
+          active: true,
+          status: 'active',
+          isSuperAdmin: true,
+          remainingDays: 9999,
+          expiresAt: '2099-12-31T23:59:59.999Z',
+        };
+      }
+    }
+
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+      include: {
+        users: { where: { isSuperAdmin: true } },
+      },
+    });
+
+    if (tenant?.users?.length && tenant.users.some((u) => u.isSuperAdmin)) {
+      return {
+        active: true,
+        status: 'active',
+        isSuperAdmin: true,
+        remainingDays: 9999,
+        expiresAt: '2099-12-31T23:59:59.999Z',
+      };
+    }
+
+    const settings: any = tenant?.settings || {};
+    const disc: any = settings.discoveryPlan || {};
+
+    let active = false;
+    let remainingDays = 0;
+    if (disc.status === 'active' && disc.expiresAt) {
+      const diffMs = new Date(disc.expiresAt).getTime() - Date.now();
+      if (diffMs > 0) {
+        active = true;
+        remainingDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+      } else {
+        disc.status = 'inactive';
+      }
+    }
+
+    // Get platform UPI settings for payment modal
+    const superAdminTenant =
+      (await prisma.tenant.findFirst({
+        where: { users: { some: { isSuperAdmin: true } } },
+      })) || (await prisma.tenant.findFirst());
+
+    const adminSettings: any = superAdminTenant?.settings || {};
+    const platformUpi = adminSettings.platformUpi || {
+      upiId: '8797186001@paytm',
+      payeeName: 'GINIE Space Platform Admin',
+      qrCodeUrl: '',
+      amount: 599,
+      instructions: 'Scan UPI QR code, pay ₹599, and upload payment screenshot with 12-digit UTR number.',
+    };
+
+    return {
+      active,
+      status: disc.status || 'inactive',
+      remainingDays,
+      expiresAt: disc.expiresAt || null,
+      utr: disc.utr || null,
+      screenshot: disc.screenshot || null,
+      submittedAt: disc.submittedAt || null,
+      rejectionReason: disc.rejectionReason || null,
+      platformUpi,
+    };
+  }
+
+  async submitPayment(tenantId: string, data: { utr: string; screenshot: string; notes?: string }) {
+    if (!data.utr?.trim()) {
+      throw new BadRequestException('Transaction reference (UTR number) is required.');
+    }
+    if (!data.screenshot?.trim()) {
+      throw new BadRequestException('Payment screenshot is required.');
+    }
+
+    const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
+    if (!tenant) throw new NotFoundException('Tenant not found.');
+
+    const currentSettings = (tenant.settings as any) || {};
+    const updatedDisc = {
+      status: 'pending',
+      utr: data.utr.trim(),
+      screenshot: data.screenshot,
+      notes: data.notes || '',
+      amount: 599,
+      submittedAt: new Date().toISOString(),
+    };
+
+    await prisma.tenant.update({
+      where: { id: tenantId },
+      data: {
+        settings: {
+          ...currentSettings,
+          discoveryPlan: updatedDisc,
+        },
+      },
+    });
+
+    return {
+      success: true,
+      message: 'Payment details submitted successfully. Platform admin will review and activate within 15-30 minutes.',
+      status: 'pending',
+    };
+  }
+
   async getUsage(tenantId: string) {
     const now = new Date();
     const periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -91,11 +203,11 @@ export class DiscoveryService {
   }
 
   async search(tenantId: string, userId: string, dto: DiscoverySearchDto) {
-    // 1. Quota Check
-    const usage = await this.getUsage(tenantId);
-    if (!usage.isUnlimited && usage.remaining <= 0) {
+    // 1. ₹599 Discovery Plan Check
+    const plan = await this.getPlanStatus(tenantId, userId);
+    if (!plan.active) {
       throw new BadRequestException(
-        `Monthly lead search limit reached (${usage.used}/${usage.total}). Please upgrade your plan in Settings to continue finding new customers.`,
+        'Google Maps Lead Discovery requires an active ₹599/mo plan. Please scan the UPI QR in the Find Customers tab to activate.',
       );
     }
 

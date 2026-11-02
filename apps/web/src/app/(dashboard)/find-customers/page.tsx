@@ -19,6 +19,9 @@ import {
   Checkbox,
   Drawer,
   List,
+  Alert,
+  QRCode,
+  Image,
 } from 'antd';
 import {
   CompassOutlined,
@@ -37,6 +40,11 @@ import {
   ThunderboltOutlined,
   CheckCircleOutlined,
   FilterOutlined,
+  LockOutlined,
+  UploadOutlined,
+  QrcodeOutlined,
+  ClockCircleOutlined,
+  CheckCircleFilled,
 } from '@ant-design/icons';
 import { useApp } from '@/context/AppContext';
 import { api } from '@/lib/api';
@@ -66,11 +74,79 @@ export default function FindCustomersPage() {
   const [waMessageText, setWaMessageText] = useState('');
   const [sendingWa, setSendingWa] = useState(false);
 
+  // ₹599 Discovery Plan & UPI Paywall State
+  const [planStatus, setPlanStatus] = useState<any>(null);
+  const [planLoading, setPlanLoading] = useState(false);
+  const [paywallModalOpen, setPaywallModalOpen] = useState(false);
+  const [paymentUtr, setPaymentUtr] = useState('');
+  const [paymentScreenshot, setPaymentScreenshot] = useState<string | null>(null);
+  const [paymentNotes, setPaymentNotes] = useState('');
+  const [submittingPayment, setSubmittingPayment] = useState(false);
+
   useEffect(() => {
+    loadPlanStatus();
     loadUsage();
     loadStatuses();
     loadSavedSearches();
   }, []);
+
+  const loadPlanStatus = async () => {
+    setPlanLoading(true);
+    try {
+      const res = await api.get('/api/discovery/plan-status');
+      setPlanStatus(res);
+      if (res?.utr && !paymentUtr) {
+        setPaymentUtr(res.utr);
+      }
+    } catch (err) {
+      console.error('Failed to load discovery plan status:', err);
+    } finally {
+      setPlanLoading(false);
+    }
+  };
+
+  const handleScreenshotUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 4 * 1024 * 1024) {
+      message.error('File size 4MB se kam honi chahiye. Kripya compressed screenshot upload karein.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (uploadEvent) => {
+      setPaymentScreenshot(uploadEvent.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSubmitPayment = async () => {
+    if (!paymentUtr.trim()) {
+      message.error('Kripya 12-digit UPI / UTR Transaction ID dalein.');
+      return;
+    }
+    if (!paymentScreenshot) {
+      message.error('Kripya payment screenshot upload karein.');
+      return;
+    }
+
+    setSubmittingPayment(true);
+    try {
+      const res = await api.post('/api/discovery/submit-payment', {
+        utr: paymentUtr.trim(),
+        screenshot: paymentScreenshot,
+        notes: paymentNotes.trim(),
+      });
+      message.success(res.message || 'Payment details submitted successfully!');
+      setPaywallModalOpen(false);
+      loadPlanStatus();
+    } catch (err: any) {
+      message.error(err.message || 'Failed to submit payment details.');
+    } finally {
+      setSubmittingPayment(false);
+    }
+  };
 
   const loadUsage = async () => {
     try {
@@ -96,6 +172,12 @@ export default function FindCustomersPage() {
   };
 
   const onSearch = async (values: any) => {
+    if (planStatus && !planStatus.active) {
+      setPaywallModalOpen(true);
+      message.warning('Google Maps Lead Discovery ke liye ₹599/mo plan active hona zaroori hai.');
+      return;
+    }
+
     setLoading(true);
     setSelectedRowKeys([]);
     setIsCachedResult(false);
@@ -412,6 +494,134 @@ export default function FindCustomersPage() {
         </Space>
       </div>
 
+      {/* Plan-Wise Status Banners */}
+      {planStatus?.active ? (
+        <Alert
+          style={{
+            marginBottom: 16,
+            borderRadius: 12,
+            border: '1.5px solid #b7eb8f',
+            background: '#f6ffed',
+          }}
+          message={
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: 8,
+              }}
+            >
+              <Space>
+                <CheckCircleFilled style={{ color: '#52c41a', fontSize: 20 }} />
+                <div>
+                  <Text strong style={{ fontSize: 14, color: '#237804' }}>
+                    ⚡ Google Maps Lead Discovery Active
+                  </Text>
+                  <Text style={{ marginLeft: 8, fontSize: 13, color: '#389e0d' }}>
+                    {planStatus.isSuperAdmin
+                      ? 'SuperAdmin Platform Access (Unlimited Google Maps Search)'
+                      : `${planStatus.remainingDays} days remaining (Expires on ${
+                          planStatus.expiresAt
+                            ? new Date(planStatus.expiresAt).toLocaleDateString('en-IN')
+                            : 'Active'
+                        })`}
+                  </Text>
+                </div>
+              </Space>
+              {!planStatus.isSuperAdmin && (
+                <Button size="small" onClick={() => setPaywallModalOpen(true)}>
+                  Extend Plan (₹599)
+                </Button>
+              )}
+            </div>
+          }
+          type="success"
+        />
+      ) : planStatus?.status === 'pending' ? (
+        <Alert
+          style={{
+            marginBottom: 16,
+            borderRadius: 12,
+            border: '1.5px solid #ffe58f',
+            background: '#fffbe6',
+          }}
+          message={
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: 8,
+              }}
+            >
+              <Space>
+                <ClockCircleOutlined style={{ color: '#faad14', fontSize: 20 }} />
+                <div>
+                  <Text strong style={{ fontSize: 14, color: '#d48806' }}>
+                    ⏳ Payment Verification Under Review (UTR: {planStatus.utr})
+                  </Text>
+                  <Text style={{ display: 'block', fontSize: 12, color: '#ad6800' }}>
+                    Aapka ₹599 payment screenshot platform admin review kar rahe hain. 15-30 minute me activate ho jayega.
+                  </Text>
+                </div>
+              </Space>
+              <Button size="small" onClick={() => setPaywallModalOpen(true)}>
+                View / Re-upload Payment
+              </Button>
+            </div>
+          }
+          type="warning"
+        />
+      ) : (
+        <Card
+          style={{
+            marginBottom: 16,
+            borderRadius: 12,
+            background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+            border: '1.5px solid #93c5fd',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: 16,
+            }}
+          >
+            <div>
+              <Space align="center" style={{ marginBottom: 4 }}>
+                <LockOutlined style={{ fontSize: 20, color: '#2563eb' }} />
+                <Title level={5} style={{ margin: 0, color: '#1e3a8a' }}>
+                  🔒 Unlock Google Maps B2B Lead Discovery (₹599 / month)
+                </Title>
+              </Space>
+              <Paragraph type="secondary" style={{ margin: 0, fontSize: 13, maxWidth: 680 }}>
+                Apne city ya area me naye dukaandar, distributors, factory aur businesses ke direct phone numbers, Google ratings aur address khojein. Instant 1-click WhatsApp outreach ke sath.
+              </Paragraph>
+            </div>
+            <Button
+              type="primary"
+              size="large"
+              icon={<QrcodeOutlined />}
+              onClick={() => setPaywallModalOpen(true)}
+              style={{
+                background: '#2563eb',
+                borderColor: '#2563eb',
+                fontWeight: 700,
+                boxShadow: '0 4px 14px rgba(37, 99, 235, 0.35)',
+              }}
+            >
+              ⚡ Scan UPI QR & Unlock (₹599)
+            </Button>
+          </div>
+        </Card>
+      )}
+
       {/* Plan-Wise Search Limits & Status Header */}
       <Card style={{ marginBottom: 24, borderRadius: 12 }}>
         <div
@@ -427,25 +637,22 @@ export default function FindCustomersPage() {
           }}
         >
           <div>
-            {usage.isUnlimited ? (
-              <Tag color="gold" icon={<SafetyCertificateOutlined />} style={{ fontSize: 13, padding: '4px 12px', borderRadius: 12, fontWeight: 600 }}>
-                Enterprise Plan: Unlimited Places Searches
+            {planStatus?.active ? (
+              <Tag
+                color="green"
+                icon={<SafetyCertificateOutlined />}
+                style={{ fontSize: 13, padding: '4px 12px', borderRadius: 12, fontWeight: 600 }}
+              >
+                ₹599 Discovery Plan: Search Unlocked ({planStatus.remainingDays} Days Left)
               </Tag>
             ) : (
-              <Space direction="vertical" size={2}>
-                <Space>
-                  <Text strong style={{ fontSize: 13 }}>Monthly Search Quota:</Text>
-                  <Tag color={usage.remaining > 5 ? 'blue' : 'volcano'}>
-                    {usage.used} of {usage.total} used ({usage.remaining} searches left)
-                  </Tag>
-                </Space>
-                <Progress
-                  percent={Math.min(100, Math.round((usage.used / usage.total) * 100))}
-                  size="small"
-                  status={usage.remaining <= 0 ? 'exception' : 'active'}
-                  style={{ width: 220 }}
-                />
-              </Space>
+              <Tag
+                color="red"
+                icon={<LockOutlined />}
+                style={{ fontSize: 13, padding: '4px 12px', borderRadius: 12, fontWeight: 600 }}
+              >
+                Google Maps Lead Discovery Locked (Requires ₹599 Plan)
+              </Tag>
             )}
           </div>
           <div>
@@ -495,12 +702,17 @@ export default function FindCustomersPage() {
             <Button
               type="primary"
               htmlType="submit"
-              icon={<SearchOutlined />}
+              icon={planStatus?.active ? <SearchOutlined /> : <LockOutlined />}
               loading={loading}
               size="large"
-              disabled={!usage.isUnlimited && usage.remaining <= 0}
+              style={
+                !planStatus?.active
+                  ? { background: '#2563eb', borderColor: '#2563eb', fontWeight: 600 }
+                  : undefined
+              }
             >
-              {t.discovery.searchButton}
+              {planStatus?.active ? t.discovery.searchButton : '⚡ Unlock Lead Discovery (₹599)'}
+            </Button>
             </Button>
           </Form.Item>
         </Form>
@@ -741,6 +953,153 @@ export default function FindCustomersPage() {
               </Button>
             </Space>
           </Form.Item>
+        </Form>
+      </Modal>
+      {/* ₹599 Discovery Plan UPI Paywall Modal */}
+      <Modal
+        title={
+          <Space>
+            <QrcodeOutlined style={{ color: '#2563eb', fontSize: 22 }} />
+            <span style={{ fontWeight: 700, fontSize: 16 }}>
+              Unlock Google Maps Lead Discovery — ₹599 / Month
+            </span>
+          </Space>
+        }
+        open={paywallModalOpen}
+        onCancel={() => setPaywallModalOpen(false)}
+        footer={null}
+        width={560}
+        destroyOnClose
+      >
+        <div style={{ textAlign: 'center', marginBottom: 16 }}>
+          <Tag color="blue" style={{ fontSize: 12, padding: '2px 10px', marginBottom: 8 }}>
+            Impulse Add-on • Core CRM Remains 100% Free
+          </Tag>
+          <Paragraph type="secondary" style={{ fontSize: 13, margin: '4px 0 16px' }}>
+            Apne local city & pin code me kisi bhi category ke B2B clients, phone numbers aur Google Maps listing data search karein.
+          </Paragraph>
+
+          {/* QR Code Section */}
+          <div
+            style={{
+              display: 'inline-block',
+              padding: 12,
+              background: '#fff',
+              borderRadius: 16,
+              border: '2px solid #e2e8f0',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.06)',
+              marginBottom: 12,
+            }}
+          >
+            {planStatus?.platformUpi?.qrCodeUrl ? (
+              <img
+                src={planStatus.platformUpi.qrCodeUrl}
+                alt="Platform UPI QR Code"
+                style={{ width: 220, height: 220, objectFit: 'contain', display: 'block', borderRadius: 8 }}
+              />
+            ) : (
+              <QRCode
+                value={`upi://pay?pa=${planStatus?.platformUpi?.upiId || '8797186001@paytm'}&pn=${encodeURIComponent(
+                  planStatus?.platformUpi?.payeeName || 'GINIE Space',
+                )}&am=${planStatus?.platformUpi?.amount || 599}&cu=INR`}
+                size={220}
+              />
+            )}
+          </div>
+
+          <div
+            style={{
+              background: '#f8fafc',
+              padding: '12px 16px',
+              borderRadius: 10,
+              textAlign: 'left',
+              marginBottom: 16,
+              border: '1px solid #e2e8f0',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+              <Text type="secondary" style={{ fontSize: 13 }}>UPI ID:</Text>
+              <Text copyable={{ text: planStatus?.platformUpi?.upiId || '8797186001@paytm' }} strong style={{ fontSize: 14 }}>
+                {planStatus?.platformUpi?.upiId || '8797186001@paytm'}
+              </Text>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+              <Text type="secondary" style={{ fontSize: 13 }}>Payee Name:</Text>
+              <Text strong style={{ fontSize: 14 }}>{planStatus?.platformUpi?.payeeName || 'GINIE Space Platform Admin'}</Text>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Text type="secondary" style={{ fontSize: 13 }}>Amount to Pay:</Text>
+              <Text strong style={{ fontSize: 16, color: '#16a34a' }}>₹{planStatus?.platformUpi?.amount || 599} / Month</Text>
+            </div>
+          </div>
+        </div>
+
+        <Divider style={{ margin: '12px 0 16px' }}>
+          <Text strong style={{ fontSize: 13, color: '#64748b' }}>PAYMENT PROOF SUBMISSION</Text>
+        </Divider>
+
+        <Form layout="vertical">
+          <Form.Item
+            label="12-Digit UPI / UTR Transaction ID (Required)"
+            required
+            extra="Google Pay / PhonePe / Paytm screen par likha 12-digit UTR / Reference number"
+          >
+            <Input
+              placeholder="e.g. 431289456712"
+              maxLength={24}
+              value={paymentUtr}
+              onChange={(e) => setPaymentUtr(e.target.value.trim())}
+              style={{ height: 40 }}
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="Upload Payment Screenshot (JPG / PNG)"
+            required
+            extra="Successful payment screen ka clear screenshot upload karein (Max 4MB)"
+          >
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/jpg,image/webp"
+              onChange={handleScreenshotUpload}
+              style={{ display: 'block', width: '100%', padding: '6px', border: '1px dashed #cbd5e1', borderRadius: 8 }}
+            />
+            {paymentScreenshot && (
+              <div style={{ marginTop: 8 }}>
+                <Text type="success" style={{ fontSize: 12 }}>✓ Screenshot selected</Text>
+                <div style={{ marginTop: 4, width: 80, height: 80, borderRadius: 6, overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+                  <img src={paymentScreenshot} alt="Screenshot Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                </div>
+              </div>
+            )}
+          </Form.Item>
+
+          <Form.Item label="Notes / Business Reference (Optional)">
+            <Input
+              placeholder="e.g. Paid via PhonePe from Ram Sharma"
+              value={paymentNotes}
+              onChange={(e) => setPaymentNotes(e.target.value)}
+            />
+          </Form.Item>
+
+          <div style={{ marginTop: 20 }}>
+            <Button
+              type="primary"
+              size="large"
+              block
+              loading={submittingPayment}
+              onClick={handleSubmitPayment}
+              style={{
+                height: 44,
+                background: '#16a34a',
+                borderColor: '#16a34a',
+                fontWeight: 700,
+                fontSize: 15,
+              }}
+            >
+              Submit for Approval & Activate (₹599)
+            </Button>
+          </div>
         </Form>
       </Modal>
     </div>
