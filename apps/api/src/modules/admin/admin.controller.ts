@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Post,
   Patch,
   Param,
   Body,
@@ -32,6 +33,21 @@ export class AdminController {
     return this.adminService.listTenants();
   }
 
+  @Post('tenants')
+  async createTenant(
+    @Body()
+    body: {
+      name: string;
+      ownerName: string;
+      ownerEmail: string;
+      ownerPhone?: string;
+      planName?: string;
+      password?: string;
+    },
+  ) {
+    return this.adminService.createTenant(body);
+  }
+
   @Get('plans')
   async listPlans() {
     return this.adminService.listPlans();
@@ -53,5 +69,44 @@ export class AdminController {
     @Body() dto: UpdateTenantPlanDto,
   ) {
     return this.adminService.updateTenantPlan(id, dto.planName);
+  }
+
+  @Post('tenants/:id/impersonate')
+  async impersonateTenant(@Param('id') id: string) {
+    return this.adminService.impersonateTenant(id);
+  }
+
+  // ─── Global WhatsApp Bridge Control ──────────────────────────────────────
+
+  @Get('bridge/status')
+  async getBridgeStatus() {
+    return this.adminService.getBridgeStatus();
+  }
+
+  @Post('bridge/pairing-code')
+  async requestBridgePairingCode(@Body() body: { phone: string }) {
+    return this.adminService.requestBridgePairingCode(body.phone);
+  }
+
+  @Post('bridge/test-message')
+  async sendBridgeTestMessage(@Body() body: { phone: string; text?: string }) {
+    return this.adminService.sendBridgeTestMessage(body.phone, body.text);
+  }
+
+  @Post('bridge/disconnect')
+  async disconnectBridge() {
+    return this.adminService.disconnectBridge();
+  }
+
+  // ─── System & Audit ──────────────────────────────────────────────────────
+
+  @Get('system-health')
+  async getSystemHealth() {
+    return this.adminService.getSystemHealth();
+  }
+
+  @Get('audit-logs')
+  async getAuditLogs() {
+    return this.adminService.getAuditLogs();
   }
 }

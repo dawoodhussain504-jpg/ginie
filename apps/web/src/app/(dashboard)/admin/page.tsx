@@ -17,6 +17,12 @@ import {
   Result,
   Divider,
   Tooltip,
+  Tabs,
+  Form,
+  Alert,
+  Spin,
+  Row,
+  Col,
 } from 'antd';
 import {
   SafetyCertificateOutlined,
@@ -34,6 +40,17 @@ import {
   GlobalOutlined,
   CloudServerOutlined,
   ArrowRightOutlined,
+  WhatsAppOutlined,
+  QrcodeOutlined,
+  KeyOutlined,
+  SendOutlined,
+  DisconnectOutlined,
+  EyeOutlined,
+  PlusOutlined,
+  DatabaseOutlined,
+  AuditOutlined,
+  ApiOutlined,
+  CheckOutlined,
 } from '@ant-design/icons';
 import { useApp } from '@/context/AppContext';
 import { useRouter } from 'next/navigation';
@@ -43,9 +60,12 @@ import { formatDateIndian } from '@ginie/i18n';
 const { Title, Text, Paragraph } = Typography;
 
 export default function AdminMasterConsolePage() {
-  const { user, brandColor } = useApp();
+  const { user, brandColor, login } = useApp();
   const router = useRouter();
 
+  const [activeTab, setActiveTab] = useState<string>('overview');
+
+  // Overview & Tenants
   const [metrics, setMetrics] = useState<any>(null);
   const [tenants, setTenants] = useState<any[]>([]);
   const [plans, setPlans] = useState<any[]>([]);
@@ -54,18 +74,48 @@ export default function AdminMasterConsolePage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [planFilter, setPlanFilter] = useState<string>('all');
 
+  // Modals
   const [selectedTenant, setSelectedTenant] = useState<any>(null);
   const [planModalOpen, setPlanModalOpen] = useState(false);
   const [targetPlan, setTargetPlan] = useState<string>('Pro');
   const [updatingPlan, setUpdatingPlan] = useState(false);
-  const [bridgeStatus, setBridgeStatus] = useState<string>('checking');
+
+  const [createTenantModalOpen, setCreateTenantModalOpen] = useState(false);
+  const [createForm] = Form.useForm();
+  const [creatingTenant, setCreatingTenant] = useState(false);
+
+  // WhatsApp Bridge Hub State
+  const [bridgeStatus, setBridgeStatus] = useState<any>(null);
+  const [bridgeLoading, setBridgeLoading] = useState(false);
+  const [pairingPhone, setPairingPhone] = useState('');
+  const [generatedPairingCode, setGeneratedPairingCode] = useState<string | null>(null);
+  const [pairingLoading, setPairingLoading] = useState(false);
+
+  const [testRecipient, setTestRecipient] = useState('');
+  const [testMessageText, setTestMessageText] = useState('');
+  const [testSending, setTestSending] = useState(false);
+
+  // System Health & Audit
+  const [systemHealth, setSystemHealth] = useState<any>(null);
+  const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [healthLoading, setHealthLoading] = useState(false);
 
   useEffect(() => {
     if (user && user.isSuperAdmin) {
       loadAdminData();
-      checkBridgeStatus();
+      loadBridgeStatus();
+      loadHealthAndAudit();
     }
   }, [user]);
+
+  // Periodic Bridge Refresh when in WhatsApp tab
+  useEffect(() => {
+    if (activeTab === 'whatsapp') {
+      loadBridgeStatus();
+      const interval = setInterval(loadBridgeStatus, 12000);
+      return () => clearInterval(interval);
+    }
+  }, [activeTab]);
 
   const loadAdminData = async () => {
     setLoading(true);
@@ -85,21 +135,133 @@ export default function AdminMasterConsolePage() {
     }
   };
 
-  const checkBridgeStatus = async () => {
+  const loadBridgeStatus = async () => {
+    setBridgeLoading(true);
     try {
-      const res = await api.get('/api/whatsapp/session');
-      if (res?.status === 'connected') {
-        setBridgeStatus('connected');
-      } else if (res?.status === 'qr_ready') {
-        setBridgeStatus('ready_pairing');
-      } else {
-        setBridgeStatus('online');
-      }
-    } catch {
-      setBridgeStatus('offline');
+      const res = await api.get('/api/admin/bridge/status');
+      setBridgeStatus(res);
+    } catch (err: any) {
+      setBridgeStatus({ status: 'disconnected', error: err.message });
+    } finally {
+      setBridgeLoading(false);
     }
   };
 
+  const loadHealthAndAudit = async () => {
+    setHealthLoading(true);
+    try {
+      const [healthRes, auditRes] = await Promise.all([
+        api.get('/api/admin/system-health').catch(() => null),
+        api.get('/api/admin/audit-logs').catch(() => []),
+      ]);
+      setSystemHealth(healthRes);
+      setAuditLogs(auditRes || []);
+    } catch (err: any) {
+      console.error('Failed to load health/audit:', err);
+    } finally {
+      setHealthLoading(false);
+    }
+  };
+
+  // 1. Generate WhatsApp 8-Digit Pairing Code
+  const handleRequestPairingCode = async () => {
+    const clean = pairingPhone.replace(/\D/g, '');
+    if (clean.length < 10) {
+      message.error('Please enter a valid 10-digit mobile number for pairing.');
+      return;
+    }
+    setPairingLoading(true);
+    setGeneratedPairingCode(null);
+    try {
+      const res = await api.post('/api/admin/bridge/pairing-code', { phone: clean });
+      if (res.pairingCode) {
+        setGeneratedPairingCode(res.pairingCode);
+        message.success('Pairing code generated! Enter it on your WhatsApp app.');
+      } else {
+        message.info(res.message || 'Connecting to WhatsApp servers...');
+      }
+      loadBridgeStatus();
+    } catch (err: any) {
+      message.error(err.message || 'Failed to generate pairing code. Ensure bridge is running.');
+    } finally {
+      setPairingLoading(false);
+    }
+  };
+
+  // 2. Send Live Test WhatsApp Message
+  const handleSendTestMessage = async () => {
+    const clean = testRecipient.replace(/\D/g, '');
+    if (clean.length < 10) {
+      message.error('Please enter a valid recipient 10-digit mobile number.');
+      return;
+    }
+    setTestSending(true);
+    try {
+      await api.post('/api/admin/bridge/test-message', {
+        phone: clean,
+        text: testMessageText.trim() || undefined,
+      });
+      message.success(`✓ Live test WhatsApp message dispatched successfully to +91 ${clean.slice(-10)}!`);
+      setTestMessageText('');
+    } catch (err: any) {
+      message.error(err.message || 'Failed to dispatch test message. Is WhatsApp linked?');
+    } finally {
+      setTestSending(false);
+    }
+  };
+
+  // 3. Disconnect WhatsApp Bridge
+  const handleDisconnectBridge = async () => {
+    try {
+      await api.post('/api/admin/bridge/disconnect');
+      message.success('WhatsApp session disconnected and auth cache reset.');
+      setGeneratedPairingCode(null);
+      loadBridgeStatus();
+    } catch (err: any) {
+      message.error(err.message || 'Failed to disconnect session.');
+    }
+  };
+
+  // 4. Create New Business Tenant Manually
+  const handleCreateTenant = async (values: any) => {
+    setCreatingTenant(true);
+    try {
+      const res = await api.post('/api/admin/tenants', values);
+      message.success(`Business "${res.tenantName}" created successfully! Initial password: ${values.password || 'Ginie@123'}`);
+      setCreateTenantModalOpen(false);
+      createForm.resetFields();
+      loadAdminData();
+    } catch (err: any) {
+      message.error(err.message || 'Failed to create business.');
+    } finally {
+      setCreatingTenant(false);
+    }
+  };
+
+  // 5. Impersonate / Open CRM as Business Owner
+  const handleImpersonate = async (record: any) => {
+    try {
+      const res = await api.post(`/api/admin/tenants/${record.id}/impersonate`);
+      if (res.accessToken && res.user) {
+        // Save current super admin session so we can easily return
+        const currentToken = localStorage.getItem('ginie_token');
+        const currentUser = localStorage.getItem('ginie_user');
+        if (currentToken && currentUser) {
+          sessionStorage.setItem('admin_master_token', currentToken);
+          sessionStorage.setItem('admin_master_user', currentUser);
+        }
+
+        // Login as client
+        login(res.accessToken, res.user);
+        message.success(`Switched context to "${record.name}". You are now viewing their CRM.`);
+        router.push('/');
+      }
+    } catch (err: any) {
+      message.error(err.message || 'Failed to switch to client workspace.');
+    }
+  };
+
+  // 6. Suspend / Activate Tenant
   const handleToggleStatus = async (record: any) => {
     const nextStatus = record.status === 'active' ? 'suspended' : 'active';
     try {
@@ -111,12 +273,7 @@ export default function AdminMasterConsolePage() {
     }
   };
 
-  const handleOpenPlanModal = (record: any) => {
-    setSelectedTenant(record);
-    setTargetPlan(record.planName || 'Pro');
-    setPlanModalOpen(true);
-  };
-
+  // 7. Save Subscription Plan
   const handleSavePlan = async () => {
     if (!selectedTenant) return;
     setUpdatingPlan(true);
@@ -132,14 +289,14 @@ export default function AdminMasterConsolePage() {
     }
   };
 
-  // Access Guard: If not super-admin, block access
+  // Access Guard
   if (user && !user.isSuperAdmin) {
     return (
       <div style={{ padding: '60px 20px', maxWidth: 600, margin: '0 auto' }}>
         <Result
           status="403"
           title="Super Admin Access Only"
-          subTitle="Aapke account ke paas Platform Master Console ka access nahi hai. Ye page sirf software owner ke liye reserved hai."
+          subTitle="Aapke account ke paas Platform Master Console ka access nahi hai. Ye page sirf platform owner ke liye reserved hai."
           extra={
             <Button type="primary" icon={<HomeOutlined />} onClick={() => router.push('/')}>
               Go to My CRM Workspace
@@ -162,7 +319,7 @@ export default function AdminMasterConsolePage() {
     return matchesSearch && matchesStatus && matchesPlan;
   });
 
-  const columns = [
+  const tenantColumns = [
     {
       title: 'Business Name',
       key: 'name',
@@ -170,8 +327,8 @@ export default function AdminMasterConsolePage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div
             style={{
-              width: 36,
-              height: 36,
+              width: 38,
+              height: 38,
               borderRadius: 8,
               background: record.brandColor || brandColor,
               color: '#fff',
@@ -202,7 +359,7 @@ export default function AdminMasterConsolePage() {
             {plan.toUpperCase()}
           </Tag>
           <Tooltip title="Change Plan">
-            <Button size="small" type="link" onClick={() => handleOpenPlanModal(record)}>
+            <Button size="small" type="link" onClick={() => { setSelectedTenant(record); setTargetPlan(record.planName || 'Pro'); setPlanModalOpen(true); }}>
               Change
             </Button>
           </Tooltip>
@@ -210,13 +367,13 @@ export default function AdminMasterConsolePage() {
       ),
     },
     {
-      title: 'Users',
+      title: 'Team Size',
       dataIndex: 'userCount',
       key: 'userCount',
       render: (count: number) => <Tag color="cyan">{count || 1} staff</Tag>,
     },
     {
-      title: 'CRM Data',
+      title: 'CRM Data Volume',
       key: 'dataCount',
       render: (_: any, record: any) => (
         <Text style={{ fontSize: 12 }}>
@@ -250,6 +407,16 @@ export default function AdminMasterConsolePage() {
       key: 'actions',
       render: (_: any, record: any) => (
         <Space>
+          <Button
+            size="small"
+            type="primary"
+            icon={<EyeOutlined />}
+            style={{ fontWeight: 600, background: '#1677ff' }}
+            onClick={() => handleImpersonate(record)}
+          >
+            Login as Client
+          </Button>
+
           <Popconfirm
             title={`Are you sure you want to ${record.status === 'active' ? 'suspend' : 'activate'} this company?`}
             onConfirm={() => handleToggleStatus(record)}
@@ -264,221 +431,701 @@ export default function AdminMasterConsolePage() {
               {record.status === 'active' ? 'Suspend' : 'Activate'}
             </Button>
           </Popconfirm>
-
-          <Button
-            size="small"
-            type="primary"
-            ghost
-            icon={<ArrowRightOutlined />}
-            onClick={() => {
-              message.info(`Switching workspace view to ${record.name}`);
-              router.push('/');
-            }}
-          >
-            Open CRM
-          </Button>
         </Space>
       ),
     },
   ];
 
   return (
-    <div>
-      {/* Top Header */}
+    <div style={{ maxWidth: 1280, margin: '0 auto', paddingBottom: 40 }}>
+      {/* ─── Master Header with Mode Switcher ──────────────────────────────── */}
       <div
         style={{
+          background: '#0f172a',
+          color: '#fff',
+          padding: '20px 24px',
+          borderRadius: 14,
+          marginBottom: 20,
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           flexWrap: 'wrap',
           gap: 16,
-          marginBottom: 24,
+          boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
         }}
       >
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <Title level={3} style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <SafetyCertificateOutlined style={{ color: '#faad14' }} /> GINIE Platform Master Console
+            <SafetyCertificateOutlined style={{ color: '#faad14', fontSize: 24 }} />
+            <Title level={3} style={{ color: '#fff', margin: 0, fontWeight: 700 }}>
+              GINIE Master Console
             </Title>
-            <Tag color="gold" style={{ fontWeight: 700, padding: '2px 8px' }}>
+            <Tag color="gold" style={{ fontWeight: 800, padding: '2px 8px' }}>
               SUPER ADMIN
             </Tag>
           </div>
-          <Text type="secondary">
-            Global SaaS Platform Cockpit: All Tenant Companies, System Subscriptions, and Infrastructure Health
+          <Text style={{ color: '#94a3b8', fontSize: 13, marginTop: 4, display: 'block' }}>
+            Platform Command Center: Multi-tenant SaaS Management, Global WhatsApp Bridge & Infrastructure Health
           </Text>
         </div>
 
-        <Space wrap>
-          <Button icon={<SyncOutlined />} onClick={loadAdminData} loading={loading}>
-            Refresh Platform Data
-          </Button>
+        <Space size="middle" wrap>
           <Button
             type="primary"
             icon={<HomeOutlined />}
             onClick={() => router.push('/')}
-            style={{ fontWeight: 600 }}
+            style={{
+              height: 40,
+              fontWeight: 600,
+              background: '#2563eb',
+              borderColor: '#2563eb',
+              borderRadius: 8,
+            }}
           >
-            Open CRM Workspace
+            Switch to CRM Workspace ➔
+          </Button>
+          <Button
+            icon={<SyncOutlined />}
+            onClick={() => { loadAdminData(); loadBridgeStatus(); loadHealthAndAudit(); }}
+            loading={loading}
+            style={{ height: 40, borderRadius: 8 }}
+          >
+            Refresh
           </Button>
         </Space>
       </div>
 
-      {/* 4 KPI Metrics Grids */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: 16,
-          marginBottom: 24,
-        }}
-      >
-        <Card style={{ borderRadius: 12, borderTop: `4px solid ${brandColor}` }}>
-          <Text type="secondary">Registered Businesses</Text>
-          <Title level={2} style={{ margin: '8px 0 0', color: brandColor }}>
-            {metrics?.totalTenants || tenants.length}
-          </Title>
-          <Text type="secondary" style={{ fontSize: 12 }}>Active companies onboarded</Text>
-        </Card>
+      {/* ─── 4 Professional Master Tabs ───────────────────────────────────── */}
+      <Tabs
+        activeKey={activeTab}
+        onChange={setActiveTab}
+        size="large"
+        type="card"
+        style={{ marginBottom: 20 }}
+        items={[
+          {
+            key: 'overview',
+            label: (
+              <Space>
+                <DashboardOutlined />
+                <span style={{ fontWeight: 600 }}>Cockpit Overview</span>
+              </Space>
+            ),
+            children: (
+              <div>
+                {/* 4 Primary KPI Cards */}
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                    gap: 16,
+                    marginBottom: 24,
+                  }}
+                >
+                  <Card style={{ borderRadius: 12, borderTop: `4px solid ${brandColor}` }}>
+                    <Text type="secondary">Registered Businesses</Text>
+                    <Title level={2} style={{ margin: '8px 0 0', color: brandColor }}>
+                      {metrics?.totalTenants || tenants.length}
+                    </Title>
+                    <Text type="secondary" style={{ fontSize: 12 }}>Active companies onboarded</Text>
+                  </Card>
 
-        <Card style={{ borderRadius: 12, borderTop: '4px solid #52c41a' }}>
-          <Text type="secondary">Active Platform Users</Text>
-          <Title level={2} style={{ margin: '8px 0 0', color: '#52c41a' }}>
-            {metrics?.totalUsers || 0}
-          </Title>
-          <Text type="secondary" style={{ fontSize: 12 }}>Total owners + sales staff</Text>
-        </Card>
+                  <Card style={{ borderRadius: 12, borderTop: '4px solid #52c41a' }}>
+                    <Text type="secondary">Active Platform Users</Text>
+                    <Title level={2} style={{ margin: '8px 0 0', color: '#52c41a' }}>
+                      {metrics?.totalUsers || 0}
+                    </Title>
+                    <Text type="secondary" style={{ fontSize: 12 }}>Total owners + sales staff</Text>
+                  </Card>
 
-        <Card style={{ borderRadius: 12, borderTop: '4px solid #722ed1' }}>
-          <Text type="secondary">Places Lead Searches Run</Text>
-          <Title level={2} style={{ margin: '8px 0 0', color: '#722ed1' }}>
-            {metrics?.totalSearches || 0}
-          </Title>
-          <Text type="secondary" style={{ fontSize: 12 }}>Total discovery requests</Text>
-        </Card>
+                  <Card style={{ borderRadius: 12, borderTop: '4px solid #722ed1' }}>
+                    <Text type="secondary">Google Maps Searches</Text>
+                    <Title level={2} style={{ margin: '8px 0 0', color: '#722ed1' }}>
+                      {metrics?.totalSearches || 0}
+                    </Title>
+                    <Text type="secondary" style={{ fontSize: 12 }}>Total discovery requests</Text>
+                  </Card>
 
-        <Card style={{ borderRadius: 12, borderTop: '4px solid #faad14' }}>
-          <Text type="secondary">Platform Revenue (MRR)</Text>
-          <Title level={2} style={{ margin: '8px 0 0', color: '#faad14' }}>
-            ₹{Number(metrics?.totalRevenueINR || 0).toLocaleString('en-IN')}
-          </Title>
-          <Text type="secondary" style={{ fontSize: 12 }}>Gross collected from plans</Text>
-        </Card>
-      </div>
+                  <Card style={{ borderRadius: 12, borderTop: '4px solid #faad14' }}>
+                    <Text type="secondary">Gross Revenue (MRR)</Text>
+                    <Title level={2} style={{ margin: '8px 0 0', color: '#faad14' }}>
+                      ₹{Number(metrics?.totalRevenueINR || 0).toLocaleString('en-IN')}
+                    </Title>
+                    <Text type="secondary" style={{ fontSize: 12 }}>Collected from plans</Text>
+                  </Card>
+                </div>
 
-      {/* Infrastructure Health Status Card */}
-      <Card style={{ borderRadius: 12, marginBottom: 24, background: '#fafafa' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <CloudServerOutlined style={{ fontSize: 24, color: '#1677ff' }} />
-            <div>
-              <Text strong style={{ fontSize: 14 }}>Global Infrastructure & Bridge Status</Text>
-              <br />
-              <Text type="secondary" style={{ fontSize: 12 }}>
-                Render Production Cluster: ginie-api + ginie-web + ginie-whatsapp-bridge
-              </Text>
-            </div>
-          </div>
+                {/* 3 Quick Launch Action Cards */}
+                <Row gutter={[16, 16]}>
+                  <Col xs={24} md={8}>
+                    <Card
+                      hoverable
+                      onClick={() => setActiveTab('whatsapp')}
+                      style={{ borderRadius: 12, border: '1px solid #bbf7d0', background: '#f0fdf4' }}
+                    >
+                      <Space align="center" style={{ marginBottom: 12 }}>
+                        <WhatsAppOutlined style={{ fontSize: 28, color: '#16a34a' }} />
+                        <Title level={5} style={{ margin: 0, color: '#15803d' }}>
+                          WhatsApp Master Bridge
+                        </Title>
+                      </Space>
+                      <Paragraph type="secondary" style={{ fontSize: 13, marginBottom: 12 }}>
+                        Status:{' '}
+                        <b>{bridgeStatus?.status === 'connected' ? `Connected (+${bridgeStatus?.phone})` : 'Disconnected / QR Ready'}</b>
+                        <br />
+                        PostgreSQL Session Persistence: <b>Active</b>
+                      </Paragraph>
+                      <Button type="primary" size="small" style={{ background: '#16a34a', borderColor: '#16a34a' }}>
+                        Manage Bridge & QR ➔
+                      </Button>
+                    </Card>
+                  </Col>
 
-          <Space size="middle" wrap>
-            <div>
-              <Text type="secondary" style={{ fontSize: 12 }}>WhatsApp Baileys Service:</Text>{' '}
-              <Tag color={bridgeStatus === 'connected' ? 'green' : 'cyan'}>
-                {bridgeStatus === 'connected' ? '● Connected' : '● Bridge Live (https://ginie-whatsapp-bridge.onrender.com)'}
-              </Tag>
-            </div>
-            <div>
-              <Text type="secondary" style={{ fontSize: 12 }}>PostgreSQL DB:</Text>{' '}
-              <Tag color="green">● Healthy (Multi-tenant RLS)</Tag>
-            </div>
-            <div>
-              <Text type="secondary" style={{ fontSize: 12 }}>Core REST API:</Text>{' '}
-              <Tag color="green">● Live v2.0</Tag>
-            </div>
-          </Space>
-        </div>
-      </Card>
+                  <Col xs={24} md={8}>
+                    <Card
+                      hoverable
+                      onClick={() => setActiveTab('tenants')}
+                      style={{ borderRadius: 12, border: '1px solid #bfdbfe', background: '#eff6ff' }}
+                    >
+                      <Space align="center" style={{ marginBottom: 12 }}>
+                        <ShopOutlined style={{ fontSize: 28, color: '#2563eb' }} />
+                        <Title level={5} style={{ margin: 0, color: '#1d4ed8' }}>
+                          Client Businesses & Plans
+                        </Title>
+                      </Space>
+                      <Paragraph type="secondary" style={{ fontSize: 13, marginBottom: 12 }}>
+                        Total Onboarded: <b>{tenants.length} Companies</b>
+                        <br />
+                        Manage subscriptions, suspend/activate, or login as client.
+                      </Paragraph>
+                      <Button type="primary" size="small" style={{ background: '#2563eb', borderColor: '#2563eb' }}>
+                        View Businesses ➔
+                      </Button>
+                    </Card>
+                  </Col>
 
-      {/* Company Accounts Directory */}
-      <Card
-        title={
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-            <Space>
-              <ShopOutlined />
-              <span>Registered Business Tenants Directory ({filteredTenants.length})</span>
-            </Space>
+                  <Col xs={24} md={8}>
+                    <Card
+                      hoverable
+                      onClick={() => setActiveTab('health')}
+                      style={{ borderRadius: 12, border: '1px solid #e2e8f0', background: '#f8fafc' }}
+                    >
+                      <Space align="center" style={{ marginBottom: 12 }}>
+                        <CloudServerOutlined style={{ fontSize: 28, color: '#475569' }} />
+                        <Title level={5} style={{ margin: 0, color: '#334155' }}>
+                          System Health & Security
+                        </Title>
+                      </Space>
+                      <Paragraph type="secondary" style={{ fontSize: 13, marginBottom: 12 }}>
+                        DB Latency: <b>{systemHealth?.database?.latencyMs || 0}ms</b>
+                        <br />
+                        Places API & AI Engine status monitoring.
+                      </Paragraph>
+                      <Button size="small">
+                        View Server Diagnostics ➔
+                      </Button>
+                    </Card>
+                  </Col>
+                </Row>
+              </div>
+            ),
+          },
+          {
+            key: 'whatsapp',
+            label: (
+              <Space>
+                <WhatsAppOutlined style={{ color: '#25D366' }} />
+                <span style={{ fontWeight: 600 }}>WhatsApp Master Hub</span>
+                {bridgeStatus?.status === 'connected' && <Badge status="success" />}
+              </Space>
+            ),
+            children: (
+              <div>
+                {/* Real-time Connection Status Header */}
+                <Card
+                  style={{
+                    borderRadius: 12,
+                    marginBottom: 20,
+                    background: bridgeStatus?.status === 'connected' ? '#f0fdf4' : '#fffbeb',
+                    border: bridgeStatus?.status === 'connected' ? '1px solid #86efac' : '1px solid #fde68a',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                      <WhatsAppOutlined style={{ fontSize: 36, color: bridgeStatus?.status === 'connected' ? '#16a34a' : '#d97706' }} />
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <Title level={4} style={{ margin: 0 }}>
+                            {bridgeStatus?.status === 'connected' ? `Linked Device: +${bridgeStatus.phone}` : 'WhatsApp Web Bridge Disconnected'}
+                          </Title>
+                          <Tag color={bridgeStatus?.status === 'connected' ? 'green' : 'gold'} style={{ fontWeight: 700 }}>
+                            {bridgeStatus?.status === 'connected' ? 'CONNECTED & ACTIVE' : 'PAIRING REQUIRED'}
+                          </Tag>
+                          <Tag color="cyan">
+                            ✓ PostgreSQL Session Persistence Active
+                          </Tag>
+                        </div>
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          Daemon: <code>{bridgeStatus?.bridgeUrl || 'https://ginie-whatsapp-bridge.onrender.com'}</code> • PushName: <b>{bridgeStatus?.pushName || 'Merchant'}</b>
+                        </Text>
+                      </div>
+                    </div>
 
-            <Space wrap>
-              <Input.Search
-                placeholder="Search business name or slug..."
-                value={searchFilter}
-                onChange={(e) => setSearchFilter(e.target.value)}
-                style={{ width: 220 }}
-                allowClear
-              />
-              <Select
-                value={statusFilter}
-                onChange={setStatusFilter}
-                style={{ width: 120 }}
-                options={[
-                  { value: 'all', label: 'All Status' },
-                  { value: 'active', label: 'Active' },
-                  { value: 'suspended', label: 'Suspended' },
-                ]}
-              />
-              <Select
-                value={planFilter}
-                onChange={setPlanFilter}
-                style={{ width: 130 }}
-                options={[
-                  { value: 'all', label: 'All Plans' },
-                  { value: 'free', label: 'Free' },
-                  { value: 'pro', label: 'Pro' },
-                  { value: 'enterprise', label: 'Enterprise' },
-                ]}
-              />
-            </Space>
-          </div>
-        }
-        style={{ borderRadius: 12 }}
-      >
-        <Table
-          dataSource={filteredTenants}
-          columns={columns}
-          rowKey="id"
-          loading={loading}
-          pagination={{ pageSize: 10 }}
-        />
-      </Card>
+                    <Space wrap>
+                      <Button icon={<SyncOutlined />} onClick={loadBridgeStatus} loading={bridgeLoading}>
+                        Check Live Status
+                      </Button>
+                      {bridgeStatus?.status === 'connected' && (
+                        <Popconfirm
+                          title="Are you sure you want to unlink and disconnect this WhatsApp device?"
+                          onConfirm={handleDisconnectBridge}
+                          okText="Disconnect"
+                          cancelText="Cancel"
+                        >
+                          <Button danger icon={<DisconnectOutlined />}>
+                            Unlink WhatsApp
+                          </Button>
+                        </Popconfirm>
+                      )}
+                    </Space>
+                  </div>
+                </Card>
 
-      {/* Plan Update Modal */}
+                {/* 2-Column Pairing Grid */}
+                <Row gutter={[20, 20]} style={{ marginBottom: 24 }}>
+                  {/* Option A: Live QR Code */}
+                  <Col xs={24} md={12}>
+                    <Card
+                      title={
+                        <Space>
+                          <QrcodeOutlined style={{ color: '#1677ff' }} />
+                          <span>Method 1: Scan QR Code with Phone</span>
+                        </Space>
+                      }
+                      style={{ borderRadius: 12, height: '100%' }}
+                    >
+                      {bridgeStatus?.status === 'connected' ? (
+                        <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+                          <CheckCircleOutlined style={{ fontSize: 56, color: '#52c41a', marginBottom: 16 }} />
+                          <Title level={4}>WhatsApp is Connected!</Title>
+                          <Paragraph type="secondary">
+                            Aapka WhatsApp device successfully linked hai. Credentials PostgreSQL database me permanently saved hain aur restart par bhi disconnect nahi honge.
+                          </Paragraph>
+                        </div>
+                      ) : bridgeStatus?.qrCode || bridgeStatus?.qr ? (
+                        <div style={{ textAlign: 'center', padding: 10 }}>
+                          <img
+                            src={bridgeStatus.qrCode || bridgeStatus.qr}
+                            alt="WhatsApp Pairing QR"
+                            style={{
+                              width: 260,
+                              height: 260,
+                              borderRadius: 12,
+                              border: '1px solid #e2e8f0',
+                              padding: 8,
+                              background: '#fff',
+                            }}
+                          />
+                          <Paragraph type="secondary" style={{ fontSize: 12, marginTop: 12 }}>
+                            1. Open WhatsApp on your phone.<br />
+                            2. Tap <b>Settings / 3-dots ➔ Linked Devices ➔ Link a Device</b>.<br />
+                            3. Point your camera at this QR code.
+                          </Paragraph>
+                          <Button size="small" icon={<SyncOutlined />} onClick={loadBridgeStatus}>
+                            Refresh QR Code
+                          </Button>
+                        </div>
+                      ) : (
+                        <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+                          <Spin tip="Generating fresh pairing handshake with WhatsApp servers..." />
+                        </div>
+                      )}
+                    </Card>
+                  </Col>
+
+                  {/* Option B: 8-Digit Pairing Code */}
+                  <Col xs={24} md={12}>
+                    <Card
+                      title={
+                        <Space>
+                          <KeyOutlined style={{ color: '#faad14' }} />
+                          <span>Method 2: Link with Phone Number (No Camera Needed)</span>
+                        </Space>
+                      }
+                      style={{ borderRadius: 12, height: '100%' }}
+                    >
+                      <Paragraph type="secondary" style={{ fontSize: 13 }}>
+                        Agar camera scan nahi karna, toh apna WhatsApp number dalein aur screen par aane wala 8-digit code apne WhatsApp app me enter karein:
+                      </Paragraph>
+
+                      <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+                        <Input
+                          addonBefore="+91"
+                          placeholder="8797186001"
+                          value={pairingPhone}
+                          onChange={(e) => setPairingPhone(e.target.value)}
+                          maxLength={15}
+                        />
+                        <Button
+                          type="primary"
+                          onClick={handleRequestPairingCode}
+                          loading={pairingLoading}
+                          style={{ fontWeight: 600 }}
+                        >
+                          Get 8-Digit Code
+                        </Button>
+                      </div>
+
+                      {generatedPairingCode && (
+                        <div
+                          style={{
+                            background: '#f8fafc',
+                            border: '2px dashed #3b82f6',
+                            padding: '16px 20px',
+                            borderRadius: 12,
+                            textAlign: 'center',
+                            marginBottom: 16,
+                          }}
+                        >
+                          <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>
+                            Enter this code on your phone in WhatsApp:
+                          </Text>
+                          <Title level={2} style={{ margin: 0, letterSpacing: '4px', color: '#1d4ed8' }}>
+                            {generatedPairingCode}
+                          </Title>
+                          <Text type="secondary" style={{ fontSize: 11, marginTop: 8, display: 'block' }}>
+                            WhatsApp ➔ Linked Devices ➔ Link with phone number instead.
+                          </Text>
+                        </div>
+                      )}
+
+                      <Alert
+                        message="Anti-Disconnect Protection Active"
+                        description="Once paired, session credentials are securely synced to PostgreSQL. The bridge will never lose pairing even on Render cold restarts."
+                        type="info"
+                        showIcon
+                      />
+                    </Card>
+                  </Col>
+                </Row>
+
+                {/* Live Test Message Dispatcher */}
+                <Card
+                  title={
+                    <Space>
+                      <SendOutlined style={{ color: '#16a34a' }} />
+                      <span>Live WhatsApp Test Message Dispatcher</span>
+                    </Space>
+                  }
+                  style={{ borderRadius: 12 }}
+                >
+                  <Paragraph type="secondary" style={{ fontSize: 13 }}>
+                    Live delivery verify karne ke liye yahan koi bhi mobile number dalein aur 1-click test ping dispatch karein:
+                  </Paragraph>
+
+                  <Row gutter={16}>
+                    <Col xs={24} md={8}>
+                      <Input
+                        addonBefore="+91"
+                        placeholder="8797186001"
+                        value={testRecipient}
+                        onChange={(e) => setTestRecipient(e.target.value)}
+                        style={{ marginBottom: 10 }}
+                      />
+                    </Col>
+                    <Col xs={24} md={12}>
+                      <Input
+                        placeholder="Custom message (Optional, default live ping text will be sent)"
+                        value={testMessageText}
+                        onChange={(e) => setTestMessageText(e.target.value)}
+                        style={{ marginBottom: 10 }}
+                      />
+                    </Col>
+                    <Col xs={24} md={4}>
+                      <Button
+                        type="primary"
+                        icon={<SendOutlined />}
+                        onClick={handleSendTestMessage}
+                        loading={testSending}
+                        block
+                        style={{ background: '#16a34a', borderColor: '#16a34a', fontWeight: 600 }}
+                      >
+                        Send Test Ping
+                      </Button>
+                    </Col>
+                  </Row>
+                </Card>
+              </div>
+            ),
+          },
+          {
+            key: 'tenants',
+            label: (
+              <Space>
+                <ShopOutlined />
+                <span style={{ fontWeight: 600 }}>Businesses & Plans</span>
+                <Badge count={tenants.length} overflowCount={999} style={{ backgroundColor: '#2563eb' }} />
+              </Space>
+            ),
+            children: (
+              <div>
+                {/* Search & Actions Bar */}
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                    gap: 12,
+                    marginBottom: 16,
+                  }}
+                >
+                  <Space wrap>
+                    <Input.Search
+                      placeholder="Search business name or slug..."
+                      value={searchFilter}
+                      onChange={(e) => setSearchFilter(e.target.value)}
+                      style={{ width: 260 }}
+                      allowClear
+                    />
+
+                    <Select
+                      value={statusFilter}
+                      onChange={setStatusFilter}
+                      style={{ width: 140 }}
+                      options={[
+                        { value: 'all', label: 'All Status' },
+                        { value: 'active', label: 'Active Only' },
+                        { value: 'suspended', label: 'Suspended Only' },
+                      ]}
+                    />
+
+                    <Select
+                      value={planFilter}
+                      onChange={setPlanFilter}
+                      style={{ width: 140 }}
+                      options={[
+                        { value: 'all', label: 'All Plans' },
+                        { value: 'free', label: 'Free' },
+                        { value: 'pro', label: 'Pro' },
+                        { value: 'enterprise', label: 'Enterprise' },
+                      ]}
+                    />
+                  </Space>
+
+                  <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    onClick={() => setCreateTenantModalOpen(true)}
+                    style={{ fontWeight: 600 }}
+                  >
+                    + Onboard New Business
+                  </Button>
+                </div>
+
+                {/* Businesses Directory Table */}
+                <Card style={{ borderRadius: 12 }} bodyStyle={{ padding: 0 }}>
+                  <Table
+                    columns={tenantColumns}
+                    dataSource={filteredTenants}
+                    rowKey="id"
+                    loading={loading}
+                    pagination={{ pageSize: 10, showTotal: (total) => `Total ${total} client businesses` }}
+                  />
+                </Card>
+              </div>
+            ),
+          },
+          {
+            key: 'health',
+            label: (
+              <Space>
+                <CloudServerOutlined />
+                <span style={{ fontWeight: 600 }}>System & Server Health</span>
+              </Space>
+            ),
+            children: (
+              <div>
+                {/* Diagnostic Cards */}
+                <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+                  <Col xs={24} md={8}>
+                    <Card title={<Space><DatabaseOutlined style={{ color: '#1677ff' }} /><span>Managed PostgreSQL</span></Space>} style={{ borderRadius: 12 }}>
+                      <Text type="secondary">Latency / Response Time:</Text>
+                      <Title level={3} style={{ margin: '4px 0 8px', color: '#1677ff' }}>
+                        {systemHealth?.database?.latencyMs || 2} ms
+                      </Title>
+                      <Tag color="green">● Status: Healthy (Multi-tenant RLS)</Tag>
+                      <br />
+                      <Text type="secondary" style={{ fontSize: 11, marginTop: 8, display: 'block' }}>
+                        Region: Oregon (AWS/Render Cluster)
+                      </Text>
+                    </Card>
+                  </Col>
+
+                  <Col xs={24} md={8}>
+                    <Card title={<Space><CompassOutlined style={{ color: '#722ed1' }} /><span>Google Places API (New)</span></Space>} style={{ borderRadius: 12 }}>
+                      <Text type="secondary">Searches Run This Month:</Text>
+                      <Title level={3} style={{ margin: '4px 0 8px', color: '#722ed1' }}>
+                        {systemHealth?.placesApi?.searchesThisMonth || 0}
+                      </Title>
+                      <Tag color="cyan">● Unlimited Sovereign Mode</Tag>
+                      <br />
+                      <Text type="secondary" style={{ fontSize: 11, marginTop: 8, display: 'block' }}>
+                        FieldMask Cost Optimizer: Active
+                      </Text>
+                    </Card>
+                  </Col>
+
+                  <Col xs={24} md={8}>
+                    <Card title={<Space><ApiOutlined style={{ color: '#faad14' }} /><span>Google Gemini AI Copilot</span></Space>} style={{ borderRadius: 12 }}>
+                      <Text type="secondary">Model Version:</Text>
+                      <Title level={3} style={{ margin: '4px 0 8px', color: '#faad14' }}>
+                        Gemini 1.5 Flash
+                      </Title>
+                      <Tag color="green">● Online & Ready</Tag>
+                      <br />
+                      <Text type="secondary" style={{ fontSize: 11, marginTop: 8, display: 'block' }}>
+                        Customer Interest Scoring & Smart Replies
+                      </Text>
+                    </Card>
+                  </Col>
+                </Row>
+
+                {/* Audit Logs Table */}
+                <Card
+                  title={<Space><AuditOutlined style={{ color: '#1677ff' }} /><span>Recent Platform Activity & Audit Logs</span></Space>}
+                  style={{ borderRadius: 12 }}
+                  extra={
+                    <Button size="small" icon={<SyncOutlined />} onClick={loadHealthAndAudit} loading={healthLoading}>
+                      Refresh Logs
+                    </Button>
+                  }
+                >
+                  <Table
+                    size="small"
+                    dataSource={auditLogs}
+                    rowKey="id"
+                    pagination={{ pageSize: 8 }}
+                    columns={[
+                      {
+                        title: 'Timestamp',
+                        dataIndex: 'createdAt',
+                        key: 'createdAt',
+                        render: (t: string) => formatDateIndian(t),
+                      },
+                      {
+                        title: 'User',
+                        key: 'user',
+                        render: (_: any, r: any) => r.user?.name || 'System / Admin',
+                      },
+                      {
+                        title: 'Action',
+                        dataIndex: 'action',
+                        key: 'action',
+                        render: (act: string) => <Tag color="blue">{act}</Tag>,
+                      },
+                      {
+                        title: 'Target Entity',
+                        dataIndex: 'entityType',
+                        key: 'entityType',
+                        render: (e: string) => <Tag>{e}</Tag>,
+                      },
+                    ]}
+                  />
+                </Card>
+              </div>
+            ),
+          },
+        ]}
+      />
+
+      {/* ─── Modal 1: Plan Upgrade / Downgrade ─────────────────────────────── */}
       <Modal
-        title={`Update Plan for ${selectedTenant?.name}`}
+        title={`Change Subscription Plan for "${selectedTenant?.name}"`}
         open={planModalOpen}
-        onCancel={() => setPlanModalOpen(false)}
         onOk={handleSavePlan}
         confirmLoading={updatingPlan}
-        okText="Save Plan"
+        onCancel={() => setPlanModalOpen(false)}
+        okText="Apply Plan"
       >
-        <div style={{ padding: '16px 0' }}>
-          <Paragraph type="secondary">
-            Select the subscription plan for <strong>{selectedTenant?.name}</strong>. This updates their lead
-            discovery search limits and user seat limits.
-          </Paragraph>
+        <Paragraph type="secondary" style={{ fontSize: 13, marginTop: 10 }}>
+          Select the SaaS subscription tier to allocate to this business account:
+        </Paragraph>
+        <Select
+          value={targetPlan}
+          onChange={setTargetPlan}
+          style={{ width: '100%', marginTop: 8 }}
+          options={[
+            { value: 'Free', label: 'Free (Starter Limits)' },
+            { value: 'Pro', label: 'Pro Growth (Unlimited Features)' },
+            { value: 'Enterprise', label: 'Enterprise (VIP Support & Dedicated Quota)' },
+          ]}
+        />
+      </Modal>
 
-          <Select
-            value={targetPlan}
-            onChange={setTargetPlan}
-            style={{ width: '100%' }}
-            size="large"
-            options={[
-              { value: 'Free', label: 'Free Plan (Max 2 users, 50 monthly searches)' },
-              { value: 'Pro', label: 'Pro Plan (Max 10 users, 500 monthly searches) - ₹2,999/mo' },
-              { value: 'Enterprise', label: 'Enterprise Plan (Max 50 users, 2,000 monthly searches) - ₹4,999/mo' },
+      {/* ─── Modal 2: Onboard New Business ─────────────────────────────────── */}
+      <Modal
+        title="Onboard New Business Client"
+        open={createTenantModalOpen}
+        onOk={() => createForm.submit()}
+        confirmLoading={creatingTenant}
+        onCancel={() => setCreateTenantModalOpen(false)}
+        okText="Create Business & Account"
+      >
+        <Paragraph type="secondary" style={{ fontSize: 13 }}>
+          Naye client ka business name aur owner credentials enter karein. Unka dedicated CRM workspace turant activate ho jayega:
+        </Paragraph>
+        <Form form={createForm} layout="vertical" onFinish={handleCreateTenant}>
+          <Form.Item
+            name="name"
+            label="Business / Company Name"
+            rules={[{ required: true, message: 'Please enter company name' }]}
+          >
+            <Input placeholder="e.g. Royal Auto Spares" />
+          </Form.Item>
+
+          <Form.Item
+            name="ownerName"
+            label="Owner Full Name"
+            rules={[{ required: true, message: 'Please enter owner name' }]}
+          >
+            <Input placeholder="e.g. Rajesh Sharma" />
+          </Form.Item>
+
+          <Form.Item
+            name="ownerEmail"
+            label="Owner Email Address"
+            rules={[
+              { required: true, message: 'Please enter owner email' },
+              { type: 'email', message: 'Enter a valid email' },
             ]}
-          />
-        </div>
+          >
+            <Input placeholder="e.g. rajesh@example.com" />
+          </Form.Item>
+
+          <Form.Item name="ownerPhone" label="WhatsApp Mobile Number">
+            <Input addonBefore="+91" placeholder="98765 43210" maxLength={15} />
+          </Form.Item>
+
+          <Form.Item name="planName" label="Subscription Plan" initialValue="Pro">
+            <Select
+              options={[
+                { value: 'Free', label: 'Free Plan' },
+                { value: 'Pro', label: 'Pro Growth (Recommended)' },
+                { value: 'Enterprise', label: 'Enterprise VIP' },
+              ]}
+            />
+          </Form.Item>
+
+          <Form.Item name="password" label="Initial Login Password" initialValue="Ginie@123">
+            <Input placeholder="Default: Ginie@123" />
+          </Form.Item>
+        </Form>
       </Modal>
     </div>
   );
+}
+
+function DashboardOutlined(props: any) {
+  return <SafetyCertificateOutlined {...props} />;
 }

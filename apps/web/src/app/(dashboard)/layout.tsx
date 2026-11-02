@@ -30,6 +30,9 @@ import {
   MenuOutlined,
   AppstoreOutlined,
   SafetyCertificateOutlined,
+  SwapOutlined,
+  CrownOutlined,
+  ArrowLeftOutlined,
 } from '@ant-design/icons';
 import { useApp } from '@/context/AppContext';
 import { usePathname, useRouter } from 'next/navigation';
@@ -53,6 +56,25 @@ export default function DashboardLayout({
   const router = useRouter();
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstallable, setIsInstallable] = useState(false);
+  const [isImpersonating, setIsImpersonating] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsImpersonating(!!sessionStorage.getItem('admin_master_token'));
+    }
+  }, [pathname]);
+
+  const handleExitImpersonation = () => {
+    const masterToken = sessionStorage.getItem('admin_master_token');
+    if (masterToken) {
+      localStorage.setItem('ginie_token', masterToken);
+      sessionStorage.removeItem('admin_master_token');
+      message.success('Master Admin session restored!');
+      window.location.href = '/admin';
+    } else {
+      router.push('/admin');
+    }
+  };
 
   useEffect(() => {
     const handleBeforeInstall = (e: any) => {
@@ -330,13 +352,31 @@ export default function DashboardLayout({
           </div>
 
           <Space size="middle">
-            {user?.isSuperAdmin && (
+            {isImpersonating && (
+              <Button
+                type="primary"
+                danger
+                size="middle"
+                icon={<ArrowLeftOutlined />}
+                onClick={handleExitImpersonation}
+                style={{ fontWeight: 600, borderRadius: 6 }}
+              >
+                Exit Impersonation
+              </Button>
+            )}
+
+            {user?.isSuperAdmin && !isImpersonating && (
               pathname === '/admin' ? (
                 <Button
                   size="middle"
                   icon={<HomeOutlined />}
                   onClick={() => router.push('/')}
-                  style={{ fontWeight: 600 }}
+                  style={{
+                    fontWeight: 600,
+                    borderRadius: 8,
+                    background: isDark ? '#262626' : '#f5f5f5',
+                    border: '1px solid #d9d9d9',
+                  }}
                 >
                   CRM Workspace
                 </Button>
@@ -346,10 +386,12 @@ export default function DashboardLayout({
                   icon={<SafetyCertificateOutlined />}
                   onClick={() => router.push('/admin')}
                   style={{
-                    background: '#faad14',
+                    background: 'linear-gradient(135deg, #faad14 0%, #d48806 100%)',
                     borderColor: '#d48806',
                     color: '#000',
-                    fontWeight: 600,
+                    fontWeight: 700,
+                    borderRadius: 8,
+                    boxShadow: '0 2px 6px rgba(212, 136, 6, 0.25)',
                   }}
                 >
                   Master Console
@@ -403,6 +445,44 @@ export default function DashboardLayout({
             </Dropdown>
           </Space>
         </Header>
+
+        {/* Impersonation Warning Banner */}
+        {isImpersonating && (
+          <div
+            style={{
+              background: 'linear-gradient(90deg, #722ed1 0%, #1677ff 100%)',
+              color: '#fff',
+              padding: '10px 24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+              zIndex: 10,
+            }}
+          >
+            <Space size="middle">
+              <SafetyCertificateOutlined style={{ fontSize: 18, color: '#faad14' }} />
+              <div>
+                <Text style={{ color: '#fff', fontWeight: 600, fontSize: 14 }}>
+                  Client Workspace Impersonation Active
+                </Text>
+                <span style={{ color: '#e6f4ff', fontSize: 12, marginLeft: 8 }}>
+                  Managing as <strong>{user?.companyName || 'Business Client'}</strong> ({user?.name || 'User'} &bull; {user?.role || 'Owner'})
+                </span>
+              </div>
+            </Space>
+            <Button
+              type="primary"
+              danger
+              size="small"
+              icon={<ArrowLeftOutlined />}
+              onClick={handleExitImpersonation}
+              style={{ fontWeight: 600, borderRadius: 6 }}
+            >
+              Exit & Return to Master Console
+            </Button>
+          </div>
+        )}
 
         {/* Content Area */}
         <Content style={{ margin: 20, minHeight: 280, paddingBottom: 64 }}>
