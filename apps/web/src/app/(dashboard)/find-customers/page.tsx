@@ -713,7 +713,6 @@ export default function FindCustomersPage() {
             >
               {planStatus?.active ? t.discovery.searchButton : '⚡ Unlock Lead Discovery (₹599)'}
             </Button>
-            </Button>
           </Form.Item>
         </Form>
       </Card>

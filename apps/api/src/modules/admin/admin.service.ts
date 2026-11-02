@@ -428,10 +428,10 @@ export class AdminService {
     });
 
     return tenants
-      .map((t) => {
+      .map((t: any) => {
         const settings: any = t.settings || {};
         const disc: any = settings.discoveryPlan || {};
-        const owner = t.users[0] || {};
+        const owner: any = t.users?.[0] || {};
 
         let active = false;
         let remainingDays = 0;
@@ -461,7 +461,7 @@ export class AdminService {
           amount: disc.amount || 599,
         };
       })
-      .filter((r) => r.status === 'pending' || r.status === 'active' || r.submittedAt);
+      .filter((r: any) => r.status === 'pending' || r.status === 'active' || r.submittedAt);
   }
 
   async approveDiscoveryRequest(tenantId: string, days = 30) {
