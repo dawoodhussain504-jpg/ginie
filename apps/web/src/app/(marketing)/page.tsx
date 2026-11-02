@@ -521,7 +521,7 @@ export default function MarketingLandingPage() {
                 borderColor: 'rgba(37, 211, 102, 0.3)',
               }}
             >
-              Chat with Founder
+              Chat with GINIE
             </Button>
           </div>
 
@@ -1357,7 +1357,7 @@ export default function MarketingLandingPage() {
                 borderColor: 'rgba(255,255,255,0.16)',
               }}
             >
-              WhatsApp Founder Dawood
+              Chat with GINIE
             </Button>
           </Space>
         </div>
@@ -1410,7 +1410,7 @@ export default function MarketingLandingPage() {
                 India&apos;s dedicated sales CRM for local businesses, clinics, manufacturers, and agencies. 100% Free Core CRM with on-demand Google Maps lead discovery via UPI.
               </Paragraph>
               <div style={{ fontSize: 13, color: '#94a3b8' }}>
-                Direct Founder Support:{' '}
+                GINIE WhatsApp Support:{' '}
                 <a
                   href="https://wa.me/918797186001"
                   target="_blank"
