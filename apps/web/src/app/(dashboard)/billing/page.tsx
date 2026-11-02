@@ -25,6 +25,7 @@ import {
   PlusOutlined,
   FileTextOutlined,
   ShoppingOutlined,
+  ShopOutlined,
   CheckCircleOutlined,
   QrcodeOutlined,
   WhatsAppOutlined,
@@ -466,6 +467,11 @@ export default function BillingPage() {
       key: 'unit',
       render: (u: string) => u || 'piece',
     },
+    {
+      title: 'Digital Storefront',
+      key: 'storefront',
+      render: () => <Tag color="green">🛍️ Live on Store</Tag>,
+    },
   ];
 
   const quotationColumns = [
@@ -750,15 +756,23 @@ export default function BillingPage() {
       children: (
         <Card
           title={
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
               <span>Products, Items & Service Rates</span>
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={() => setProductModalVisible(true)}
-              >
-                {t.billing.addProduct}
-              </Button>
+              <Space wrap>
+                <Button
+                  icon={<ShopOutlined />}
+                  onClick={() => window.open('/store/catalog', '_blank')}
+                >
+                  View Digital Storefront 🛍️
+                </Button>
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={() => setProductModalVisible(true)}
+                >
+                  {t.billing.addProduct}
+                </Button>
+              </Space>
             </div>
           }
           style={{ borderRadius: 12 }}
