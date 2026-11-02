@@ -390,6 +390,7 @@ export class AuthService {
     message: string;
     isNewUser: boolean;
     phone: string;
+    delivered?: boolean;
   }> {
     const configuredAdminPhone = (process.env.ADMIN_WHATSAPP_PHONE || AuthService.SUPER_ADMIN_PHONE).replace(/\D/g, '').slice(-10);
     const configuredAdminEmail = (process.env.ADMIN_EMAIL || AuthService.SUPER_ADMIN_EMAIL).toLowerCase().trim();
