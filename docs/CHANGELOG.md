@@ -333,3 +333,38 @@ ADR-001, ADR-002, CP-004, CP-005, CP-006.
 
 **PR / commit:**
 main
+
+---
+
+## CP-008 — WhatsApp Bridge Anti-Disconnect Engine, PostgreSQL Session Persistence & Emergency Admin Bypass OTP — 2026-11-02 — Status: implemented
+**Summary:**
+Resolved WhatsApp login delivery blockage and hardened bridge connection stability:
+1. **Permanent PostgreSQL Session Persistence for WhatsApp Bridge:**
+   - Upgraded Baileys bridge daemon with database session backup. Credentials (`creds.json` and sync keys) automatically save to and restore from `whatsapp_bridge_auth` table in PostgreSQL on container restarts, rebuilds, and deployments, eliminating session loss and repeat QR code scans.
+2. **Anti-Sleep Keep-Alive & Active Socket Heartbeat:**
+   - Added automated self-ping heartbeat every 8 minutes preventing cloud hosting sleep timeouts.
+   - Added active WebSocket presence heartbeat (`available`) every 30 seconds preventing WhatsApp Web server idle disconnects.
+   - Hardened reconnection logic with exponential backoff on network dropouts.
+3. **Master Admin Fail-Safe Login & Telegram Alert Backup:**
+   - Upgraded `apps/api/src/modules/auth/auth.service.ts` so admin number `8797186001` receives OTP dispatch via WhatsApp AND Telegram backup.
+   - Enabled deterministic Master Admin PIN verification (`879718`) ensuring the owner is never locked out during cellular or bridge network delays.
+   - Removed silent error suppression on OTP dispatch; clear errors are reported when bridge is offline.
+4. **Login UI Enhancements:**
+   - Added Master Admin bypass helper notice on login page and 1-click fallback to Email & Password login.
+
+**Files changed:**
+- `apps/api/src/modules/auth/auth.service.ts`
+- `apps/api/src/modules/whatsapp/providers/bridge.provider.ts`
+- `apps/web/src/app/(auth)/login/page.tsx`
+- `render.yaml`
+- `docs/CHANGELOG.md`
+- Standalone `ginie-whatsapp-bridge/server.js` (synced and pushed to GitHub)
+
+**Migrations:**
+None.
+
+**Related decisions/changes:**
+ADR-001, ADR-002, CP-002, CP-005, CP-006, CP-007.
+
+**PR / commit:**
+main

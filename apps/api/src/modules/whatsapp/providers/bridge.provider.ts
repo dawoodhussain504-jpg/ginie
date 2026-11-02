@@ -22,6 +22,9 @@ export class BridgeProvider implements WhatsAppProvider {
   async sendText(to: string, text: string): Promise<{ messageId: string }> {
     try {
       const cleanNumber = to.replace(/\D/g, '');
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 12000); // 12s timeout
+
       const response = await fetch(`${this.baseUrl}/send`, {
         method: 'POST',
         headers: {
@@ -29,7 +32,8 @@ export class BridgeProvider implements WhatsAppProvider {
           'X-Bridge-Secret': this.secret,
         },
         body: JSON.stringify({ number: cleanNumber, text }),
-      });
+        signal: controller.signal,
+      }).finally(() => clearTimeout(timeoutId));
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -85,10 +89,14 @@ export class BridgeProvider implements WhatsAppProvider {
     pushName?: string;
   }> {
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
+
       // 1. Try querying /qr first to see if QR or connected status is available
       const qrRes = await fetch(`${this.baseUrl}/qr`, {
         headers: { 'X-Bridge-Secret': this.secret },
-      });
+        signal: controller.signal,
+      }).finally(() => clearTimeout(timeoutId));
 
       if (qrRes.ok) {
         const data = (await qrRes.json()) as any;
@@ -129,6 +137,23 @@ export class BridgeProvider implements WhatsAppProvider {
     return {
       status: 'qr_ready',
     };
+  }
+
+  async requestPairingCode(phone: string): Promise<{ success: boolean; pairingCode?: string; error?: string }> {
+    try {
+      const res = await fetch(`${this.baseUrl}/pairing-code`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Bridge-Secret': this.secret,
+        },
+        body: JSON.stringify({ phone }),
+      });
+      const data = (await res.json()) as any;
+      return data;
+    } catch (err: any) {
+      return { success: false, error: err.message };
+    }
   }
 
   async disconnect(): Promise<void> {
