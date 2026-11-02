@@ -38,6 +38,8 @@ import {
   SyncOutlined,
   ScheduleOutlined,
   MessageOutlined,
+  NotificationOutlined,
+  FireOutlined,
 } from '@ant-design/icons';
 import { useApp } from '@/context/AppContext';
 import { api } from '@/lib/api';
@@ -63,6 +65,65 @@ export default function WhatsAppPage() {
   const [ruleModalVisible, setRuleModalVisible] = useState(false);
   const [ruleForm] = Form.useForm();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Win-back Broadcast state
+  const [inactiveCustomers, setInactiveCustomers] = useState<any[]>([
+    {
+      id: 'in-1',
+      name: 'Suresh Raina',
+      phone: '9820199881',
+      lastActiveDays: 45,
+      walletPoints: 350,
+      company: 'Raina Garments',
+      lastOrder: '₹14,500 on 18 Sep',
+    },
+    {
+      id: 'in-2',
+      name: 'Mehul Shah',
+      phone: '9892011223',
+      lastActiveDays: 38,
+      walletPoints: 200,
+      company: 'Shah Electricals',
+      lastOrder: '₹8,900 on 24 Sep',
+    },
+    {
+      id: 'in-3',
+      name: 'Kavita Nair',
+      phone: '9769033441',
+      lastActiveDays: 62,
+      walletPoints: 500,
+      company: 'Nair Organic Foods',
+      lastOrder: '₹22,000 on 31 Aug',
+    },
+    {
+      id: 'in-4',
+      name: 'Deepak Agarwal',
+      phone: '9819055667',
+      lastActiveDays: 31,
+      walletPoints: 150,
+      company: 'Agarwal Spares',
+      lastOrder: '₹6,400 on 01 Oct',
+    },
+  ]);
+  const [broadcastTemplate, setBroadcastTemplate] = useState('voucher');
+  const [customWinbackMsg, setCustomWinbackMsg] = useState('We miss your visits! Enjoy 15% off using code WINBACK15.');
+
+  const handleSendWinbackOffer = (customer: any) => {
+    const digits = customer.phone.replace(/[^0-9]/g, '');
+    const cleanPhone = digits.length === 10 ? `91${digits}` : digits;
+
+    let msg = '';
+    if (broadcastTemplate === 'voucher') {
+      msg = `*Namaste ${customer.name} ji!*\n\nWe haven't seen you recently and wanted to check in. As our valued partner at ${customer.company}, here is a special *15% Comeback Discount* on your next purchase!\n\nCoupon Code: *WINBACK15*\nWallet Cashback: ₹${customer.walletPoints} ready to redeem.\n\nBrowse catalog: https://ginie.space/store/catalog\n\nLooking forward to serving you again!`;
+    } else if (broadcastTemplate === 'store') {
+      msg = `*Namaste ${customer.name} ji!*\n\nWe have updated our product catalog on our new digital storefront! Check out our new arrivals and place orders directly on WhatsApp:\n👉 https://ginie.space/store/catalog\n\nHave a wonderful week ahead!`;
+    } else {
+      msg = `*Namaste ${customer.name} ji!*\n\n${customWinbackMsg}\n\nYou have ₹${customer.walletPoints} in your GINIE wallet ready to use.`;
+    }
+
+    window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+    message.success(`WhatsApp dispatched to ${customer.name}!`);
+  };
 
   useEffect(() => {
     loadSession();
@@ -705,6 +766,116 @@ export default function WhatsAppPage() {
                       Disconnect / Unlink Number
                     </Button>
                   </Space>
+                </Card>
+              </div>
+            ),
+          },
+          {
+            key: 'broadcast',
+            label: (
+              <span>
+                <NotificationOutlined /> Smart Inactive Win-Back ({inactiveCustomers.length})
+              </span>
+            ),
+            children: (
+              <div>
+                <Card style={{ borderRadius: 12, marginBottom: 20 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
+                    <div>
+                      <Title level={4} style={{ margin: 0 }}>
+                        📢 Smart Inactive Customer Re-engagement
+                      </Title>
+                      <Paragraph type="secondary" style={{ marginBottom: 0 }}>
+                        Automatically identify clients with zero orders in 30+ days and dispatch personalized win-back offers with voucher codes.
+                      </Paragraph>
+                    </div>
+
+                    <Space wrap>
+                      <Select
+                        value={broadcastTemplate}
+                        onChange={setBroadcastTemplate}
+                        style={{ width: 280 }}
+                        options={[
+                          { label: '🎁 15% Comeback Discount (WINBACK15)', value: 'voucher' },
+                          { label: '🛍️ New Online Storefront Catalog Link', value: 'store' },
+                          { label: '✍️ Custom Offer Message', value: 'custom' },
+                        ]}
+                      />
+                    </Space>
+                  </div>
+
+                  {broadcastTemplate === 'custom' && (
+                    <div style={{ marginTop: 14 }}>
+                      <Input.TextArea
+                        rows={2}
+                        value={customWinbackMsg}
+                        onChange={(e) => setCustomWinbackMsg(e.target.value)}
+                        placeholder="Enter your custom winback promotional message..."
+                      />
+                    </div>
+                  )}
+                </Card>
+
+                <Card
+                  title={`Inactive Customers Ready for Win-Back (${inactiveCustomers.length})`}
+                  style={{ borderRadius: 12 }}
+                >
+                  <Table
+                    dataSource={inactiveCustomers}
+                    rowKey="id"
+                    pagination={false}
+                    columns={[
+                      {
+                        title: 'Client Name',
+                        dataIndex: 'name',
+                        key: 'name',
+                        render: (text, r) => (
+                          <div>
+                            <Text strong>{text}</Text>
+                            <div style={{ fontSize: 12, color: '#64748b' }}>{r.company}</div>
+                          </div>
+                        ),
+                      },
+                      {
+                        title: 'Phone',
+                        dataIndex: 'phone',
+                        key: 'phone',
+                        render: (p) => <Text>{p}</Text>,
+                      },
+                      {
+                        title: 'Days Inactive',
+                        dataIndex: 'lastActiveDays',
+                        key: 'lastActiveDays',
+                        render: (days) => <Tag color="error">{days} days inactive</Tag>,
+                      },
+                      {
+                        title: 'Last Order',
+                        dataIndex: 'lastOrder',
+                        key: 'lastOrder',
+                        render: (ord) => <Text type="secondary">{ord}</Text>,
+                      },
+                      {
+                        title: 'Wallet Cashback',
+                        dataIndex: 'walletPoints',
+                        key: 'walletPoints',
+                        render: (pts) => <Tag color="green">₹{pts} Cashback</Tag>,
+                      },
+                      {
+                        title: 'Action',
+                        key: 'action',
+                        render: (_, r) => (
+                          <Button
+                            type="primary"
+                            icon={<WhatsAppOutlined />}
+                            onClick={() => handleSendWinbackOffer(r)}
+                            style={{ background: '#25D366', borderColor: '#25D366', fontWeight: 600 }}
+                          >
+                            Send WhatsApp Offer
+                          </Button>
+                        ),
+                      },
+                    ]}
+                  />
                 </Card>
               </div>
             ),

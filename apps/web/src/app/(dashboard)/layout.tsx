@@ -11,6 +11,9 @@ import {
   Select,
   Typography,
   Drawer,
+  Tag,
+  Tooltip,
+  Badge,
   message,
 } from 'antd';
 import {
@@ -33,12 +36,15 @@ import {
   SwapOutlined,
   CrownOutlined,
   ArrowLeftOutlined,
+  ShopOutlined,
+  ThunderboltFilled,
 } from '@ant-design/icons';
 import { useApp } from '@/context/AppContext';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import OnboardingWizardModal from '@/components/OnboardingWizardModal';
+import GinieAiAssistantDrawer from '@/components/GinieAiAssistantDrawer';
 
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
@@ -57,6 +63,28 @@ export default function DashboardLayout({
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstallable, setIsInstallable] = useState(false);
   const [isImpersonating, setIsImpersonating] = useState(false);
+  const [aiDrawerOpen, setAiDrawerOpen] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsOnline(navigator.onLine);
+      const handleOnline = () => {
+        setIsOnline(true);
+        message.success('Internet connected! GINIE cloud sync is active.');
+      };
+      const handleOffline = () => {
+        setIsOnline(false);
+        message.warning('Offline mode active - Bills & data will be cached locally.');
+      };
+      window.addEventListener('online', handleOnline);
+      window.addEventListener('offline', handleOffline);
+      return () => {
+        window.removeEventListener('online', handleOnline);
+        window.removeEventListener('offline', handleOffline);
+      };
+    }
+  }, []);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -362,6 +390,37 @@ export default function DashboardLayout({
           </div>
 
           <Space size="middle">
+
+            {/* Online / Offline Status Badge */}
+            <Tag color={isOnline ? 'green' : 'orange'} style={{ borderRadius: 12, margin: 0, fontWeight: 700 }}>
+              {isOnline ? '🟢 Live Cloud' : '🟠 Offline Mode'}
+            </Tag>
+
+            {/* AI Assistant Button */}
+            <Button
+              type="primary"
+              icon={<ThunderboltFilled />}
+              onClick={() => setAiDrawerOpen(true)}
+              style={{
+                borderRadius: 8,
+                background: 'linear-gradient(135deg, #1677ff 0%, #722ed1 100%)',
+                borderColor: 'transparent',
+                fontWeight: 700,
+                boxShadow: '0 2px 8px rgba(114, 46, 209, 0.25)',
+              }}
+            >
+              Ask GINIE AI ✨
+            </Button>
+
+            {/* Digital Storefront Link */}
+            <Tooltip title="View your Public Digital Storefront & Catalog">
+              <Link href="/store/catalog" target="_blank">
+                <Button icon={<ShopOutlined />} style={{ borderRadius: 8, fontWeight: 600 }}>
+                  Storefront 🛍️
+                </Button>
+              </Link>
+            </Tooltip>
+
             {isImpersonating && (
               <Button
                 type="primary"
@@ -471,6 +530,7 @@ export default function DashboardLayout({
             }}
           >
             <Space size="middle">
+
               <SafetyCertificateOutlined style={{ fontSize: 18, color: '#faad14' }} />
               <div>
                 <Text style={{ color: '#fff', fontWeight: 600, fontSize: 14 }}>
@@ -602,6 +662,10 @@ export default function DashboardLayout({
       <OnboardingWizardModal
         open={onboardingOpen}
         onClose={() => setOnboardingOpen(false)}
+      />
+      <GinieAiAssistantDrawer
+        open={aiDrawerOpen}
+        onClose={() => setAiDrawerOpen(false)}
       />
     </Layout>
   );

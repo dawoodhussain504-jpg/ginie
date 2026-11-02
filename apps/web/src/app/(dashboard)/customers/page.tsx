@@ -12,7 +12,12 @@ import {
   Typography,
   Modal,
   Form,
+  InputNumber,
+  Select,
   message,
+  Row,
+  Col,
+  Statistic,
 } from 'antd';
 import {
   UsergroupAddOutlined,
@@ -24,15 +29,23 @@ import {
   WhatsAppOutlined,
   ShopOutlined,
   ClockCircleOutlined,
+  GiftOutlined,
+  DollarCircleOutlined,
 } from '@ant-design/icons';
 import { useApp } from '@/context/AppContext';
 import { api } from '@/lib/api';
-import { formatDateIndian } from '@ginie/i18n';
+import { formatDateIndian, formatIndianCurrency } from '@ginie/i18n';
 import { useSearchParams, useRouter } from 'next/navigation';
 import CustomerTimelineDrawer from '@/components/CustomerTimelineDrawer';
 import CustomerImportModal from '@/components/CustomerImportModal';
 
 const { Title, Text } = Typography;
+
+interface LoyaltyData {
+  points: number;
+  cashback: number;
+  tier: 'Silver' | 'Gold' | 'Platinum';
+}
 
 function CustomersContent() {
   const { t, brandColor } = useApp();
@@ -47,6 +60,12 @@ function CustomersContent() {
   const [companies, setCompanies] = useState<any[]>([]);
   const [search, setSearch] = useState('');
 
+  // Loyalty Points state
+  const [loyaltyMap, setLoyaltyMap] = useState<Record<string, LoyaltyData>>({});
+  const [giftModalOpen, setGiftModalOpen] = useState(false);
+  const [selectedLoyaltyContact, setSelectedLoyaltyContact] = useState<any | null>(null);
+  const [giftForm] = Form.useForm();
+
   // Modals & Drawers state
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   const [timelineDrawerOpen, setTimelineDrawerOpen] = useState(false);
@@ -57,6 +76,12 @@ function CustomersContent() {
 
   useEffect(() => {
     loadData();
+    const savedLoyalty = localStorage.getItem('ginie_customer_loyalty');
+    if (savedLoyalty) {
+      try {
+        setLoyaltyMap(JSON.parse(savedLoyalty));
+      } catch {}
+    }
   }, []);
 
   const loadData = async () => {
@@ -66,12 +91,82 @@ function CustomersContent() {
         api.get('/api/contacts'),
         api.get('/api/companies'),
       ]);
-      setContacts(contactsRes || []);
+      const loadedContacts = contactsRes || [];
+      setContacts(loadedContacts);
       setCompanies(companiesRes || []);
+
+      // If no loyalty map existed, populate initial tiers
+      const savedLoyalty = localStorage.getItem('ginie_customer_loyalty');
+      if (!savedLoyalty && loadedContacts.length > 0) {
+        const initialMap: Record<string, LoyaltyData> = {};
+        loadedContacts.forEach((c: any, idx: number) => {
+          const tiers: ('Silver' | 'Gold' | 'Platinum')[] = ['Silver', 'Gold', 'Platinum'];
+          const pts = [150, 420, 850, 290, 600][idx % 5];
+          initialMap[c.id] = {
+            points: pts,
+            cashback: Math.round(pts * 0.5),
+            tier: tiers[idx % 3],
+          };
+        });
+        setLoyaltyMap(initialMap);
+        localStorage.setItem('ginie_customer_loyalty', JSON.stringify(initialMap));
+      }
     } catch (err: any) {
       message.error(err.message || 'Failed to load customer data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleOpenGiftModal = (contact: any) => {
+    setSelectedLoyaltyContact(contact);
+    const existing = loyaltyMap[contact.id] || { points: 200, cashback: 50, tier: 'Silver' };
+    giftForm.setFieldsValue({
+      points: 100,
+      reason: 'Festive Bonus / Loyalty Appreciation',
+      tier: existing.tier,
+    });
+    setGiftModalOpen(true);
+  };
+
+  const handleSaveLoyaltyGift = (values: any) => {
+    if (!selectedLoyaltyContact) return;
+    const existing = loyaltyMap[selectedLoyaltyContact.id] || { points: 0, cashback: 0, tier: 'Silver' };
+    const addedPoints = Number(values.points || 0);
+    const newTotal = existing.points + addedPoints;
+    let newTier = values.tier || existing.tier;
+    if (newTotal > 750) newTier = 'Platinum';
+    else if (newTotal > 350) newTier = 'Gold';
+
+    const updated = {
+      ...loyaltyMap,
+      [selectedLoyaltyContact.id]: {
+        points: newTotal,
+        cashback: Math.round(newTotal * 0.5),
+        tier: newTier,
+      },
+    };
+
+    setLoyaltyMap(updated);
+    localStorage.setItem('ginie_customer_loyalty', JSON.stringify(updated));
+    message.success(`🎉 Added ${addedPoints} loyalty points to ${selectedLoyaltyContact.name}!`);
+    setGiftModalOpen(false);
+
+    // Optional WhatsApp celebration dispatch
+    if (selectedLoyaltyContact.phone) {
+      const cleanPhone = selectedLoyaltyContact.phone.replace(/[^0-9]/g, '');
+      const waPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+      const text =
+        `*Dear ${selectedLoyaltyContact.name},*\n\n` +
+        `Congratulations! You have received *${addedPoints} Bonus Loyalty Points* (₹${addedPoints}) in your GINIE wallet.\n` +
+        `Total Wallet Balance: *${newTotal} Points* (${newTier} Member).\n` +
+        `Redeem this on your next billing or order!\n\n` +
+        `Thank you for being our valued customer.`;
+      
+      const sendWa = window.confirm(`Points credited! Send celebratory WhatsApp notification to ${selectedLoyaltyContact.name}?`);
+      if (sendWa) {
+        window.open(`https://wa.me/${waPhone}?text=${encodeURIComponent(text)}`, '_blank');
+      }
     }
   };
 
@@ -112,6 +207,8 @@ function CustomersContent() {
     );
   });
 
+  const totalPointsInSystem = Object.values(loyaltyMap).reduce((sum, item) => sum + (item.points || 0), 0);
+
   const contactColumns = [
     {
       title: 'Customer Name',
@@ -135,6 +232,40 @@ function CustomersContent() {
           )}
         </div>
       ),
+    },
+    {
+      title: 'Loyalty Points & Wallet',
+      key: 'loyalty',
+      render: (_: any, record: any) => {
+        const data = loyaltyMap[record.id] || { points: 250, cashback: 50, tier: 'Silver' };
+        const tierColors: Record<string, string> = {
+          Gold: 'gold',
+          Silver: 'blue',
+          Platinum: 'purple',
+        };
+        return (
+          <div>
+            <Space size={6}>
+              <Tag color={tierColors[data.tier] || 'blue'} style={{ fontWeight: 600 }}>
+                {data.tier}
+              </Tag>
+              <Text strong style={{ color: '#059669', fontSize: 13 }}>
+                🪙 {data.points} pts
+              </Text>
+            </Space>
+            <div style={{ marginTop: 2 }}>
+              <Button
+                size="small"
+                type="link"
+                style={{ padding: 0, height: 'auto', fontSize: 11 }}
+                onClick={() => handleOpenGiftModal(record)}
+              >
+                + Gift Points / Tier
+              </Button>
+            </div>
+          </div>
+        );
+      },
     },
     {
       title: 'Company',
@@ -269,10 +400,10 @@ function CustomersContent() {
         <div>
           <Title level={2} style={{ margin: 0 }}>
             <UsergroupAddOutlined style={{ marginRight: 10, color: brandColor }} />
-            Customers & Accounts
+            Customers, Accounts & Loyalty
           </Title>
           <Text type="secondary">
-            Manage all client contacts, accounts, and 360° chronological activity timelines.
+            Manage all client contacts, customer cashback wallets, and 360° chronological activity timelines.
           </Text>
         </div>
 
@@ -293,6 +424,40 @@ function CustomersContent() {
           </Button>
         </Space>
       </div>
+
+      {/* Loyalty & Retention Metric Bar */}
+      <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
+        <Col xs={24} sm={8}>
+          <Card style={{ borderRadius: 12 }}>
+            <Statistic
+              title="Active Customers"
+              value={contacts.length}
+              prefix={<UsergroupAddOutlined style={{ color: brandColor }} />}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={8}>
+          <Card style={{ borderRadius: 12 }}>
+            <Statistic
+              title="Total Loyalty Points In Circulation"
+              value={totalPointsInSystem}
+              suffix="Pts"
+              valueStyle={{ color: '#059669' }}
+              prefix={<GiftOutlined />}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={8}>
+          <Card style={{ borderRadius: 12 }}>
+            <Statistic
+              title="Redeemable Cashback Value"
+              value={formatIndianCurrency(totalPointsInSystem)}
+              valueStyle={{ color: '#7c3aed' }}
+              prefix={<DollarCircleOutlined />}
+            />
+          </Card>
+        </Col>
+      </Row>
 
       {/* Main Card with Tabs: People vs Companies */}
       <Card style={{ borderRadius: 14 }}>
@@ -352,6 +517,55 @@ function CustomersContent() {
           ]}
         />
       </Card>
+
+      {/* Gift Loyalty Points Modal */}
+      <Modal
+        title={
+          <Space>
+            <GiftOutlined style={{ color: '#059669' }} />
+            <span>Credit Loyalty Points & Cashback Wallet</span>
+          </Space>
+        }
+        open={giftModalOpen}
+        onCancel={() => setGiftModalOpen(false)}
+        onOk={() => giftForm.submit()}
+        okText="Credit Points to Customer"
+      >
+        {selectedLoyaltyContact && (
+          <div>
+            <div style={{ background: '#f8fafc', padding: 12, borderRadius: 8, marginBottom: 16 }}>
+              <Text strong>{selectedLoyaltyContact.name}</Text>
+              <div style={{ fontSize: 12, color: '#64748b' }}>
+                Phone: {selectedLoyaltyContact.phone || 'N/A'} &bull; Current Points: {loyaltyMap[selectedLoyaltyContact.id]?.points || 0}
+              </div>
+            </div>
+
+            <Form form={giftForm} layout="vertical" onFinish={handleSaveLoyaltyGift}>
+              <Form.Item
+                name="points"
+                label="Points to Credit (1 pt = ₹1 discount)"
+                rules={[{ required: true, message: 'Please enter points' }]}
+              >
+                <InputNumber style={{ width: '100%' }} min={10} max={10000} step={50} />
+              </Form.Item>
+
+              <Form.Item name="tier" label="Membership Tier">
+                <Select
+                  options={[
+                    { label: 'Silver Member', value: 'Silver' },
+                    { label: 'Gold Member', value: 'Gold' },
+                    { label: 'Platinum VIP Member', value: 'Platinum' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item name="reason" label="Reason / Campaign">
+                <Input placeholder="e.g. Festival Gift, Review Reward, Order Bonus" />
+              </Form.Item>
+            </Form>
+          </div>
+        )}
+      </Modal>
 
       {/* Customer 360 Timeline Drawer */}
       <CustomerTimelineDrawer

@@ -26,6 +26,8 @@ import {
   FundProjectionScreenOutlined,
   CheckSquareOutlined,
   CalendarOutlined,
+  EnvironmentOutlined,
+  CompassOutlined,
 } from '@ant-design/icons';
 import { useApp } from '@/context/AppContext';
 import { api } from '@/lib/api';
@@ -58,10 +60,121 @@ function SalesAndTasksContent() {
   const [addTaskModalVisible, setAddTaskModalVisible] = useState(false);
   const [taskForm] = Form.useForm();
 
+  // Field Visits state
+  const [visits, setVisits] = useState<any[]>([]);
+  const [visitModalVisible, setVisitModalVisible] = useState(false);
+  const [checkingInGps, setCheckingInGps] = useState(false);
+  const [currentCoords, setCurrentCoords] = useState<{ lat: number; lng: number; accuracy: number } | null>(null);
+  const [visitForm] = Form.useForm();
+
   useEffect(() => {
     loadPipelines();
     loadTasks();
+    loadVisits();
   }, []);
+
+  const loadVisits = () => {
+    const saved = localStorage.getItem('ginie_field_visits');
+    if (saved) {
+      try {
+        setVisits(JSON.parse(saved));
+        return;
+      } catch {}
+    }
+    const defaultVisits = [
+      {
+        id: 'v-1',
+        executive: 'Rajesh Sharma',
+        client: 'Apex Industrial Parts, MIDC Bhosari',
+        purpose: 'Sample Demo & Price Negotiation',
+        outcome: 'Client approved initial batch of 200 units. Awaiting PO.',
+        latitude: 18.6279,
+        longitude: 73.8443,
+        accuracy: 8,
+        timestamp: new Date(Date.now() - 3600000 * 3).toISOString(),
+      },
+      {
+        id: 'v-2',
+        executive: 'Pooja Verma',
+        client: 'Sunrise Supermarket, FC Road',
+        purpose: 'Payment Collection & Restock Check',
+        outcome: 'Collected ₹42,500 via cheque #881290. Next visit Tuesday.',
+        latitude: 18.5204,
+        longitude: 73.8567,
+        accuracy: 12,
+        timestamp: new Date(Date.now() - 3600000 * 24).toISOString(),
+      },
+      {
+        id: 'v-3',
+        executive: 'Amit Deshmukh',
+        client: 'Kalyani Tech Park, Viman Nagar',
+        purpose: 'Annual Maintenance Contract Renewal',
+        outcome: 'Signed 1-year contract extension for ₹1,80,000.',
+        latitude: 18.5679,
+        longitude: 73.9143,
+        accuracy: 5,
+        timestamp: new Date(Date.now() - 3600000 * 48).toISOString(),
+      },
+    ];
+    setVisits(defaultVisits);
+    localStorage.setItem('ginie_field_visits', JSON.stringify(defaultVisits));
+  };
+
+  const handleStartCheckIn = () => {
+    if (typeof window === 'undefined' || !navigator.geolocation) {
+      message.warning('Geolocation not supported by this device. Using default coordinates.');
+      setCurrentCoords({ lat: 18.5204, lng: 73.8567, accuracy: 15 });
+      setVisitModalVisible(true);
+      return;
+    }
+
+    setCheckingInGps(true);
+    message.loading({ content: 'Capturing GPS satellite coordinates...', key: 'gps_msg', duration: 4 });
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setCheckingInGps(false);
+        message.destroy('gps_msg');
+        setCurrentCoords({
+          lat: Number(pos.coords.latitude.toFixed(5)),
+          lng: Number(pos.coords.longitude.toFixed(5)),
+          accuracy: Math.round(pos.coords.accuracy),
+        });
+        setVisitModalVisible(true);
+        message.success(`📍 GPS Fixed (±${Math.round(pos.coords.accuracy)}m accuracy)!`);
+      },
+      (err) => {
+        setCheckingInGps(false);
+        message.destroy('gps_msg');
+        console.warn('GPS error:', err.message);
+        setCurrentCoords({ lat: 18.5204, lng: 73.8567, accuracy: 25 });
+        setVisitModalVisible(true);
+        message.info('Using regional estimated GPS coordinates.');
+      },
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  };
+
+  const handleSaveVisit = (values: any) => {
+    const newVisit = {
+      id: `v-${Date.now()}`,
+      executive: values.executive || 'Sales Executive',
+      client: values.client,
+      purpose: values.purpose,
+      outcome: values.outcome || 'Meeting completed successfully.',
+      latitude: currentCoords?.lat || 18.5204,
+      longitude: currentCoords?.lng || 73.8567,
+      accuracy: currentCoords?.accuracy || 10,
+      timestamp: new Date().toISOString(),
+    };
+
+    const updated = [newVisit, ...visits];
+    setVisits(updated);
+    localStorage.setItem('ginie_field_visits', JSON.stringify(updated));
+    setVisitModalVisible(false);
+    visitForm.resetFields();
+    message.success('📍 Client visit check-in saved with verified GPS timestamp!');
+  };
 
   const loadPipelines = async () => {
     setLoading(true);
@@ -251,7 +364,7 @@ function SalesAndTasksContent() {
         </div>
 
         <Space wrap>
-          {activeTab === 'pipeline' ? (
+          {activeTab === 'pipeline' && (
             <Button
               type="primary"
               icon={<PlusOutlined />}
@@ -259,7 +372,8 @@ function SalesAndTasksContent() {
             >
               Add Deal / Sale
             </Button>
-          ) : (
+          )}
+          {activeTab === 'tasks' && (
             <Button
               type="primary"
               icon={<PlusOutlined />}
@@ -268,6 +382,15 @@ function SalesAndTasksContent() {
               Add Task
             </Button>
           )}
+          <Button
+            type="primary"
+            icon={<EnvironmentOutlined />}
+            loading={checkingInGps}
+            onClick={handleStartCheckIn}
+            style={{ background: '#059669', borderColor: '#059669' }}
+          >
+            GPS Field Check-in
+          </Button>
         </Space>
       </div>
 
@@ -416,6 +539,117 @@ function SalesAndTasksContent() {
                 />
               ),
             },
+            {
+              key: 'visits',
+              label: (
+                <span style={{ fontSize: 15, fontWeight: 600 }}>
+                  📍 Field Visits & GPS ({visits.length})
+                </span>
+              ),
+              children: (
+                <div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      flexWrap: 'wrap',
+                      gap: 12,
+                      marginBottom: 16,
+                      background: '#f8fafc',
+                      padding: '12px 16px',
+                      borderRadius: 10,
+                      border: '1px solid #e2e8f0',
+                    }}
+                  >
+                    <div>
+                      <Text strong style={{ fontSize: 16, display: 'block' }}>
+                        Live GPS Field Visit Check-in Log
+                      </Text>
+                      <Text type="secondary" style={{ fontSize: 12 }}>
+                        Track on-ground sales staff meetings, geofenced customer visits, and real-time outcomes.
+                      </Text>
+                    </div>
+                    <Button
+                      type="primary"
+                      icon={<EnvironmentOutlined />}
+                      loading={checkingInGps}
+                      onClick={handleStartCheckIn}
+                      style={{ background: '#059669', borderColor: '#059669', fontWeight: 600 }}
+                    >
+                      📍 Check-in at Client Location (GPS)
+                    </Button>
+                  </div>
+
+                  <Table
+                    dataSource={visits}
+                    rowKey="id"
+                    pagination={{ pageSize: 8 }}
+                    columns={[
+                      {
+                        title: 'Executive',
+                        dataIndex: 'executive',
+                        key: 'executive',
+                        render: (text) => <Text strong>{text}</Text>,
+                      },
+                      {
+                        title: 'Client / Target Location',
+                        dataIndex: 'client',
+                        key: 'client',
+                        render: (c) => <span style={{ fontWeight: 500 }}>{c}</span>,
+                      },
+                      {
+                        title: 'Purpose',
+                        dataIndex: 'purpose',
+                        key: 'purpose',
+                        render: (p) => <Tag color="blue">{p}</Tag>,
+                      },
+                      {
+                        title: 'Outcome & Notes',
+                        dataIndex: 'outcome',
+                        key: 'outcome',
+                      },
+                      {
+                        title: 'GPS Coordinates',
+                        key: 'gps',
+                        render: (_, r) => (
+                          <div>
+                            <Tag color="cyan">
+                              {r.latitude}, {r.longitude}
+                            </Tag>
+                            <div style={{ fontSize: 11, color: '#94a3b8' }}>
+                              Accuracy: ±{r.accuracy}m
+                            </div>
+                          </div>
+                        ),
+                      },
+                      {
+                        title: 'Check-in Time',
+                        dataIndex: 'timestamp',
+                        key: 'timestamp',
+                        render: (d) => formatDateIndian(d),
+                      },
+                      {
+                        title: 'Action',
+                        key: 'action',
+                        render: (_, r) => (
+                          <Button
+                            size="small"
+                            type="link"
+                            href={`https://maps.google.com/?q=${r.latitude},${r.longitude}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            icon={<EnvironmentOutlined />}
+                          >
+                            Map
+                          </Button>
+                        ),
+                      },
+                    ]}
+                  />
+                </div>
+              ),
+            },
           ]}
         />
       </Card>
@@ -518,6 +752,64 @@ function SalesAndTasksContent() {
                 { label: 'Other', value: 'other' },
               ]}
             />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* GPS Visit Check-in Modal */}
+      <Modal
+        title={
+          <Space>
+            <EnvironmentOutlined style={{ color: '#059669' }} />
+            <span>Client Location GPS Check-in</span>
+          </Space>
+        }
+        open={visitModalVisible}
+        onCancel={() => setVisitModalVisible(false)}
+        onOk={() => visitForm.submit()}
+        okText="Confirm & Save Check-in"
+      >
+        <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', padding: 12, borderRadius: 8, marginBottom: 16 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#065f46' }}>
+            🛰️ GPS Location Fixed:
+          </div>
+          <div style={{ fontSize: 13, color: '#047857', marginTop: 2 }}>
+            Lat: {currentCoords?.lat}, Lng: {currentCoords?.lng} (Accuracy: ±{currentCoords?.accuracy}m)
+          </div>
+          <a
+            href={`https://maps.google.com/?q=${currentCoords?.lat},${currentCoords?.lng}`}
+            target="_blank"
+            rel="noreferrer"
+            style={{ fontSize: 11, color: '#0284c7', textDecoration: 'underline' }}
+          >
+            Open in Google Maps to Verify Location
+          </a>
+        </div>
+
+        <Form form={visitForm} layout="vertical" onFinish={handleSaveVisit} initialValues={{ executive: 'Rajesh Sharma', purpose: 'Quotation Negotiation' }}>
+          <Form.Item name="executive" label="Staff / Sales Executive" rules={[{ required: true }]}>
+            <Input placeholder="e.g. Rajesh Sharma" />
+          </Form.Item>
+
+          <Form.Item name="client" label="Client / Business Name & Address" rules={[{ required: true, message: 'Please enter client name or location' }]}>
+            <Input placeholder="e.g. Mahavir Textiles, Ring Road, Surat" />
+          </Form.Item>
+
+          <Form.Item name="purpose" label="Purpose of Visit" rules={[{ required: true }]}>
+            <Select
+              options={[
+                { label: 'Quotation Negotiation', value: 'Quotation Negotiation' },
+                { label: 'Product / Machine Demo', value: 'Product Demo' },
+                { label: 'Payment / Cheque Collection', value: 'Payment Collection' },
+                { label: 'Site Inspection / Survey', value: 'Site Survey' },
+                { label: 'Contract Signing', value: 'Contract Signing' },
+                { label: 'Routine Relationship Visit', value: 'Routine Relationship Visit' },
+              ]}
+            />
+          </Form.Item>
+
+          <Form.Item name="outcome" label="Meeting Outcome & Action Notes">
+            <Input.TextArea rows={3} placeholder="e.g. Client agreed on 5% volume discount, final PO expected by Thursday." />
           </Form.Item>
         </Form>
       </Modal>

@@ -223,7 +223,7 @@ export default function MarketingLandingPage() {
           borderBottom: '1px solid rgba(255,255,255,0.08)',
         }}
       >
-        <Space orientation="horizontal" size="middle" wrap style={{ justifyContent: 'center' }}>
+        <Space direction="horizontal" size="middle" wrap style={{ justifyContent: 'center' }}>
           <span>
             <SafetyCertificateOutlined style={{ color: '#10b981', marginRight: 6 }} />
             GINIE Core CRM is 100% Free Forever
@@ -407,7 +407,7 @@ export default function MarketingLandingPage() {
       >
         <div style={{ maxWidth: 960, margin: '0 auto', position: 'relative', zIndex: 2 }}>
           {/* Trust Badge */}
-          <div style={{ orientation: 'horizontal', display: 'inline-flex', marginBottom: 24 }}>
+          <div style={{ display: 'inline-flex', marginBottom: 24 }}>
             <div
               style={{
                 display: 'inline-flex',

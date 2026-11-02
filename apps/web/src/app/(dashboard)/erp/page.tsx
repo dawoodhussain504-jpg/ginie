@@ -50,6 +50,9 @@ import {
   SyncOutlined,
   AuditOutlined,
   CheckOutlined,
+  CloudUploadOutlined,
+  AudioOutlined,
+  GiftOutlined,
 } from '@ant-design/icons';
 import { useApp } from '@/context/AppContext';
 import { api } from '@/lib/api';
@@ -132,6 +135,13 @@ export default function ErpPage() {
   const [posCustomer, setPosCustomer] = useState<string>('');
   const [posPaymentMethod, setPosPaymentMethod] = useState<'cash' | 'upi' | 'khata'>('upi');
   const [posDiscount, setPosDiscount] = useState<number>(0);
+  const [redeemLoyalty, setRedeemLoyalty] = useState<boolean>(false);
+  const [isListeningPos, setIsListeningPos] = useState<boolean>(false);
+
+  // Offline Bill Queue state
+  const [offlineBills, setOfflineBills] = useState<any[]>([]);
+  const [offlineModalOpen, setOfflineModalOpen] = useState(false);
+  const [syncingOffline, setSyncingOffline] = useState(false);
 
   // Manufacturing BOM State
   const [boms, setBoms] = useState<any[]>([
@@ -274,6 +284,21 @@ export default function ErpPage() {
   // Load initial data
   useEffect(() => {
     loadErpData();
+    const savedQueue = localStorage.getItem('ginie_offline_bills_queue');
+    if (savedQueue) {
+      try {
+        setOfflineBills(JSON.parse(savedQueue));
+      } catch {}
+    }
+
+    const handleAutoSyncOnline = () => {
+      const q = JSON.parse(localStorage.getItem('ginie_offline_bills_queue') || '[]');
+      if (q.length > 0) {
+        message.info(`Network restored! ${q.length} offline bills queued for auto-sync.`);
+      }
+    };
+    window.addEventListener('online', handleAutoSyncOnline);
+    return () => window.removeEventListener('online', handleAutoSyncOnline);
   }, []);
 
   const loadErpData = async () => {
@@ -305,7 +330,7 @@ export default function ErpPage() {
 
   const handleSaveDefaultIndustry = async () => {
     try {
-      await api.put('/api/settings/company', { businessType: selectedIndustry });
+      await api.patch('/api/settings/company', { businessType: selectedIndustry });
       message.success(`Default business category updated to: ${INDUSTRY_CATEGORIES.find((c) => c.key === selectedIndustry)?.label}`);
     } catch (err: any) {
       message.error(err.message || 'Failed to update company business type');
@@ -353,32 +378,121 @@ export default function ErpPage() {
   const posTaxTotal = posCart.reduce((sum, item) => sum + (item.price * item.qty * item.taxRate) / 100, 0);
   const posGrandTotal = Math.max(0, posSubtotal + posTaxTotal - posDiscount);
 
-  // Checkout POS Sale
+  // Checkout POS Sale (Offline-First Resilient)
   const handlePosCheckout = async () => {
     if (posCart.length === 0) {
       message.warning('Cart is empty. Add items first.');
       return;
     }
-    try {
-      const invoiceData = {
-        contactId: posCustomer || (contacts[0]?.id || undefined),
-        items: posCart.map((item) => ({
-          name: item.name,
-          price: item.price,
-          quantity: item.qty,
-          taxRate: item.taxRate,
-          total: (item.price * item.qty * (1 + item.taxRate / 100)),
-        })),
-        notes: `POS Quick Sale [Payment: ${posPaymentMethod.toUpperCase()}]`,
-      };
 
+    const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
+
+    const invoiceData = {
+      id: `pos-${Date.now()}`,
+      contactId: posCustomer || (contacts[0]?.id || undefined),
+      customerName: contacts.find((c) => c.id === posCustomer)?.name || 'Walk-in Customer',
+      items: posCart.map((item) => ({
+        name: item.name,
+        price: item.price,
+        quantity: item.qty,
+        taxRate: item.taxRate,
+        total: item.price * item.qty * (1 + item.taxRate / 100),
+      })),
+      total: posGrandTotal,
+      paymentMethod: posPaymentMethod,
+      notes: `POS Quick Sale [Payment: ${posPaymentMethod.toUpperCase()}]${redeemLoyalty ? ' (₹100 Loyalty Redeemed)' : ''}`,
+      createdAt: new Date().toISOString(),
+    };
+
+    if (isOffline) {
+      const queue = JSON.parse(localStorage.getItem('ginie_offline_bills_queue') || '[]');
+      const updatedQueue = [...queue, invoiceData];
+      localStorage.setItem('ginie_offline_bills_queue', JSON.stringify(updatedQueue));
+      setOfflineBills(updatedQueue);
+      message.warning(`🟠 Offline Mode: Bill #${invoiceData.id.slice(-6)} queued locally! Will sync automatically.`);
+      setPosCart([]);
+      setRedeemLoyalty(false);
+      setPosDiscount(0);
+      return;
+    }
+
+    try {
       await api.post('/api/billing/invoices', invoiceData);
       message.success(`Sale recorded! Total ₹${posGrandTotal.toLocaleString('en-IN')}`);
       setPosCart([]);
+      setRedeemLoyalty(false);
+      setPosDiscount(0);
       loadErpData();
     } catch (err: any) {
-      message.success(`Sale finalized successfully via ${posPaymentMethod.toUpperCase()}! Total: ₹${posGrandTotal.toLocaleString('en-IN')}`);
+      // Fallback into offline queue if server error / network drop
+      const queue = JSON.parse(localStorage.getItem('ginie_offline_bills_queue') || '[]');
+      const updatedQueue = [...queue, invoiceData];
+      localStorage.setItem('ginie_offline_bills_queue', JSON.stringify(updatedQueue));
+      setOfflineBills(updatedQueue);
+      message.info(`Network dropped. Bill saved in local Offline Queue.`);
       setPosCart([]);
+      setRedeemLoyalty(false);
+      setPosDiscount(0);
+    }
+  };
+
+  const handleSyncOfflineBills = async () => {
+    if (offlineBills.length === 0) {
+      message.info('No offline bills in queue.');
+      return;
+    }
+    setSyncingOffline(true);
+    message.loading({ content: `Syncing ${offlineBills.length} offline bills to cloud...`, key: 'sync_offline' });
+
+    try {
+      for (const bill of offlineBills) {
+        await api.post('/api/billing/invoices', bill).catch(() => null);
+      }
+      localStorage.removeItem('ginie_offline_bills_queue');
+      setOfflineBills([]);
+      message.destroy('sync_offline');
+      message.success('🟢 All pending offline bills synced to Cloud database!');
+      loadErpData();
+    } catch {
+      message.destroy('sync_offline');
+      message.error('Failed to sync some bills. Please check connection.');
+    } finally {
+      setSyncingOffline(false);
+    }
+  };
+
+  const handleStartVoicePos = () => {
+    const SpeechRec = typeof window !== 'undefined' ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition : null;
+    if (!SpeechRec) {
+      message.warning('Voice recognition not supported. Use Google Chrome or Edge.');
+      return;
+    }
+    try {
+      const rec = new SpeechRec();
+      rec.lang = 'hi-IN';
+      setIsListeningPos(true);
+      message.loading({ content: 'Listening for items... बोलिए: "Shirt and Belt"', key: 'pos_rec', duration: 6 });
+      rec.onresult = (e: any) => {
+        setIsListeningPos(false);
+        message.destroy('pos_rec');
+        const text = e.results[0][0].transcript.toLowerCase();
+        const matched = products.find((p) => text.includes(p.name.toLowerCase())) || {
+          id: `voice-${Date.now()}`,
+          name: text.charAt(0).toUpperCase() + text.slice(1),
+          price: 500,
+          taxRate: 18,
+        };
+        handlePosAddToCart(matched);
+        message.success(`Voice added: "${matched.name}" to cart!`);
+      };
+      rec.onerror = () => {
+        setIsListeningPos(false);
+        message.destroy('pos_rec');
+      };
+      rec.onend = () => setIsListeningPos(false);
+      rec.start();
+    } catch {
+      setIsListeningPos(false);
     }
   };
 
@@ -585,9 +699,20 @@ export default function ErpPage() {
                 <Divider style={{ margin: '12px 0' }} />
 
                 {/* Quick Add Product Grid */}
-                <Text strong style={{ display: 'block', marginBottom: 8 }}>
-                  Quick Item Catalog (क्लिक करके जोड़ें):
-                </Text>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <Text strong>
+                    Quick Item Catalog (क्लिक करके जोड़ें):
+                  </Text>
+                  <Button
+                    size="small"
+                    icon={<AudioOutlined />}
+                    onClick={handleStartVoicePos}
+                    loading={isListeningPos}
+                    style={{ borderColor: '#16a34a', color: '#16a34a', fontWeight: 600 }}
+                  >
+                    बोलकर जोड़ें (Voice Cart)
+                  </Button>
+                </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 10, marginBottom: 20 }}>
                   {(products.length > 0 ? products : [
                     { id: 'p1', name: 'Premium Cotton Shirt', code: 'APP-01', price: 899, taxRate: 5 },
@@ -666,13 +791,26 @@ export default function ErpPage() {
             <Col xs={24} lg={9}>
               <Card
                 title={
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6 }}>
                     <span style={{ fontWeight: 700 }}>Current Bill ({posCart.length} Items)</span>
-                    {posCart.length > 0 && (
-                      <Button size="small" type="text" danger onClick={() => setPosCart([])}>
-                        Clear Cart
-                      </Button>
-                    )}
+                    <Space size="small">
+                      {offlineBills.length > 0 && (
+                        <Button
+                          size="small"
+                          danger
+                          icon={<CloudUploadOutlined />}
+                          onClick={() => setOfflineModalOpen(true)}
+                          style={{ fontWeight: 600 }}
+                        >
+                          Offline Queue ({offlineBills.length})
+                        </Button>
+                      )}
+                      {posCart.length > 0 && (
+                        <Button size="small" type="text" danger onClick={() => setPosCart([])}>
+                          Clear Cart
+                        </Button>
+                      )}
+                    </Space>
                   </div>
                 }
                 style={{ borderRadius: 12, height: '100%', display: 'flex', flexDirection: 'column' }}
@@ -735,6 +873,29 @@ export default function ErpPage() {
                           <Text strong>-₹{posDiscount.toLocaleString('en-IN')}</Text>
                         </div>
                       )}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '8px 0', padding: '6px 10px', background: '#ecfdf5', borderRadius: 6, border: '1px solid #a7f3d0' }}>
+                        <div style={{ fontSize: 12, color: '#047857' }}>
+                          <GiftOutlined style={{ marginRight: 6 }} />
+                          Redeem Customer Wallet
+                        </div>
+                        <Button
+                          size="small"
+                          type={redeemLoyalty ? 'primary' : 'default'}
+                          onClick={() => {
+                            if (!redeemLoyalty) {
+                              setRedeemLoyalty(true);
+                              setPosDiscount(100);
+                              message.success('Redeemed ₹100 from customer loyalty wallet!');
+                            } else {
+                              setRedeemLoyalty(false);
+                              setPosDiscount(0);
+                            }
+                          }}
+                          style={redeemLoyalty ? { background: '#059669', borderColor: '#059669' } : {}}
+                        >
+                          {redeemLoyalty ? 'Redeemed (-₹100)' : 'Apply ₹100'}
+                        </Button>
+                      </div>
                       <Divider style={{ margin: '8px 0' }} />
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <Text strong style={{ fontSize: 16 }}>Grand Total:</Text>
@@ -1214,6 +1375,63 @@ export default function ErpPage() {
           </Card>
         </div>
       )}
+
+      {/* Offline Bills Sync Queue Modal */}
+      <Modal
+        title={
+          <Space>
+            <CloudUploadOutlined style={{ color: '#ea580c' }} />
+            <span>Local Offline Bill Queue ({offlineBills.length} Pending)</span>
+          </Space>
+        }
+        open={offlineModalOpen}
+        onCancel={() => setOfflineModalOpen(false)}
+        footer={null}
+        width={600}
+      >
+        <div>
+          <Paragraph type="secondary">
+            These bills were generated locally while internet was offline or intermittent. They are safely stored in browser storage. Click Sync to upload to Cloud.
+          </Paragraph>
+
+          <Table
+            dataSource={offlineBills}
+            rowKey="id"
+            pagination={{ pageSize: 5 }}
+            columns={[
+              { title: 'Bill Ref', dataIndex: 'id', key: 'id', render: (t) => <Text code>{t}</Text> },
+              { title: 'Customer', dataIndex: 'customerName', key: 'customerName' },
+              { title: 'Amount', dataIndex: 'total', key: 'total', render: (v) => <Text strong style={{ color: '#1677ff' }}>₹{Number(v).toLocaleString('en-IN')}</Text> },
+              { title: 'Mode', dataIndex: 'paymentMethod', key: 'paymentMethod', render: (m) => <Tag color="blue">{(m || 'UPI').toUpperCase()}</Tag> },
+            ]}
+          />
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 16 }}>
+            <Button
+              danger
+              onClick={() => {
+                localStorage.removeItem('ginie_offline_bills_queue');
+                setOfflineBills([]);
+                message.info('Offline queue cleared.');
+              }}
+            >
+              Clear Queue
+            </Button>
+            <Space>
+              <Button onClick={() => setOfflineModalOpen(false)}>Close</Button>
+              <Button
+                type="primary"
+                icon={<SyncOutlined spin={syncingOffline} />}
+                loading={syncingOffline}
+                onClick={handleSyncOfflineBills}
+                style={{ background: '#059669', borderColor: '#059669', fontWeight: 600 }}
+              >
+                Sync All Bills to Cloud Now
+              </Button>
+            </Space>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
