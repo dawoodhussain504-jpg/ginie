@@ -23,6 +23,7 @@ import {
   DatabaseOutlined,
 } from '@ant-design/icons';
 import { useApp } from '@/context/AppContext';
+import { api } from '@/lib/api';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -40,19 +41,17 @@ export default function SubscriptionsPage() {
 
   const fetchStats = async () => {
     try {
-      const token = localStorage.getItem('ginie_token');
-      const res = await fetch('http://localhost:4000/api/subscriptions/current', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        const data = await res.json();
+      const data = await api.get('/api/subscriptions/current');
+      if (data) {
         setStats({
           leadsUsed: data.usage?.leadsUsed || 0,
           discoveryUsed: data.usage?.discoveryUsed || 0,
-          workflowsActive: 4,
+          workflowsActive: data.usage?.workflowsActive || 0,
         });
       }
-    } catch {}
+    } catch (err) {
+      console.error('Failed to load subscription stats:', err);
+    }
   };
 
   const unlockedFeatures = [

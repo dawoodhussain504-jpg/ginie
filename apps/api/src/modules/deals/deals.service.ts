@@ -25,49 +25,44 @@ export class DealsService {
         },
       });
       if (pipelines.length > 0) return pipelines;
-    } catch {}
 
-    return [
-      {
-        id: 'pipe-1',
-        name: 'Standard Sales Pipeline',
-        isDefault: true,
-        stages: [
-          {
-            id: 'stg-1',
-            name: 'Prospect',
-            orderIndex: 0,
-            deals: [
-              { id: 'd-1', title: 'Industrial Pumps Supply', value: 125000, company: { name: 'Metro Hardware Stores' }, contact: { name: 'Anil Kumar' } },
+      const newPipe = await prisma.pipeline.create({
+        data: {
+          tenantId,
+          name: 'Standard Sales Pipeline',
+          isDefault: true,
+          stages: {
+            create: [
+              { tenantId, name: 'Prospect', orderIndex: 0 },
+              { tenantId, name: 'Qualified', orderIndex: 1 },
+              { tenantId, name: 'Proposal Sent', orderIndex: 2 },
+              { tenantId, name: 'Negotiation', orderIndex: 3 },
+              { tenantId, name: 'Closed Won', orderIndex: 4 },
+              { tenantId, name: 'Closed Lost', orderIndex: 5 },
             ],
           },
-          {
-            id: 'stg-2',
-            name: 'Qualified',
-            orderIndex: 1,
-            deals: [
-              { id: 'd-2', title: 'Medical Equipment AMC', value: 85000, company: { name: 'Apex Health Clinic' }, contact: { name: 'Priya Sharma' } },
-            ],
+        },
+        include: {
+          stages: {
+            orderBy: { orderIndex: 'asc' },
+            include: {
+              deals: {
+                where: { deletedAt: null },
+                include: {
+                  contact: true,
+                  company: true,
+                  owner: true,
+                },
+              },
+            },
           },
-          {
-            id: 'stg-3',
-            name: 'Proposal Sent',
-            orderIndex: 2,
-            deals: [
-              { id: 'd-3', title: 'Enterprise Software License', value: 240000, company: { name: 'City Dental' }, contact: { name: 'Dr. Verma' } },
-            ],
-          },
-          {
-            id: 'stg-4',
-            name: 'Closed Won',
-            orderIndex: 3,
-            deals: [
-              { id: 'd-4', title: 'Office Networking Setup', value: 65000, company: { name: 'Apex Logistics' }, contact: { name: 'Karan Mehra' } },
-            ],
-          },
-        ],
-      },
-    ];
+        },
+      });
+      return [newPipe];
+    } catch (err) {
+      console.error('Failed to query pipelines from database:', err);
+      return [];
+    }
   }
 
   async create(tenantId: string, userId: string, dto: CreateDealDto) {

@@ -17,7 +17,7 @@ interface AppContextType {
   brandColor: string;
   setBrandColor: (color: string) => void;
   t: Dictionary;
-  login: (token: string, user: AuthenticatedUser) => void;
+  login: (token: string, user: AuthenticatedUser, refreshToken?: string) => void;
   logout: () => void;
 }
 
@@ -53,8 +53,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setIsDark(savedDark);
   }, []);
 
-  const login = (newToken: string, newUser: AuthenticatedUser) => {
+  const login = (newToken: string, newUser: AuthenticatedUser, newRefreshToken?: string) => {
     localStorage.setItem('ginie_token', newToken);
+    if (newRefreshToken) {
+      localStorage.setItem('ginie_refresh_token', newRefreshToken);
+    }
     localStorage.setItem('ginie_user', JSON.stringify(newUser));
     setToken(newToken);
     setUser(newUser);
@@ -65,6 +68,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const logout = () => {
     localStorage.removeItem('ginie_token');
+    localStorage.removeItem('ginie_refresh_token');
     localStorage.removeItem('ginie_user');
     setToken(null);
     setUser(null);

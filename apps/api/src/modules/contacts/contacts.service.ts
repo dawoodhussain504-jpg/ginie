@@ -11,13 +11,11 @@ export class ContactsService {
         orderBy: { createdAt: 'desc' },
         include: { company: true },
       });
-      if (contacts.length > 0) return contacts;
-    } catch {}
-
-    return [
-      { id: 'cnt-1', name: 'Anil Kumar', phone: '+91 98201 23456', email: 'anil@metrohardware.in', company: { name: 'Metro Hardware Stores' }, createdAt: new Date().toISOString() },
-      { id: 'cnt-2', name: 'Priya Sharma', phone: '+91 98112 34567', email: 'priya@apexclinic.com', company: { name: 'Apex Health Clinic' }, createdAt: new Date().toISOString() },
-    ];
+      return contacts;
+    } catch (err) {
+      console.error('Failed to query contacts from database:', err);
+      return [];
+    }
   }
 
   async findAllCompanies(tenantId: string) {
@@ -27,13 +25,11 @@ export class ContactsService {
         orderBy: { createdAt: 'desc' },
         include: { contacts: true, deals: true },
       });
-      if (companies.length > 0) return companies;
-    } catch {}
-
-    return [
-      { id: 'cmp-1', name: 'Metro Hardware Stores', city: 'Mumbai', phone: '+91 98201 23456', contacts: [{ name: 'Anil Kumar' }], deals: [{ title: 'Industrial Supply', value: 125000 }] },
-      { id: 'cmp-2', name: 'Apex Health Clinic', city: 'Pune', phone: '+91 98112 34567', contacts: [{ name: 'Priya Sharma' }], deals: [{ title: 'Equipment AMC', value: 85000 }] },
-    ];
+      return companies;
+    } catch (err) {
+      console.error('Failed to query companies from database:', err);
+      return [];
+    }
   }
 
   async createContact(tenantId: string, data: { name: string; phone?: string; email?: string; companyName?: string; designation?: string; notes?: string }) {

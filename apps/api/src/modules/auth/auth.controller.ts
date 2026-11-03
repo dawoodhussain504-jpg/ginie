@@ -67,6 +67,15 @@ export class AuthController {
     return this.authService.resetPassword(body.identifier, body.otp, body.newPassword);
   }
 
+  @Public()
+  @Post('refresh')
+  async refresh(@Body() body: { refreshToken: string }) {
+    if (!body?.refreshToken) {
+      throw new BadRequestException('Refresh token is required.');
+    }
+    return this.authService.refreshToken(body.refreshToken);
+  }
+
   @Get('me')
   async getMe(@CurrentUser('id') userId: string, @CurrentUser('tenantId') tenantId: string) {
     return this.authService.getMe(userId, tenantId);

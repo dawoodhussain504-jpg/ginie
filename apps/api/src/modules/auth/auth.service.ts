@@ -980,15 +980,30 @@ export class AuthService {
 
     const accessToken = this.jwtService.sign(payload, {
       secret,
-      expiresIn: process.env.JWT_ACCESS_EXPIRY || '15m',
+      expiresIn: process.env.JWT_ACCESS_EXPIRY || '24h',
     });
 
     const refreshToken = this.jwtService.sign(payload, {
       secret: refreshSecret,
-      expiresIn: process.env.JWT_REFRESH_EXPIRY || '7d',
+      expiresIn: process.env.JWT_REFRESH_EXPIRY || '30d',
     });
 
     return { accessToken, refreshToken };
+  }
+
+  async refreshToken(refreshToken: string): Promise<AuthTokens> {
+    const refreshSecret = process.env.JWT_REFRESH_SECRET || 'dev_secret_refresh_ginie_app';
+    try {
+      const decoded: any = this.jwtService.verify(refreshToken, { secret: refreshSecret });
+      return this.generateTokens({
+        id: decoded.id,
+        tenantId: decoded.tenantId,
+        email: decoded.email,
+        isSuperAdmin: decoded.isSuperAdmin,
+      });
+    } catch {
+      throw new UnauthorizedException('Invalid or expired refresh token. Please sign in again.');
+    }
   }
 
   async seedIndustryStarterProducts(tenantId: string, businessType: string) {

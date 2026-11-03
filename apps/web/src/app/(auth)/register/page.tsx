@@ -37,7 +37,7 @@ export default function RegisterPage() {
         phone: `+91 ${last10}`,
       };
       const res = await api.post('/api/auth/register', payload);
-      login(res.tokens.accessToken, res.user);
+      login(res.tokens.accessToken, res.user, res.tokens.refreshToken);
       router.push('/dashboard');
     } catch (err: any) {
       setErrorMessage(err.message || 'Registration failed. Please check your details.');

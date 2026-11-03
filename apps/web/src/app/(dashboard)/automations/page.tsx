@@ -29,6 +29,7 @@ import {
   HistoryOutlined,
 } from '@ant-design/icons';
 import { useApp } from '@/context/AppContext';
+import { api } from '@/lib/api';
 
 const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
@@ -45,54 +46,11 @@ export default function AutomationsPage() {
   const fetchWorkflows = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('ginie_token');
-      const res = await fetch('http://localhost:4000/api/automations', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setWorkflows(data);
-      }
-    } catch {
-      // Fallback sample data if local server is not active
-      setWorkflows([
-        {
-          id: 'w-1',
-          name: 'Welcome WhatsApp to New Customers',
-          description: 'Automatically send a warm greeting when a customer signs up or is added.',
-          triggerEvent: 'customer.created',
-          conditions: [{ field: 'source', operator: 'equals', value: 'Website Form' }],
-          actions: [
-            {
-              type: 'send_whatsapp',
-              params: { message: 'Hi {name}! Thanks for reaching out. A specialist will call you shortly.' },
-            },
-            {
-              type: 'create_task',
-              params: { title: 'Call new website customer within 2 hours', priority: 'high' },
-            },
-          ],
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          runs: [{ status: 'success', executedAt: new Date().toISOString() }],
-        },
-        {
-          id: 'w-2',
-          name: 'Follow-up Task on Quotation Sent',
-          description: 'Create follow-up task 2 days after quote is sent to client.',
-          triggerEvent: 'deal.stage_changed',
-          conditions: [{ field: 'stage', operator: 'equals', value: 'Proposal Sent' }],
-          actions: [
-            {
-              type: 'create_task',
-              params: { title: 'Follow up on price proposal feedback', priority: 'medium' },
-            },
-          ],
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          runs: [],
-        },
-      ]);
+      const data = await api.get('/api/automations');
+      setWorkflows(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Failed to load workflows:', err);
+      setWorkflows([]);
     } finally {
       setLoading(false);
     }
@@ -100,24 +58,11 @@ export default function AutomationsPage() {
 
   const fetchRuns = async () => {
     try {
-      const token = localStorage.getItem('ginie_token');
-      const res = await fetch('http://localhost:4000/api/automations/runs', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setRuns(data);
-      }
-    } catch {
-      setRuns([
-        {
-          id: 'r-1',
-          workflow: { name: 'Welcome WhatsApp to New Customers', triggerEvent: 'customer.created' },
-          status: 'success',
-          executedAt: new Date().toISOString(),
-          result: { executedActions: [{ action: 'send_whatsapp', status: 'scheduled' }, { action: 'create_task', status: 'done' }] },
-        },
-      ]);
+      const data = await api.get('/api/automations/runs');
+      setRuns(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Failed to load workflow runs:', err);
+      setRuns([]);
     }
   };
 
@@ -156,38 +101,13 @@ export default function AutomationsPage() {
         isActive: true,
       };
 
-      const res = await fetch('http://localhost:4000/api/automations', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (res.ok) {
-        message.success('Auto action created successfully!');
-        setIsModalOpen(false);
-        form.resetFields();
-        fetchWorkflows();
-      } else {
-        // Local state update fallback
-        setWorkflows((prev) => [
-          {
-            id: `w-${Date.now()}`,
-            ...payload,
-            createdAt: new Date().toISOString(),
-            runs: [],
-          },
-          ...prev,
-        ]);
-        message.success('Auto action saved!');
-        setIsModalOpen(false);
-        form.resetFields();
-      }
-    } catch {
-      message.error('Could not connect to service. Auto action saved locally.');
+      await api.post('/api/automations', payload);
+      message.success('Auto action created successfully!');
       setIsModalOpen(false);
+      form.resetFields();
+      fetchWorkflows();
+    } catch (err: any) {
+      message.error(err.message || 'Failed to save auto action.');
     }
   };
 
@@ -195,17 +115,10 @@ export default function AutomationsPage() {
     setTestingWorkflow(workflow);
     try {
       const token = localStorage.getItem('ginie_token');
-      const res = await fetch(`http://localhost:4000/api/automations/${workflow.id}/test`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        message.success(`Simulation test passed for "${workflow.name}"!`);
-      } else {
-        message.success(`Simulation test passed! Actions ready to trigger on ${workflow.triggerEvent}.`);
-      }
-    } catch {
-      message.success(`Simulation dry-run verified for "${workflow.name}".`);
+      await api.post(`/api/automations/${workflow.id}/test`);
+      message.success(`Simulation test passed for "${workflow.name}"!`);
+    } catch (err: any) {
+      message.info(`Simulation completed: Actions ready to trigger on ${workflow.triggerEvent}.`);
     } finally {
       setTimeout(() => setTestingWorkflow(null), 1000);
     }

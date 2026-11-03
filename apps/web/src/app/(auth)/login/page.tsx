@@ -93,7 +93,7 @@ export default function LoginPage() {
         password: values.password,
       });
 
-      login(res.tokens.accessToken, res.user);
+      login(res.tokens.accessToken, res.user, res.tokens.refreshToken);
       message.success(locale === 'hi' ? 'सफलतापूर्वक साइन इन किया!' : 'Signed in successfully!');
 
       if (res.user?.isSuperAdmin) {
@@ -150,7 +150,7 @@ export default function LoginPage() {
 
       const res = await api.post('/api/auth/otp/verify', payload);
 
-      login(res.tokens.accessToken, res.user);
+      login(res.tokens.accessToken, res.user, res.tokens.refreshToken);
       message.success(locale === 'hi' ? 'सफलतापूर्वक साइन इन किया!' : 'Signed in successfully!');
 
       if (res.user?.isSuperAdmin) {

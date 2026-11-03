@@ -64,88 +64,37 @@ export class LeadsService {
         pageSize,
         totalPages: Math.ceil(total / pageSize),
       };
-    } catch {
-      const demoItems = [
-        {
-          id: 'lead-1',
-          name: 'Anil Kumar',
-          companyName: 'Metro Hardware Stores',
-          phone: '+91 9820123456',
-          email: 'anil@metrohardware.in',
-          city: 'Mumbai',
-          source: 'Google Maps',
-          score: 85,
-          aiScoreCategory: 'hot',
-          aiScoreReason: 'Verified phone, active follow-ups, looking for immediate supplier.',
-          status: { name: 'Qualified', color: '#52c41a' },
-          createdAt: new Date().toISOString(),
-          activities: [
-            { type: 'note', content: 'Customer requested quotation for industrial parts.', createdAt: new Date().toISOString() },
-          ],
-        },
-        {
-          id: 'lead-2',
-          name: 'Priya Sharma',
-          companyName: 'Apex Health Clinic',
-          phone: '+91 9811234567',
-          email: 'priya@apexclinic.com',
-          city: 'Pune',
-          source: 'Website Form',
-          score: 65,
-          aiScoreCategory: 'warm',
-          aiScoreReason: 'Inquired through web form, scheduling demonstration.',
-          status: { name: 'Contacted', color: '#faad14' },
-          createdAt: new Date().toISOString(),
-          activities: [],
-        },
-      ];
+    } catch (err) {
+      console.error('Failed to query leads from database:', err);
       return {
-        items: demoItems,
-        total: demoItems.length,
-        page: 1,
-        pageSize: 20,
-        totalPages: 1,
+        items: [],
+        total: 0,
+        page,
+        pageSize,
+        totalPages: 0,
       };
     }
   }
 
   async findOne(tenantId: string, id: string) {
-    try {
-      const lead = await prisma.lead.findFirst({
-        where: { id, tenantId, deletedAt: null },
-        include: {
-          status: true,
-          owner: true,
-        },
-      });
+    const lead = await prisma.lead.findFirst({
+      where: { id, tenantId, deletedAt: null },
+      include: {
+        status: true,
+        owner: true,
+      },
+    });
 
-      if (lead) {
-        const activities = await prisma.activity.findMany({
-          where: { tenantId, entityType: 'lead', entityId: id },
-          orderBy: { createdAt: 'desc' },
-          include: { user: true },
-        });
-        return { ...lead, activities };
-      }
-    } catch {}
+    if (!lead) {
+      throw new NotFoundException('Customer/Lead not found.');
+    }
 
-    return {
-      id,
-      name: 'Anil Kumar',
-      companyName: 'Metro Hardware Stores',
-      phone: '+91 9820123456',
-      email: 'anil@metrohardware.in',
-      city: 'Mumbai',
-      source: 'Google Maps',
-      score: 85,
-      aiScoreCategory: 'hot',
-      aiScoreReason: 'Verified phone, active follow-ups, looking for immediate supplier.',
-      status: { name: 'Qualified', color: '#52c41a' },
-      createdAt: new Date().toISOString(),
-      activities: [
-        { type: 'note', content: 'Customer requested quotation for industrial parts.', createdAt: new Date().toISOString() },
-      ],
-    };
+    const activities = await prisma.activity.findMany({
+      where: { tenantId, entityType: 'lead', entityId: id },
+      orderBy: { createdAt: 'desc' },
+      include: { user: true },
+    });
+    return { ...lead, activities };
   }
 
   async create(tenantId: string, userId: string, dto: CreateLeadDto) {
@@ -233,6 +182,17 @@ export class LeadsService {
       },
     });
 
+    await prisma.auditLog.create({
+      data: {
+        tenantId,
+        userId,
+        action: 'create',
+        entity: 'lead',
+        entityId: lead.id,
+        after: { name: lead.name, phone: lead.phone, companyName: lead.companyName },
+      },
+    }).catch(() => {});
+
     return lead;
   }
 
@@ -253,6 +213,17 @@ export class LeadsService {
       include: { status: true, owner: true },
     });
 
+    await prisma.auditLog.create({
+      data: {
+        tenantId,
+        userId,
+        action: 'update',
+        entity: 'lead',
+        entityId: id,
+        after: dto,
+      },
+    }).catch(() => {});
+
     return updated;
   }
 
@@ -269,6 +240,16 @@ export class LeadsService {
       where: { id },
       data: { deletedAt: new Date() },
     });
+
+    await prisma.auditLog.create({
+      data: {
+        tenantId,
+        action: 'delete',
+        entity: 'lead',
+        entityId: id,
+        before: { name: existing.name, phone: existing.phone },
+      },
+    }).catch(() => {});
 
     return { success: true, message: 'Customer moved to bin.' };
   }

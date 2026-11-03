@@ -19,6 +19,7 @@ import {
   SearchOutlined,
 } from '@ant-design/icons';
 import { useApp } from '@/context/AppContext';
+import { api } from '@/lib/api';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -33,46 +34,11 @@ export default function AuditLogsPage() {
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('ginie_token');
-      const res = await fetch('http://localhost:4000/api/audit-logs', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setLogs(data);
-      }
-    } catch {
-      // Fallback audit entries
-      setLogs([
-        {
-          id: 'log-1',
-          action: 'create',
-          entity: 'lead',
-          entityId: 'lead-101',
-          userName: 'Rajesh Sharma',
-          createdAt: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
-          after: { name: 'Metro Electronics', phone: '+91 9820123456', city: 'Mumbai', source: 'Google Maps' },
-        },
-        {
-          id: 'log-2',
-          action: 'update',
-          entity: 'deal',
-          entityId: 'deal-202',
-          userName: 'Rajesh Sharma',
-          createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-          before: { stage: 'Proposal Sent', probability: 60 },
-          after: { stage: 'Closed Won', probability: 100, wonReason: 'Best price and service' },
-        },
-        {
-          id: 'log-3',
-          action: 'create',
-          entity: 'invoice',
-          entityId: 'inv-303',
-          userName: 'Rajesh Sharma',
-          createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
-          after: { invoiceNumber: 'INV-2026-001', amount: 35000, status: 'unpaid' },
-        },
-      ]);
+      const data = await api.get('/api/audit-logs');
+      setLogs(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Failed to load audit logs:', err);
+      setLogs([]);
     } finally {
       setLoading(false);
     }
