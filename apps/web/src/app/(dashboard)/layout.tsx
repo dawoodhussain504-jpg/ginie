@@ -150,90 +150,142 @@ export default function DashboardLayout({
     }
   }, [user]);
 
-  // Exactly 8 Simplified Menu Groups (Upgrade Spec 1.1)
-  const menuItems = [
-    {
-      key: '/dashboard',
-      icon: <HomeOutlined />,
-      label: <Link href="/dashboard">{t.nav.home}</Link>,
-    },
-    {
-      key: '/customers',
-      icon: <UsergroupAddOutlined />,
-      label: <Link href="/customers">{t.nav.customers}</Link>,
-    },
-    {
-      key: '/find-customers',
-      icon: <CompassOutlined />,
-      label: (
-        <Link href="/find-customers">
-          <span style={{ fontWeight: 600 }}>{t.nav.findCustomers}</span>
-        </Link>
-      ),
-    },
-    {
-      key: '/sales',
-      icon: <FundProjectionScreenOutlined />,
-      label: <Link href="/sales">Sales & Tasks</Link>,
-    },
-    {
-      key: '/erp',
-      icon: <AppstoreOutlined />,
-      label: (
-        <Link href="/erp">
-          <span style={{ fontWeight: 600 }}>ERP & Operations</span>
-        </Link>
-      ),
-    },
-    {
-      key: '/digital-store',
-      icon: <ShopOutlined />,
-      label: (
-        <Link href="/digital-store">
-          <span style={{ fontWeight: 600 }}>Digital Store</span>
-        </Link>
-      ),
-    },
-    {
-      key: '/whatsapp',
-      icon: <WhatsAppOutlined />,
-      label: <Link href="/whatsapp">Messages</Link>,
-    },
-    {
-      key: '/billing',
-      icon: <FileTextOutlined />,
-      label: <Link href="/billing">{t.nav.billing}</Link>,
-    },
-    {
-      key: '/reports',
-      icon: <BarChartOutlined />,
-      label: <Link href="/reports">{t.nav.reports}</Link>,
-    },
-    {
-      key: '/settings',
-      icon: <SettingOutlined />,
-      label: <Link href="/settings">{t.nav.settings}</Link>,
-    },
-  ];
-
   const isOwnerOrSuper = user?.isSuperAdmin || user?.role === 'Owner';
   const canViewBilling = isOwnerOrSuper || user?.permissions?.billing?.view !== false;
 
-  const visibleMenuItems = [
-    ...menuItems.filter((item) => {
-      if (item.key === '/billing' && !canViewBilling) return false;
-      return true;
-    }),
+  const getPageTitle = (path: string) => {
+    if (path === '/dashboard') return t.nav.home || 'Home';
+    if (path.startsWith('/customers')) return t.nav.customers || 'Customers & Leads';
+    if (path.startsWith('/sales')) return 'Sales & Pipeline';
+    if (path.startsWith('/find-customers')) return t.nav.findCustomers || 'Find Customers';
+    if (path.startsWith('/erp')) return 'ERP & Operations';
+    if (path.startsWith('/digital-store')) return 'Digital Storefront';
+    if (path.startsWith('/whatsapp')) return 'Messages & WhatsApp';
+    if (path.startsWith('/billing')) return t.nav.billing || 'Billing & Invoices';
+    if (path.startsWith('/reports')) return t.nav.reports || 'Reports & Insights';
+    if (path.startsWith('/settings')) return t.nav.settings || 'Settings';
+    if (path === '/admin') return 'Master Console';
+    return 'Dashboard';
+  };
+
+  // Structured 3-Tier Sidebar Menu
+  const visibleMenuItems: any[] = [
+    {
+      type: 'group',
+      label: (
+        <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: isDark ? '#64748b' : '#94a3b8', textTransform: 'uppercase' }}>
+          Core Sales
+        </span>
+      ),
+      children: [
+        {
+          key: '/dashboard',
+          icon: <HomeOutlined />,
+          label: <Link href="/dashboard">{t.nav.home}</Link>,
+        },
+        {
+          key: '/customers',
+          icon: <UsergroupAddOutlined />,
+          label: <Link href="/customers">{t.nav.customers}</Link>,
+        },
+        {
+          key: '/sales',
+          icon: <FundProjectionScreenOutlined />,
+          label: <Link href="/sales">Sales & Tasks</Link>,
+        },
+        {
+          key: '/find-customers',
+          icon: <CompassOutlined style={{ color: '#2563eb' }} />,
+          label: (
+            <Link href="/find-customers">
+              <span style={{ fontWeight: 600 }}>{t.nav.findCustomers}</span>
+            </Link>
+          ),
+        },
+      ],
+    },
+    {
+      type: 'group',
+      label: (
+        <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: isDark ? '#64748b' : '#94a3b8', textTransform: 'uppercase' }}>
+          Operations & ERP
+        </span>
+      ),
+      children: [
+        {
+          key: '/erp',
+          icon: <AppstoreOutlined />,
+          label: (
+            <Link href="/erp">
+              <span style={{ fontWeight: 600 }}>ERP & Operations</span>
+            </Link>
+          ),
+        },
+        {
+          key: '/digital-store',
+          icon: <ShopOutlined />,
+          label: (
+            <Link href="/digital-store">
+              <span style={{ fontWeight: 600 }}>Digital Store</span>
+            </Link>
+          ),
+        },
+        ...(canViewBilling
+          ? [
+              {
+                key: '/billing',
+                icon: <FileTextOutlined />,
+                label: <Link href="/billing">{t.nav.billing}</Link>,
+              },
+            ]
+          : []),
+      ],
+    },
+    {
+      type: 'group',
+      label: (
+        <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: isDark ? '#64748b' : '#94a3b8', textTransform: 'uppercase' }}>
+          Channels & Setup
+        </span>
+      ),
+      children: [
+        {
+          key: '/whatsapp',
+          icon: <WhatsAppOutlined style={{ color: '#25D366' }} />,
+          label: <Link href="/whatsapp">WhatsApp Inbox</Link>,
+        },
+        {
+          key: '/reports',
+          icon: <BarChartOutlined />,
+          label: <Link href="/reports">{t.nav.reports}</Link>,
+        },
+        {
+          key: '/settings',
+          icon: <SettingOutlined />,
+          label: <Link href="/settings">{t.nav.settings}</Link>,
+        },
+      ],
+    },
     ...(user?.isSuperAdmin
       ? [
           {
-            key: '/admin',
-            icon: <SafetyCertificateOutlined style={{ color: '#faad14' }} />,
+            type: 'group',
             label: (
-              <Link href="/admin">
-                <span style={{ color: '#faad14', fontWeight: 600 }}>Master Console</span>
-              </Link>
+              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: '#d48806', textTransform: 'uppercase' }}>
+                Platform HQ
+              </span>
             ),
+            children: [
+              {
+                key: '/admin',
+                icon: <SafetyCertificateOutlined style={{ color: '#faad14' }} />,
+                label: (
+                  <Link href="/admin">
+                    <span style={{ color: '#d48806', fontWeight: 600 }}>Master Console</span>
+                  </Link>
+                ),
+              },
+            ],
           },
         ]
       : []),
@@ -244,22 +296,22 @@ export default function DashboardLayout({
       {
         key: 'user-info',
         label: (
-          <div style={{ padding: '6px 8px' }}>
-            <Text strong>{user?.name || 'User'}</Text>
+          <div style={{ padding: '8px 10px' }}>
+            <Text strong style={{ fontSize: 14 }}>{user?.name || 'User'}</Text>
             <br />
             <Text type="secondary" style={{ fontSize: 12 }}>
-              {user?.companyName || 'Ginie Space'}
+              {user?.companyName || 'Business Cockpit'}
             </Text>
-            <div style={{ marginTop: 4 }}>
+            <div style={{ marginTop: 6 }}>
               <span
                 style={{
                   fontSize: 11,
                   fontWeight: 600,
                   padding: '2px 8px',
                   borderRadius: 6,
-                  background: user?.isSuperAdmin ? '#fffbe6' : user?.role === 'Owner' ? '#f9f0ff' : '#e6f4ff',
-                  color: user?.isSuperAdmin ? '#d48806' : user?.role === 'Owner' ? '#722ed1' : '#1677ff',
-                  border: user?.isSuperAdmin ? '1px solid #ffe58f' : user?.role === 'Owner' ? '1px solid #d3adf7' : '1px solid #91caff',
+                  background: user?.isSuperAdmin ? '#fffbe6' : user?.role === 'Owner' ? '#f9f0ff' : '#eff6ff',
+                  color: user?.isSuperAdmin ? '#d48806' : user?.role === 'Owner' ? '#722ed1' : '#2563eb',
+                  border: user?.isSuperAdmin ? '1px solid #ffe58f' : user?.role === 'Owner' ? '1px solid #d3adf7' : '1px solid #bfdbfe',
                 }}
               >
                 {user?.isSuperAdmin ? 'Platform Admin' : user?.role || 'Staff Member'}
@@ -269,6 +321,33 @@ export default function DashboardLayout({
         ),
       },
       { type: 'divider' as const },
+      {
+        key: 'digital-store',
+        icon: <ShopOutlined style={{ color: '#2563eb' }} />,
+        label: (
+          <Link href="/digital-store">
+            <span style={{ fontWeight: 600 }}>Digital Storefront</span>
+          </Link>
+        ),
+      },
+      ...(isInstallable
+        ? [
+            {
+              key: 'install-app',
+              icon: <MobileOutlined style={{ color: '#10b981' }} />,
+              label: <a onClick={handleInstallApp}>Install GINIE Mobile App</a>,
+            },
+          ]
+        : []),
+      ...(isOwnerOrSuper
+        ? [
+            {
+              key: 'onboarding-wizard',
+              icon: <AppstoreOutlined />,
+              label: <a onClick={() => setOnboardingOpen(true)}>Business Setup Wizard</a>,
+            },
+          ]
+        : []),
       ...(user?.isSuperAdmin
         ? [
             {
@@ -282,20 +361,12 @@ export default function DashboardLayout({
             },
           ]
         : []),
-      ...(isOwnerOrSuper
-        ? [
-            {
-              key: 'onboarding-wizard',
-              icon: <AppstoreOutlined />,
-              label: <a onClick={() => setOnboardingOpen(true)}>Business Setup Wizard</a>,
-            },
-          ]
-        : []),
       {
         key: 'settings',
         icon: <SettingOutlined />,
         label: <Link href="/settings">{t.nav.settings}</Link>,
       },
+      { type: 'divider' as const },
       {
         key: 'logout',
         icon: <LogoutOutlined />,
@@ -322,7 +393,7 @@ export default function DashboardLayout({
   };
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
+    <Layout style={{ minHeight: '100vh', background: isDark ? '#0b0f17' : '#f8fafc' }}>
       {/* Desktop Sider */}
       <Sider
         collapsible
@@ -331,43 +402,62 @@ export default function DashboardLayout({
         theme={isDark ? 'dark' : 'light'}
         className="ginie-desktop-sider"
         style={{
-          borderRight: isDark ? '1px solid #303030' : '1px solid #f0f0f0',
+          borderRight: isDark ? '1px solid #1e293b' : '1px solid #e2e8f0',
+          background: isDark ? '#0f172a' : '#ffffff',
         }}
-        width={240}
+        width={250}
       >
         <div
           style={{
             height: 64,
             display: 'flex',
             alignItems: 'center',
-            padding: '0 20px',
+            padding: '0 18px',
             gap: 12,
-            borderBottom: isDark ? '1px solid #303030' : '1px solid #f0f0f0',
+            borderBottom: isDark ? '1px solid #1e293b' : '1px solid #e2e8f0',
           }}
         >
           <div
             style={{
-              width: 34,
-              height: 34,
-              borderRadius: 8,
-              background: brandColor,
+              width: 36,
+              height: 36,
+              borderRadius: 10,
+              background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
               color: '#fff',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontWeight: 800,
+              fontWeight: 900,
               fontSize: 18,
+              boxShadow: '0 4px 12px rgba(37, 99, 235, 0.35)',
+              flexShrink: 0,
             }}
           >
             G
           </div>
           {!collapsed && (
-            <div>
-              <Text strong style={{ fontSize: 16, display: 'block', lineHeight: 1.2 }}>
-                {t.app.name}
-              </Text>
-              <Text type="secondary" style={{ fontSize: 11 }}>
-                {user?.companyName || 'Private Cockpit'}
+            <div style={{ overflow: 'hidden' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Text strong style={{ fontSize: 16, lineHeight: 1.2, letterSpacing: '-0.02em', color: isDark ? '#f8fafc' : '#0f172a' }}>
+                  GINIE
+                </Text>
+                <span
+                  style={{
+                    fontSize: 9,
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    color: '#2563eb',
+                    background: '#eff6ff',
+                    padding: '1px 6px',
+                    borderRadius: 999,
+                    border: '1px solid #bfdbfe',
+                  }}
+                >
+                  CRM
+                </span>
+              </div>
+              <Text type="secondary" style={{ fontSize: 11, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {user?.companyName || 'Business Cockpit'}
               </Text>
             </div>
           )}
@@ -377,61 +467,95 @@ export default function DashboardLayout({
           mode="inline"
           selectedKeys={[getActiveKey()]}
           items={visibleMenuItems}
-          style={{ borderRight: 0, marginTop: 8 }}
+          style={{
+            borderRight: 0,
+            marginTop: 8,
+            background: 'transparent',
+          }}
         />
       </Sider>
 
-      <Layout>
+      <Layout style={{ background: isDark ? '#0b0f17' : '#f8fafc' }}>
         {/* Top Header */}
         <Header
           style={{
-            background: isDark ? '#141414' : '#fff',
-            padding: '0 20px',
+            background: isDark ? '#0f172a' : '#ffffff',
+            padding: '0 24px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            borderBottom: isDark ? '1px solid #303030' : '1px solid #f0f0f0',
+            borderBottom: isDark ? '1px solid #1e293b' : '1px solid #e2e8f0',
             height: 64,
+            position: 'sticky',
+            top: 0,
+            zIndex: 100,
+            boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03)',
           }}
         >
-          <div>
-            <Text type="secondary" style={{ fontSize: 13 }}>
-              {t.app.tagline}
-            </Text>
+          {/* Left: Breadcrumb & Workspace badge */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 13, fontWeight: 500, color: isDark ? '#94a3b8' : '#64748b' }}>
+                GINIE
+              </span>
+              <span style={{ color: isDark ? '#475569' : '#cbd5e1', fontSize: 12 }}>/</span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: isDark ? '#f8fafc' : '#0f172a' }}>
+                {getPageTitle(pathname)}
+              </span>
+            </div>
+
+            <Tag
+              style={{
+                borderRadius: 999,
+                margin: 0,
+                fontSize: 11,
+                fontWeight: 600,
+                border: isDark ? '1px solid rgba(56, 189, 248, 0.25)' : '1px solid #bae6fd',
+                background: isDark ? 'rgba(56, 189, 248, 0.1)' : '#f0f9ff',
+                color: isDark ? '#38bdf8' : '#0284c7',
+                padding: '2px 10px',
+              }}
+            >
+              {user?.companyName || 'Business Cockpit'}
+            </Tag>
           </div>
 
-          <Space size="middle">
-
-            {/* Online / Offline Status Badge */}
-            <Tag color={isOnline ? 'green' : 'orange'} style={{ borderRadius: 12, margin: 0, fontWeight: 700 }}>
-              {isOnline ? 'Live Cloud' : 'Offline Mode'}
-            </Tag>
+          {/* Right: Controls & User Profile */}
+          <Space size="middle" align="center">
+            {/* Sync status */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginRight: 4 }}>
+              <span
+                style={{
+                  display: 'inline-block',
+                  width: 7,
+                  height: 7,
+                  borderRadius: '50%',
+                  background: isOnline ? '#10b981' : '#f59e0b',
+                  boxShadow: isOnline ? '0 0 8px rgba(16, 185, 129, 0.6)' : 'none',
+                }}
+              />
+              <span style={{ fontSize: 12, color: isDark ? '#94a3b8' : '#64748b', fontWeight: 500 }}>
+                {isOnline ? 'Cloud Synced' : 'Offline'}
+              </span>
+            </div>
 
             {/* AI Assistant Button */}
             <Button
-              type="primary"
-              icon={<ThunderboltFilled />}
+              icon={<ThunderboltFilled style={{ color: '#2563eb' }} />}
               onClick={() => setAiDrawerOpen(true)}
               style={{
                 borderRadius: 8,
-                background: 'linear-gradient(135deg, #1677ff 0%, #722ed1 100%)',
-                borderColor: 'transparent',
+                background: isDark ? 'rgba(37, 99, 235, 0.12)' : '#eff6ff',
+                borderColor: isDark ? 'rgba(37, 99, 235, 0.3)' : '#bfdbfe',
+                color: isDark ? '#60a5fa' : '#2563eb',
                 fontWeight: 700,
-                boxShadow: '0 2px 8px rgba(114, 46, 209, 0.25)',
+                height: 36,
               }}
             >
               Ask GINIE AI
             </Button>
 
-            {/* Digital Storefront Link */}
-            <Tooltip title="Manage your Public Digital Storefront & Catalog">
-              <Link href="/digital-store">
-                <Button icon={<ShopOutlined />} style={{ borderRadius: 8, fontWeight: 600 }}>
-                  Digital Store
-                </Button>
-              </Link>
-            </Tooltip>
-
+            {/* Impersonation Exit if active */}
             {isImpersonating && (
               <Button
                 type="primary"
@@ -439,64 +563,13 @@ export default function DashboardLayout({
                 size="middle"
                 icon={<ArrowLeftOutlined />}
                 onClick={handleExitImpersonation}
-                style={{ fontWeight: 600, borderRadius: 6 }}
+                style={{ fontWeight: 600, borderRadius: 8, height: 36 }}
               >
                 Exit Impersonation
               </Button>
             )}
 
-            {user?.isSuperAdmin && !isImpersonating && (
-              pathname === '/admin' ? (
-                <Button
-                  size="middle"
-                  icon={<HomeOutlined />}
-                  onClick={() => router.push('/dashboard')}
-                  style={{
-                    fontWeight: 600,
-                    borderRadius: 8,
-                    background: isDark ? '#262626' : '#f5f5f5',
-                    border: '1px solid #d9d9d9',
-                  }}
-                >
-                  CRM Workspace
-                </Button>
-              ) : (
-                <Button
-                  size="middle"
-                  icon={<SafetyCertificateOutlined />}
-                  onClick={() => router.push('/admin')}
-                  style={{
-                    background: 'linear-gradient(135deg, #faad14 0%, #d48806 100%)',
-                    borderColor: '#d48806',
-                    color: '#000',
-                    fontWeight: 700,
-                    borderRadius: 8,
-                    boxShadow: '0 2px 6px rgba(212, 136, 6, 0.25)',
-                  }}
-                >
-                  Master Console
-                </Button>
-              )
-            )}
-
-            {isInstallable && (
-              <Button
-                type="primary"
-                size="small"
-                icon={<MobileOutlined />}
-                onClick={handleInstallApp}
-                style={{
-                  background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
-                  borderColor: '#4f46e5',
-                  borderRadius: 20,
-                  fontWeight: 600,
-                  boxShadow: '0 2px 8px rgba(79, 70, 229, 0.3)',
-                }}
-              >
-                Install App
-              </Button>
-            )}
-
+            {/* Language Selector */}
             <Select
               size="middle"
               value={locale}
@@ -505,23 +578,50 @@ export default function DashboardLayout({
                 { value: 'en', label: 'English' },
                 { value: 'hi', label: 'हिंदी (HI)' },
               ]}
-              prefix={<GlobalOutlined />}
-              style={{ width: 120 }}
+              prefix={<GlobalOutlined style={{ color: isDark ? '#94a3b8' : '#64748b' }} />}
+              style={{ width: 110 }}
             />
 
+            {/* Theme Toggle */}
             <Button
               type="text"
-              icon={isDark ? <BulbFilled style={{ color: '#faad14' }} /> : <BulbOutlined />}
+              icon={isDark ? <BulbFilled style={{ color: '#faad14' }} /> : <BulbOutlined style={{ color: '#64748b' }} />}
               onClick={() => setIsDark(!isDark)}
+              style={{ borderRadius: 8, height: 36, width: 36 }}
             />
 
+            {/* User Dropdown */}
             <Dropdown menu={userDropdownItems} trigger={['click']}>
-              <Space style={{ cursor: 'pointer' }}>
-                <Avatar style={{ backgroundColor: brandColor }}>
-                  {user?.name?.[0]?.toUpperCase() || 'A'}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  cursor: 'pointer',
+                  padding: '4px 8px',
+                  borderRadius: 8,
+                  transition: 'background 0.2s ease',
+                }}
+              >
+                <Avatar
+                  style={{
+                    backgroundColor: brandColor || '#2563eb',
+                    fontWeight: 700,
+                    boxShadow: '0 2px 6px rgba(37, 99, 235, 0.25)',
+                  }}
+                  size={32}
+                >
+                  {user?.name?.[0]?.toUpperCase() || 'U'}
                 </Avatar>
-                <Text strong className="ginie-header-username">{user?.name || 'Master Admin'}</Text>
-              </Space>
+                <div className="ginie-header-username" style={{ lineHeight: 1.2 }}>
+                  <Text strong style={{ fontSize: 13, display: 'block', color: isDark ? '#f8fafc' : '#0f172a' }}>
+                    {user?.name || 'My Account'}
+                  </Text>
+                  <Text type="secondary" style={{ fontSize: 11 }}>
+                    {user?.isSuperAdmin ? 'Platform Admin' : user?.role || 'Staff'}
+                  </Text>
+                </div>
+              </div>
             </Dropdown>
           </Space>
         </Header>
@@ -566,7 +666,7 @@ export default function DashboardLayout({
         )}
 
         {/* Content Area */}
-        <Content style={{ margin: 20, minHeight: 280, paddingBottom: 64 }}>
+        <Content style={{ margin: '24px 24px', minHeight: 'calc(100vh - 120px)', paddingBottom: 64 }}>
           {children}
         </Content>
 

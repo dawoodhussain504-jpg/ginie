@@ -28,7 +28,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [locale, setLocaleState] = useState<Locale>('en');
   const [isDark, setIsDark] = useState<boolean>(false);
-  const [brandColor, setBrandColor] = useState<string>('#1677ff');
+  const [brandColor, setBrandColor] = useState<string>('#2563eb');
 
   useEffect(() => {
     const savedToken = localStorage.getItem('ginie_token');
@@ -103,9 +103,37 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         locale={locale === 'hi' ? hiIN : enUS}
         theme={{
           token: {
-            colorPrimary: brandColor,
+            colorPrimary: brandColor || '#2563eb',
+            colorInfo: brandColor || '#2563eb',
+            colorSuccess: '#10b981',
+            colorWarning: '#f59e0b',
+            colorError: '#ef4444',
             borderRadius: 8,
-            fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
+            fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+            colorBgContainer: isDark ? '#141923' : '#ffffff',
+            colorBgLayout: isDark ? '#0b0f17' : '#f8fafc',
+            colorBorder: isDark ? '#263042' : '#e2e8f0',
+            colorBorderSecondary: isDark ? '#1e2638' : '#f1f5f9',
+            fontSize: 14,
+            lineHeight: 1.5714,
+          },
+          components: {
+            Button: {
+              controlHeight: 38,
+              borderRadius: 8,
+              fontWeight: 600,
+            },
+            Card: {
+              borderRadiusLG: 12,
+              paddingLG: 20,
+            },
+            Table: {
+              borderRadius: 8,
+            },
+            Menu: {
+              itemBorderRadius: 8,
+              itemMarginInline: 8,
+            },
           },
           algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
         }}

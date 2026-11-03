@@ -215,27 +215,28 @@ export default function MarketingLandingPage() {
       {/* Top Banner */}
       <div
         style={{
-          background: 'linear-gradient(90deg, #1e293b 0%, #0f172a 100%)',
-          color: '#cbd5e1',
-          padding: '10px 20px',
-          fontSize: 13,
+          background: '#090D16',
+          color: '#94a3b8',
+          padding: '8px 20px',
+          fontSize: 12,
+          fontWeight: 600,
           textAlign: 'center',
-          borderBottom: '1px solid rgba(255,255,255,0.08)',
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
         }}
       >
         <Space direction="horizontal" size="middle" wrap style={{ justifyContent: 'center' }}>
-          <span>
-            <SafetyCertificateOutlined style={{ color: '#10b981', marginRight: 6 }} />
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#34d399' }}>
+            <SafetyCertificateOutlined />
             GINIE Core CRM is 100% Free Forever
           </span>
-          <span style={{ opacity: 0.4 }}>|</span>
-          <span>
-            <CompassOutlined style={{ color: '#60a5fa', marginRight: 6 }} />
-            Google Maps Lead Discovery: Flat ₹599 / Month via UPI
+          <span style={{ opacity: 0.3 }}>&bull;</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#60a5fa' }}>
+            <CompassOutlined />
+            Google Maps Lead Discovery: Flat ₹599 / Month
           </span>
-          <span style={{ opacity: 0.4 }}>|</span>
-          <span>
-            <WhatsAppOutlined style={{ color: '#25D366', marginRight: 6 }} />
+          <span style={{ opacity: 0.3 }}>&bull;</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#25D366' }}>
+            <WhatsAppOutlined />
             Direct Support: +91 8797186001
           </span>
         </Space>
@@ -244,19 +245,19 @@ export default function MarketingLandingPage() {
       {/* Main Navigation Header */}
       <header
         style={{
-          background: '#0B0F19',
+          background: 'rgba(9, 13, 22, 0.85)',
           borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
           position: 'sticky',
           top: 0,
           zIndex: 1000,
-          backdropFilter: 'blur(12px)',
+          backdropFilter: 'blur(16px)',
         }}
       >
         <div
           style={{
             maxWidth: 1240,
             margin: '0 auto',
-            padding: '16px 24px',
+            padding: '14px 24px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -266,8 +267,8 @@ export default function MarketingLandingPage() {
           <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10 }}>
             <div
               style={{
-                width: 38,
-                height: 38,
+                width: 36,
+                height: 36,
                 borderRadius: 10,
                 background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
                 display: 'flex',
@@ -276,22 +277,22 @@ export default function MarketingLandingPage() {
                 boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)',
               }}
             >
-              <ThunderboltFilled style={{ color: '#ffffff', fontSize: 20 }} />
+              <ThunderboltFilled style={{ color: '#ffffff', fontSize: 18 }} />
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 22, fontWeight: 900, color: '#ffffff', letterSpacing: '0.04em' }}>
+                <span style={{ fontSize: 20, fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em' }}>
                   GINIE
                 </span>
                 <span
                   style={{
-                    fontSize: 10,
+                    fontSize: 9,
                     fontWeight: 700,
-                    letterSpacing: '0.08em',
+                    letterSpacing: '0.06em',
                     textTransform: 'uppercase',
                     color: '#38bdf8',
                     background: 'rgba(56, 189, 248, 0.12)',
-                    padding: '2px 8px',
+                    padding: '1px 8px',
                     borderRadius: 999,
                     border: '1px solid rgba(56, 189, 248, 0.25)',
                   }}
@@ -308,7 +309,7 @@ export default function MarketingLandingPage() {
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 24,
+              gap: 28,
             }}
             className="marketing-nav-links"
           >
@@ -342,6 +343,7 @@ export default function MarketingLandingPage() {
                       borderColor: 'rgba(255,255,255,0.2)',
                       color: '#cbd5e1',
                       background: 'rgba(255,255,255,0.05)',
+                      height: 38,
                     }}
                   >
                     Admin Console
@@ -355,6 +357,8 @@ export default function MarketingLandingPage() {
                     borderColor: '#2563eb',
                     borderRadius: 8,
                     fontWeight: 700,
+                    height: 38,
+                    boxShadow: '0 2px 8px rgba(37, 99, 235, 0.35)',
                   }}
                 >
                   Go to Dashboard <ArrowRightOutlined />
@@ -370,6 +374,7 @@ export default function MarketingLandingPage() {
                     borderColor: 'rgba(255,255,255,0.2)',
                     color: '#e2e8f0',
                     background: 'transparent',
+                    height: 38,
                   }}
                 >
                   Log In
@@ -378,11 +383,12 @@ export default function MarketingLandingPage() {
                   type="primary"
                   onClick={() => router.push('/register')}
                   style={{
-                    background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                    background: '#2563eb',
                     borderColor: '#2563eb',
                     borderRadius: 8,
                     fontWeight: 700,
-                    boxShadow: '0 4px 12px rgba(37, 99, 235, 0.4)',
+                    height: 38,
+                    boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)',
                   }}
                 >
                   Create Free Account <ArrowRightOutlined />
@@ -466,20 +472,20 @@ export default function MarketingLandingPage() {
           </Paragraph>
 
           {/* Call to Actions */}
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 14, flexWrap: 'wrap', marginBottom: 40 }}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 40 }}>
             <Button
               type="primary"
               size="large"
               onClick={() => router.push(isLoggedIn ? '/dashboard' : '/register')}
               style={{
-                background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                background: '#2563eb',
                 borderColor: '#2563eb',
-                height: 52,
-                padding: '0 32px',
-                fontSize: 16,
-                fontWeight: 800,
-                borderRadius: 10,
-                boxShadow: '0 8px 24px rgba(37, 99, 235, 0.45)',
+                height: 48,
+                padding: '0 28px',
+                fontSize: 15,
+                fontWeight: 700,
+                borderRadius: 8,
+                boxShadow: '0 4px 16px rgba(37, 99, 235, 0.4)',
               }}
             >
               {isLoggedIn ? 'Open My Dashboard' : 'Create Free CRM Account'} <ArrowRightOutlined />
@@ -492,14 +498,14 @@ export default function MarketingLandingPage() {
                 if (el) el.scrollIntoView({ behavior: 'smooth' });
               }}
               style={{
-                height: 52,
-                padding: '0 28px',
-                fontSize: 16,
-                fontWeight: 700,
-                borderRadius: 10,
-                color: '#e2e8f0',
-                background: 'rgba(255, 255, 255, 0.06)',
-                borderColor: 'rgba(255, 255, 255, 0.16)',
+                height: 48,
+                padding: '0 24px',
+                fontSize: 15,
+                fontWeight: 600,
+                borderRadius: 8,
+                color: '#f8fafc',
+                background: 'rgba(255, 255, 255, 0.08)',
+                borderColor: 'rgba(255, 255, 255, 0.18)',
               }}
             >
               View Pricing & Plans
@@ -509,16 +515,16 @@ export default function MarketingLandingPage() {
               size="large"
               href="https://wa.me/918797186001?text=Hello%20GINIE%20Team,%20I%20have%20a%20question%20about%20the%20CRM"
               target="_blank"
-              icon={<WhatsAppOutlined style={{ color: '#25D366', fontSize: 18 }} />}
+              icon={<WhatsAppOutlined style={{ color: '#25D366', fontSize: 17 }} />}
               style={{
-                height: 52,
-                padding: '0 24px',
+                height: 48,
+                padding: '0 22px',
                 fontSize: 15,
-                fontWeight: 700,
-                borderRadius: 10,
+                fontWeight: 600,
+                borderRadius: 8,
                 color: '#25D366',
-                background: 'rgba(37, 211, 102, 0.08)',
-                borderColor: 'rgba(37, 211, 102, 0.3)',
+                background: 'rgba(37, 211, 102, 0.1)',
+                borderColor: 'rgba(37, 211, 102, 0.28)',
               }}
             >
               Chat with GINIE
