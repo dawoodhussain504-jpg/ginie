@@ -53,6 +53,7 @@ import {
   CloudUploadOutlined,
   AudioOutlined,
   GiftOutlined,
+  LockOutlined,
 } from '@ant-design/icons';
 import { useApp } from '@/context/AppContext';
 import { api } from '@/lib/api';
@@ -314,7 +315,8 @@ export default function ErpPage() {
       if (compRes) {
         setCompany(compRes);
         if (compRes.businessType) {
-          const match = INDUSTRY_CATEGORIES.find((c) => c.key === compRes.businessType.toLowerCase());
+          const bType = compRes.businessType.toLowerCase();
+          const match = INDUSTRY_CATEGORIES.find((c) => c.key === bType || (bType === 'factory' && c.key === 'manufacturing') || (bType === 'shop' && c.key === 'retail'));
           if (match) setSelectedIndustry(match.key);
         }
       }
@@ -325,15 +327,6 @@ export default function ErpPage() {
       console.error('Failed to load ERP data:', err);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleSaveDefaultIndustry = async () => {
-    try {
-      await api.patch('/api/settings/company', { businessType: selectedIndustry });
-      message.success(`Default business category updated to: ${INDUSTRY_CATEGORIES.find((c) => c.key === selectedIndustry)?.label}`);
-    } catch (err: any) {
-      message.error(err.message || 'Failed to update company business type');
     }
   };
 
@@ -542,24 +535,11 @@ export default function ErpPage() {
               GINIE Business ERP & Operations
             </Title>
             <Paragraph style={{ color: '#94a3b8', margin: '4px 0 0', fontSize: 14, maxWidth: 650 }}>
-              Switch your business category below to access specialized toolkits tailored specifically for your trade — seamlessly linked with your CRM Contacts, Leads, and Invoices.
+              Specialized enterprise toolkits and POS operations dedicated to your registered industry — seamlessly linked with your Storefront, CRM Contacts, and Invoices.
             </Paragraph>
           </div>
 
           <Space>
-            <Button
-              icon={<SaveOutlined />}
-              onClick={handleSaveDefaultIndustry}
-              style={{
-                borderRadius: 8,
-                background: 'rgba(255, 255, 255, 0.1)',
-                color: '#ffffff',
-                borderColor: 'rgba(255, 255, 255, 0.2)',
-                fontWeight: 600,
-              }}
-            >
-              Set as Company Default
-            </Button>
             <Button
               type="primary"
               icon={<SyncOutlined />}
@@ -572,40 +552,37 @@ export default function ErpPage() {
           </Space>
         </div>
 
-        {/* Dynamic Category Switcher Carousel / Chips */}
-        <div style={{ marginTop: 20, paddingTop: 18, borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
-          <Text style={{ color: '#cbd5e1', fontSize: 13, fontWeight: 700, display: 'block', marginBottom: 10 }}>
-            SELECT BUSINESS CATEGORY (व्यापार श्रेणी चुनें):
-          </Text>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {INDUSTRY_CATEGORIES.map((cat) => {
-              const isSelected = selectedIndustry === cat.key;
-              return (
-                <button
-                  key={cat.key}
-                  onClick={() => setSelectedIndustry(cat.key)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    padding: '8px 16px',
-                    borderRadius: 10,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    border: isSelected ? `2px solid ${cat.color}` : '1px solid rgba(255, 255, 255, 0.12)',
-                    background: isSelected ? 'rgba(255, 255, 255, 0.16)' : 'rgba(255, 255, 255, 0.04)',
-                    color: isSelected ? '#ffffff' : '#94a3b8',
-                    fontWeight: isSelected ? 700 : 500,
-                    fontSize: 13,
-                  }}
-                >
-                  <span style={{ color: isSelected ? cat.color : '#94a3b8' }}>{cat.icon}</span>
-                  <span>{cat.label}</span>
-                  {isSelected && <CheckOutlined style={{ fontSize: 12, color: cat.color }} />}
-                </button>
-              );
-            })}
+        {/* Permanent Registered Business Category - Locked to User Onboarding */}
+        <div style={{ marginTop: 20, paddingTop: 18, borderTop: '1px solid rgba(255, 255, 255, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '8px 18px',
+              borderRadius: 10,
+              background: 'rgba(255, 255, 255, 0.12)',
+              border: `2px solid ${activeCategoryMeta.color}`,
+              color: '#ffffff',
+              fontWeight: 700,
+              fontSize: 14,
+            }}>
+              <span style={{ color: activeCategoryMeta.color }}>{activeCategoryMeta.icon}</span>
+              <span>{activeCategoryMeta.label}</span>
+              <LockOutlined style={{ color: '#fbbf24', marginLeft: 4 }} />
+            </div>
+            <div>
+              <Text style={{ color: '#f1f5f9', fontWeight: 600, display: 'block', fontSize: 13 }}>
+                Permanent Registered Business Mode (स्थाई व्यापार श्रेणी)
+              </Text>
+              <Text style={{ color: '#94a3b8', fontSize: 12 }}>
+                Onboarding ke waqt chuna gaya business type locked hai. Aapka Storefront, ERP Counter aur Catalog iske mutabiq dedicated hain.
+              </Text>
+            </div>
           </div>
+          <Tag color="gold" icon={<LockOutlined />} style={{ borderRadius: 8, padding: '4px 12px', fontWeight: 700, fontSize: 12 }}>
+            LOCKED TO REGISTERED TRADE
+          </Tag>
         </div>
       </div>
 
@@ -644,7 +621,12 @@ export default function ErpPage() {
         <Col xs={12} sm={6}>
           <Card style={{ borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
             <Statistic
-              title={<span style={{ fontSize: 13, fontWeight: 600, color: '#64748b' }}>Industry Mode Active</span>}
+              title={
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  Industry Mode Active
+                  <LockOutlined style={{ color: '#d97706', fontSize: 12 }} />
+                </span>
+              }
               value={activeCategoryMeta.label.split('&')[0]}
               prefix={activeCategoryMeta.icon}
               valueStyle={{ fontWeight: 800, color: activeCategoryMeta.color, fontSize: 18 }}

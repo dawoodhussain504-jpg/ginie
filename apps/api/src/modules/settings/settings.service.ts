@@ -45,6 +45,7 @@ export class SettingsService {
         ...(data.email !== undefined ? { email: data.email } : {}),
         ...(data.upiId !== undefined ? { upiId: data.upiId } : {}),
         ...(data.upiName !== undefined ? { upiName: data.upiName } : {}),
+        ...(data.whatsappPhone !== undefined ? { whatsappPhone: data.whatsappPhone } : {}),
         ...(data.bankName !== undefined ? { bankName: data.bankName } : {}),
         ...(data.bankAccountNumber !== undefined ? { bankAccountNumber: data.bankAccountNumber } : {}),
         ...(data.bankIfsc !== undefined ? { bankIfsc: data.bankIfsc } : {}),
@@ -54,7 +55,10 @@ export class SettingsService {
         where: { id: tenantId },
         data: {
           ...(data.name ? { name: data.name } : {}),
+          ...(data.slug ? { slug: data.slug } : {}),
           ...(data.brandColor ? { brandColor: data.brandColor } : {}),
+          // LOCKED: Only set businessType if never set before; never allow overwriting once registered
+          ...(!existing?.businessType && data.businessType ? { businessType: data.businessType } : {}),
           settings: newSettings,
         },
       });
@@ -213,15 +217,22 @@ export class SettingsService {
   }
 
   async completeOnboarding(tenantId: string, dto: CompleteOnboardingDto) {
-    const template = BUSINESS_TEMPLATES[dto.businessType] || BUSINESS_TEMPLATES.other;
+    const existing = await prisma.tenant.findUnique({ where: { id: tenantId } });
+    // LOCKED: Preserve existing businessType if already onboarded; never allow switching
+    const businessType = (existing?.onboardingCompleted && existing?.businessType)
+      ? existing.businessType
+      : (dto.businessType || 'retail');
+
+    const template = BUSINESS_TEMPLATES[businessType] || BUSINESS_TEMPLATES.other;
 
     const tenant = await prisma.tenant.update({
       where: { id: tenantId },
       data: {
-        name: dto.businessName,
-        businessType: dto.businessType,
+        name: dto.businessName || existing?.name,
+        businessType: businessType,
         onboardingCompleted: true,
         settings: {
+          ...((existing?.settings as any) || {}),
           teamSize: dto.teamSize,
           language: dto.language,
         },

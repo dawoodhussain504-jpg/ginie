@@ -46,6 +46,7 @@ import {
   PauseCircleOutlined,
   UserAddOutlined,
   DeleteOutlined,
+  LockOutlined,
 } from '@ant-design/icons';
 import { useApp } from '@/context/AppContext';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -424,23 +425,31 @@ function SettingsContent() {
             This automatically sets up industry pipeline stages, customer fields, and WhatsApp message templates.
           </Paragraph>
 
-          <div style={{ background: '#f6ffed', padding: '16px 20px', borderRadius: 10, border: '1px solid #b7eb8f', marginBottom: 20 }}>
-            <Text strong style={{ color: '#389e0d', display: 'block' }}>
-              ✓ Current Business Configuration: {company?.businessType ? company.businessType.toUpperCase() : 'General Business'}
-            </Text>
-            <Text type="secondary" style={{ fontSize: 13 }}>
-              You can re-run the wizard at any time to switch industry templates or update your pipeline stages.
+          <div style={{ background: '#f8fafc', padding: '18px 20px', borderRadius: 10, border: '1px solid #e2e8f0', marginBottom: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
+              <LockOutlined style={{ color: '#d97706', fontSize: 16 }} />
+              <Text strong style={{ color: '#0f172a', fontSize: 15 }}>
+                Permanent Registered Business Mode: {company?.businessType ? company.businessType.toUpperCase() : 'RETAIL'}
+              </Text>
+              <Tag color="gold" style={{ fontWeight: 700, borderRadius: 6 }}>
+                LOCKED TO ACCOUNT
+              </Tag>
+            </div>
+            <Text type="secondary" style={{ fontSize: 13, display: 'block', lineHeight: 1.6 }}>
+              Aapka business category onboarding ke waqt set ho chuka hai aur permanently locked hai. Storefront layouts, POS counter, aur ERP modules aapke is chune hue vyapaar ke anuroop configure hain. Data integrity aur customer order consistency banaye rakhne ke liye vyapaar mode ko switch karna disabled hai.
             </Text>
           </div>
 
-          <Button
-            type="primary"
-            size="large"
-            icon={<AppstoreOutlined />}
-            onClick={() => setOnboardingOpen(true)}
-          >
-            Launch Business Setup Wizard
-          </Button>
+          {!company?.onboardingCompleted && !company?.businessType && (
+            <Button
+              type="primary"
+              size="large"
+              icon={<AppstoreOutlined />}
+              onClick={() => setOnboardingOpen(true)}
+            >
+              Launch Business Setup Wizard
+            </Button>
+          )}
         </Card>
       ),
     },

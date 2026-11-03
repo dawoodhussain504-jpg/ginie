@@ -41,6 +41,7 @@ import {
   DollarCircleOutlined,
   AppstoreOutlined,
   PhoneOutlined,
+  LockOutlined,
 } from '@ant-design/icons';
 import { api } from '@/lib/api';
 
@@ -88,12 +89,14 @@ export default function DigitalStoreDashboardPage() {
         const name = compRes.name || 'My Digital Store';
         const phone = compRes.settings?.whatsappPhone || compRes.users?.[0]?.phone || '918797186001';
         const upi = compRes.settings?.upiId || '';
+        const bType = compRes.businessType || 'retail';
 
         const updatedSettings = {
           storeName: name,
           slug,
           whatsappNumber: phone,
           upiId: upi,
+          businessType: bType,
         };
         setStoreSettings(updatedSettings);
         settingsForm.setFieldsValue(updatedSettings);
@@ -176,6 +179,12 @@ export default function DigitalStoreDashboardPage() {
   // Save Store Settings
   const handleSaveSettings = async (values: any) => {
     try {
+      await api.patch('/api/settings/company', {
+        name: values.storeName,
+        slug: values.slug,
+        whatsappPhone: values.whatsappNumber,
+        upiId: values.upiId,
+      }).catch(() => {});
       setStoreSettings((prev: any) => ({ ...prev, ...values }));
       localStorage.setItem('ginie_storefront_settings', JSON.stringify(values));
       message.success('Store settings saved successfully!');
@@ -589,6 +598,23 @@ export default function DigitalStoreDashboardPage() {
               children: (
                 <div style={{ maxWidth: 600, padding: '16px 0' }}>
                   <Form form={settingsForm} layout="vertical" onFinish={handleSaveSettings}>
+                    <Form.Item label="Storefront Industry Category (व्यापार श्रेणी)">
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <LockOutlined style={{ color: '#d97706' }} />
+                          <span style={{ fontWeight: 700, color: '#0f172a', textTransform: 'uppercase' }}>
+                            {storeSettings.businessType || 'RETAIL'}
+                          </span>
+                        </div>
+                        <Tag color="gold" style={{ fontWeight: 700, borderRadius: 6, margin: 0 }}>
+                          LOCKED TO ONBOARDING ACCOUNT
+                        </Tag>
+                      </div>
+                      <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 4 }}>
+                        Aapka digital storefront layout, checkout flow, aur cart isi chune hue category ke anusar dedicated hai aur change nahi ho sakta.
+                      </Text>
+                    </Form.Item>
+
                     <Form.Item
                       label="Store Public Name"
                       name="storeName"
