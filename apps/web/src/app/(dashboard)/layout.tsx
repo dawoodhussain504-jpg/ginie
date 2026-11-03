@@ -186,6 +186,15 @@ export default function DashboardLayout({
       ),
     },
     {
+      key: '/digital-store',
+      icon: <ShopOutlined />,
+      label: (
+        <Link href="/digital-store">
+          <span style={{ fontWeight: 600 }}>Digital Store</span>
+        </Link>
+      ),
+    },
+    {
       key: '/whatsapp',
       icon: <WhatsAppOutlined />,
       label: <Link href="/whatsapp">Messages</Link>,
@@ -303,6 +312,8 @@ export default function DashboardLayout({
     if (pathname.startsWith('/customers') || pathname === '/people' || pathname === '/companies') return '/customers';
     if (pathname.startsWith('/sales') || pathname === '/tasks') return '/sales';
     if (pathname.startsWith('/find-customers')) return '/find-customers';
+    if (pathname.startsWith('/erp')) return '/erp';
+    if (pathname.startsWith('/digital-store')) return '/digital-store';
     if (pathname.startsWith('/whatsapp')) return '/whatsapp';
     if (pathname.startsWith('/billing')) return '/billing';
     if (pathname.startsWith('/reports')) return '/reports';
@@ -413,10 +424,10 @@ export default function DashboardLayout({
             </Button>
 
             {/* Digital Storefront Link */}
-            <Tooltip title="View your Public Digital Storefront & Catalog">
-              <Link href="/store/catalog" target="_blank">
+            <Tooltip title="Manage your Public Digital Storefront & Catalog">
+              <Link href="/digital-store">
                 <Button icon={<ShopOutlined />} style={{ borderRadius: 8, fontWeight: 600 }}>
-                  Storefront
+                  Digital Store
                 </Button>
               </Link>
             </Tooltip>
