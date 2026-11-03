@@ -24,6 +24,7 @@ import {
   GoldOutlined,
   CustomerServiceOutlined,
   AppstoreOutlined,
+  CoffeeOutlined,
   CheckCircleFilled,
   RightOutlined,
   LeftOutlined,
@@ -46,6 +47,7 @@ const businessIcons: Record<string, React.ReactNode> = {
   clinic: <MedicineBoxOutlined style={{ fontSize: 28, color: '#eb2f96' }} />,
   factory: <GoldOutlined style={{ fontSize: 28, color: '#fa8c16' }} />,
   services: <CustomerServiceOutlined style={{ fontSize: 28, color: '#722ed1' }} />,
+  restaurant: <CoffeeOutlined style={{ fontSize: 28, color: '#fa541c' }} />,
   other: <AppstoreOutlined style={{ fontSize: 28, color: '#13c2c2' }} />,
 };
 
@@ -281,7 +283,8 @@ export default function OnboardingWizardModal({
                     <Space wrap>
                       {BUSINESS_TEMPLATES[selectedType].messageTemplates.map((mt, idx) => (
                         <Tag key={idx} color="green">
-                          💬 {mt.name}
+                          <WhatsAppOutlined style={{ marginRight: 4 }} />
+                          {mt.name}
                         </Tag>
                       ))}
                     </Space>

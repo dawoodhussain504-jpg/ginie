@@ -125,6 +125,24 @@ export default function RegisterPage() {
           </Form.Item>
 
           <Form.Item
+            label={locale === 'hi' ? 'बिजनेस की श्रेणी (Business Category)' : 'Business Category / Industry'}
+            name="businessType"
+            initialValue="retail"
+            rules={[{ required: true, message: 'Please select your business category' }]}
+          >
+            <Select
+              options={[
+                { value: 'retail', label: locale === 'hi' ? 'दुकान, रीटेल, इलेक्ट्रॉनिक्स व किराना (Retail & Store)' : 'Retail Store, Kirana & Electronics' },
+                { value: 'restaurant', label: locale === 'hi' ? 'रेस्टोरेंट, कैफे व फूड (Restaurant, Cafe & Food)' : 'Restaurant, Cafe & Food' },
+                { value: 'wholesale', label: locale === 'hi' ? 'थोक व्यापार, डिस्ट्रीब्यूशन व बी2बी (Wholesale & B2B)' : 'Wholesale, Distribution & B2B' },
+                { value: 'clinic', label: locale === 'hi' ? 'क्लिनिक, डॉक्टर व स्वास्थ्य (Clinic & Healthcare)' : 'Clinic, Doctor & Healthcare' },
+                { value: 'services', label: locale === 'hi' ? 'सर्विस, कंसल्टिंग व एजेंसी (Services & Agency)' : 'Services, Consulting & Agency' },
+                { value: 'factory', label: locale === 'hi' ? 'फैक्ट्री, मैन्युफैक्चरिंग व उद्योग (Factory & Manufacturing)' : 'Factory & Manufacturing' },
+              ]}
+            />
+          </Form.Item>
+
+          <Form.Item
             label={locale === 'hi' ? 'आपका पूरा नाम' : 'Your Full Name'}
             name="name"
             rules={[

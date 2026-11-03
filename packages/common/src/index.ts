@@ -30,6 +30,7 @@ export const RegisterSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   phone: z.string().optional(),
+  businessType: z.string().optional(),
 });
 export type RegisterDto = z.infer<typeof RegisterSchema>;
 
@@ -64,6 +65,7 @@ export const CreateLeadSchema = z.object({
   name: z.string().min(2, 'Customer name is required'),
   companyName: z.string().optional(),
   phone: z.string().optional(),
+  businessType: z.string().optional(),
   email: z.string().email('Please enter a valid email address').optional().or(z.literal('')),
   website: z.string().optional(),
   address: z.string().optional(),
@@ -254,6 +256,7 @@ export type CreateCustomFieldDto = z.infer<typeof CreateCustomFieldSchema>;
 export const SubmitWebFormSchema = z.object({
   name: z.string().min(2, 'Your name is required'),
   phone: z.string().optional(),
+  businessType: z.string().optional(),
   email: z.string().email().optional(),
   message: z.string().optional(),
   customFields: z.record(z.any()).optional().default({}),
@@ -394,11 +397,11 @@ export interface AuditLogDto {
 // ========================================================
 // 15. Business Types & Onboarding (Upgrade Spec Phase 1)
 // ========================================================
-export type BusinessTypeEnum = 'shop' | 'school' | 'clinic' | 'factory' | 'services' | 'other';
+export type BusinessTypeEnum = 'shop' | 'school' | 'clinic' | 'factory' | 'services' | 'restaurant' | 'wholesale' | 'other';
 
 export const CompleteOnboardingSchema = z.object({
   businessName: z.string().min(2, 'Business name is required'),
-  businessType: z.enum(['shop', 'school', 'clinic', 'factory', 'services', 'other']),
+  businessType: z.enum(['shop', 'school', 'clinic', 'factory', 'services', 'restaurant', 'wholesale', 'other']),
   teamSize: z.string().optional().default('1-5'),
   language: z.enum(['en', 'hi']).default('en'),
 });
@@ -459,6 +462,7 @@ export const ImportCustomersSchema = z.object({
     z.object({
       name: z.string().min(1, 'Name is required'),
       phone: z.string().optional(),
+  businessType: z.string().optional(),
       email: z.string().optional(),
       companyName: z.string().optional(),
       city: z.string().optional(),

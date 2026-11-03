@@ -21,6 +21,8 @@ import {
   Select,
   Tabs,
   Table,
+  Spin,
+  Alert,
 } from 'antd';
 import {
   ShoppingCartOutlined,
@@ -34,99 +36,159 @@ import {
   ThunderboltFilled,
   SettingOutlined,
   CopyOutlined,
-  ShareAltOutlined,
+  MedicineBoxOutlined,
+  CoffeeOutlined,
+  AppstoreOutlined,
+  BuildOutlined,
+  CustomerServiceOutlined,
+  GiftOutlined,
+  QrcodeOutlined,
+  CheckCircleOutlined,
+  FileTextOutlined,
 } from '@ant-design/icons';
 import { api } from '@/lib/api';
 
 const { Title, Text, Paragraph } = Typography;
 
 export default function PublicStorePage({ params }: { params: { slug: string } }) {
-  const defaultInitialProducts = [
-    { id: '1', name: 'Premium Cotton Shirt', price: 899, category: 'Apparel', code: 'APP-01', inStock: true, image: '' },
-    { id: '2', name: 'Formal Trousers Slim Fit', price: 1299, category: 'Apparel', code: 'APP-02', inStock: true, image: '' },
-    { id: '3', name: 'Pure Leather Belt (Black)', price: 450, category: 'Accessories', code: 'ACC-01', inStock: true, image: '' },
-    { id: '4', name: 'Cotton Socks Pack of 3', price: 199, category: 'Accessories', code: 'ACC-02', inStock: true, image: '' },
-    { id: '5', name: 'Leather Wallet Men Bi-fold', price: 650, category: 'Accessories', code: 'ACC-03', inStock: true, image: '' },
-    { id: '6', name: 'Designer Polo T-Shirt', price: 599, category: 'Apparel', code: 'APP-03', inStock: true, image: '' },
-  ];
-
-  const [products, setProducts] = useState<any[]>(defaultInitialProducts);
+  const [loading, setLoading] = useState(true);
+  const [submittingOrder, setSubmittingOrder] = useState(false);
+  const [store, setStore] = useState<any>(null);
+  const [products, setProducts] = useState<any[]>([]);
   const [cart, setCart] = useState<any[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [adminModalOpen, setAdminModalOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('All');
+
+  // Customer Checkout Details
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerName, setCustomerName] = useState('');
+  const [customerAddress, setCustomerAddress] = useState('');
+  const [industryNotes, setIndustryNotes] = useState('');
+  const [gstNumber, setGstNumber] = useState('');
 
   // Store Configuration
-  const [companyName, setCompanyName] = useState('GINIE Official Store');
+  const [companyName, setCompanyName] = useState('GINIE Digital Store');
   const [whatsappNumber, setWhatsappNumber] = useState('918797186001');
+  const [businessType, setBusinessType] = useState<string>('retail');
 
   const [productForm] = Form.useForm();
   const [settingsForm] = Form.useForm();
 
   useEffect(() => {
-    // 1. Load saved store settings
-    const savedSettings = localStorage.getItem('ginie_storefront_settings');
-    if (savedSettings) {
-      try {
-        const parsed = JSON.parse(savedSettings);
-        if (parsed.storeName) setCompanyName(parsed.storeName);
-        if (parsed.whatsappNumber) setWhatsappNumber(parsed.whatsappNumber);
-        settingsForm.setFieldsValue(parsed);
-      } catch {}
-    } else {
-      settingsForm.setFieldsValue({
-        storeName: 'GINIE Official Store',
-        whatsappNumber: '918797186001',
-      });
-    }
+    loadStoreData();
+  }, [params.slug]);
 
-    // 2. Load custom storefront products
-    const savedProducts = localStorage.getItem('ginie_storefront_products');
-    if (savedProducts) {
-      try {
-        const parsedProds = JSON.parse(savedProducts);
-        if (Array.isArray(parsedProds) && parsedProds.length > 0) {
-          setProducts(parsedProds);
-        }
-      } catch {}
+  const loadStoreData = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get(`/api/billing/store/${params.slug}`);
+      if (res) {
+        setStore(res);
+        setCompanyName(res.name || 'Official Store');
+        const wa = res.settings?.whatsappPhone || res.settings?.whatsappNumber || '918797186001';
+        setWhatsappNumber(wa);
+        setBusinessType(res.businessType || 'retail');
+        setProducts(res.products || []);
+      }
+    } catch {
+      // Fallback
+      setCompanyName('GINIE Digital Store');
+    } finally {
+      setLoading(false);
     }
+  };
 
-    // 3. Sync with backend catalog if available
-    api.get('/api/billing/products')
-      .then((backendProds) => {
-        if (Array.isArray(backendProds) && backendProds.length > 0) {
-          const formatted = backendProds.map((bp) => ({
-            id: bp.id,
-            name: bp.name,
-            price: Number(bp.price || 0),
-            category: bp.category || 'General',
-            code: bp.code || 'SKU',
-            inStock: true,
-          }));
-          // Merge unique by name
-          setProducts((prev) => {
-            const existingNames = new Set(prev.map((p) => p.name.toLowerCase()));
-            const toAdd = formatted.filter((f) => !existingNames.has(f.name.toLowerCase()));
-            const merged = [...prev, ...toAdd];
-            localStorage.setItem('ginie_storefront_products', JSON.stringify(merged));
-            return merged;
-          });
-        }
-      })
-      .catch(() => {});
-  }, []);
+  const getIndustryTheme = () => {
+    switch (businessType) {
+      case 'restaurant':
+        return {
+          headerBg: '#0f172a',
+          accentColor: '#fa541c',
+          tagText: 'Digital Food Menu & Kitchen Ordering (रेस्टोरेंट व फूड मेनू)',
+          icon: <CoffeeOutlined style={{ fontSize: 22, color: '#fa541c' }} />,
+          buttonLabel: 'Add to Plate',
+          cartLabel: 'Your Food Order & Table/Delivery Details',
+          notePlaceholder: 'Table number / Cooking instructions (e.g. less spicy, extra chutney)...',
+        };
+      case 'wholesale':
+        return {
+          headerBg: '#0f172a',
+          accentColor: '#722ed1',
+          tagText: 'B2B Wholesale Catalog & Bulk Orders (थोक व्यापार कैटलॉग)',
+          icon: <AppstoreOutlined style={{ fontSize: 22, color: '#722ed1' }} />,
+          buttonLabel: 'Add to Bulk Cart',
+          cartLabel: 'Wholesale Order & Dispatch Destination',
+          notePlaceholder: 'Transport name / Delivery instructions / Purchase order ref...',
+        };
+      case 'clinic':
+        return {
+          headerBg: '#0f172a',
+          accentColor: '#13c2c2',
+          tagText: 'Clinic Appointments & Health Packages (क्लिनिक व स्वास्थ्य केंद्र)',
+          icon: <MedicineBoxOutlined style={{ fontSize: 22, color: '#13c2c2' }} />,
+          buttonLabel: 'Book Consultation / Test',
+          cartLabel: 'Patient Appointment Booking & Health Tests',
+          notePlaceholder: 'Patient age / Chief symptoms / Preferred slot (Morning / Evening)...',
+        };
+      case 'services':
+        return {
+          headerBg: '#0f172a',
+          accentColor: '#2f54eb',
+          tagText: 'Professional Services & Consulting (सर्विस व एजेंसी पोर्टफोलियो)',
+          icon: <CustomerServiceOutlined style={{ fontSize: 22, color: '#2f54eb' }} />,
+          buttonLabel: 'Select Service Package',
+          cartLabel: 'Service Engagement & Scope Brief',
+          notePlaceholder: 'Project goals / Requirements brief / Deadline...',
+        };
+      case 'factory':
+        return {
+          headerBg: '#0f172a',
+          accentColor: '#fa8c16',
+          tagText: 'Industrial Parts & Manufacturing RFQ (फैक्ट्री व उत्पादन कैटलॉग)',
+          icon: <BuildOutlined style={{ fontSize: 22, color: '#fa8c16' }} />,
+          buttonLabel: 'Add to RFQ Batch',
+          cartLabel: 'Industrial Dispatch & Specs Order',
+          notePlaceholder: 'Custom material specs / Target delivery date...',
+        };
+      default:
+        return {
+          headerBg: '#0f172a',
+          accentColor: '#1677ff',
+          tagText: 'Official Digital Storefront (डिजिटल स्टोर)',
+          icon: <ShopOutlined style={{ fontSize: 22, color: '#1677ff' }} />,
+          buttonLabel: 'Add to Cart',
+          cartLabel: 'Your Shopping Cart & Delivery Address',
+          notePlaceholder: 'Delivery instructions / Landmark / Special requests...',
+        };
+    }
+  };
+
+  const theme = getIndustryTheme();
+
+  // Categories list
+  const categories = ['All', ...Array.from(new Set(products.map((p) => p.category).filter(Boolean)))];
 
   const addToCart = (product: any) => {
+    // Check ERP stock
+    if (product.stockInHand !== undefined && product.stockInHand <= 0) {
+      message.warning('Sorry, this product is currently out of stock.');
+      return;
+    }
+
     setCart((prev) => {
       const existing = prev.find((item) => item.id === product.id);
       if (existing) {
+        if (product.stockInHand && existing.qty >= product.stockInHand) {
+          message.warning(`Maximum available stock in hand is ${product.stockInHand}.`);
+          return prev;
+        }
         return prev.map((item) => (item.id === product.id ? { ...item, qty: item.qty + 1 } : item));
       }
       return [...prev, { ...product, qty: 1 }];
     });
-    message.success(`${product.name} added to cart!`);
+    message.success(`${product.name} added!`);
   };
 
   const updateCartQty = (id: string, delta: number) => {
@@ -135,6 +197,10 @@ export default function PublicStorePage({ params }: { params: { slug: string } }
         .map((item) => {
           if (item.id === id) {
             const newQty = item.qty + delta;
+            if (item.stockInHand && newQty > item.stockInHand) {
+              message.warning(`Maximum available stock in hand is ${item.stockInHand}.`);
+              return item;
+            }
             return newQty > 0 ? { ...item, qty: newQty } : null;
           }
           return item;
@@ -143,138 +209,159 @@ export default function PublicStorePage({ params }: { params: { slug: string } }
     );
   };
 
-  const cartTotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+  const cartTotal = cart.reduce((sum, item) => sum + Number(item.price || 0) * item.qty, 0);
+  const cashbackPoints = Math.max(10, Math.floor(cartTotal * 0.05)); // 5% Cashback
 
-  const handleSendOrderWhatsApp = () => {
+  const handleSendOrderWhatsApp = async () => {
     if (cart.length === 0) {
       message.warning('Cart is empty.');
       return;
     }
+
+    if (!customerPhone.trim()) {
+      message.error('Please enter your phone number to receive your order confirmation & loyalty points.');
+      return;
+    }
+
+    setSubmittingOrder(true);
     const cleanNumber = whatsappNumber.replace(/[^0-9]/g, '');
     const targetNumber = cleanNumber.length === 10 ? `91${cleanNumber}` : cleanNumber;
 
-    const orderItems = cart.map((item) => `- ${item.name} x ${item.qty} = INR ${item.price * item.qty}`).join('\n');
+    // 1. Build line items
+    const orderItems = cart
+      .map((item) => `- ${item.name} x ${item.qty} = INR ${(Number(item.price) * item.qty).toLocaleString('en-IN')}`)
+      .join('\n');
+
+    let extraDetails = '';
+    if (businessType === 'restaurant') {
+      extraDetails = `*Dining / Delivery:* ${customerAddress || 'Dine-In'}\n` +
+        (industryNotes ? `*Cooking Notes:* ${industryNotes}\n` : '');
+    } else if (businessType === 'wholesale') {
+      extraDetails = (gstNumber ? `*Buyer GSTIN:* ${gstNumber}\n` : '') +
+        `*Delivery Address:* ${customerAddress || 'Not specified'}\n` +
+        (industryNotes ? `*Transport Notes:* ${industryNotes}\n` : '');
+    } else if (businessType === 'clinic') {
+      extraDetails = (industryNotes ? `*Patient / Symptoms:* ${industryNotes}\n` : '') +
+        `*Preferred Timing:* ${customerAddress || 'Earliest Available'}\n`;
+    } else {
+      extraDetails = `*Delivery Address:* ${customerAddress || 'Not specified'}\n` +
+        (industryNotes ? `*Special Notes:* ${industryNotes}\n` : '');
+    }
+
     const orderText =
+      `*GINIE Store Order Confirmation*\n` +
+      `--------------------------------\n` +
       `Hello ${companyName}!\n\n` +
-      `I want to place an order from your digital storefront catalog:\n\n` +
+      `I have placed an order from your online store catalog:\n\n` +
       `${orderItems}\n\n` +
       `*Total Amount:* INR ${cartTotal.toLocaleString('en-IN')}\n` +
-      `*Customer Name:* ${customerName || 'Shopper'}\n` +
-      `*Phone:* ${customerPhone || 'Not provided'}\n\n` +
-      `Please confirm my order and share your UPI payment QR details!`;
+      `*Cashback Reward:* +${cashbackPoints} Points to CRM Wallet\n` +
+      `--------------------------------\n` +
+      `*Customer Name:* ${customerName || 'Store Customer'}\n` +
+      `*Customer Phone:* ${customerPhone}\n` +
+      extraDetails +
+      `\nPlease confirm order receipt & send payment confirmation details!`;
 
-    // Persist order into backend database
-    api.post(`/api/billing/store/${params.slug}/order`, {
-      customerName: customerName || 'Store Shopper',
-      customerPhone,
-      items: cart,
-      subtotal: cartTotal,
-      total: cartTotal,
-    }).catch(() => {});
+    // 2. Persist order into backend database (which deducts ERP stock & syncs CRM contact + points)
+    try {
+      await api.post(`/api/billing/store/${params.slug}/order`, {
+        customerName: customerName || 'Store Customer',
+        customerPhone,
+        customerAddress,
+        items: cart,
+        subtotal: cartTotal,
+        total: cartTotal,
+        notes: industryNotes + (gstNumber ? ` | GSTIN: ${gstNumber}` : ''),
+      });
 
+      // Reload store data to reflect live deducted stock
+      loadStoreData();
+    } catch {
+      // Continue even if local offline
+    } finally {
+      setSubmittingOrder(false);
+    }
+
+    // 3. Open WhatsApp directly to merchant
     const encoded = encodeURIComponent(orderText);
     const waUrl = `https://wa.me/${targetNumber}?text=${encoded}`;
     window.open(waUrl, '_blank');
-    message.success('Opening WhatsApp to send order directly to store!');
+    message.success(`Order placed! +${cashbackPoints} Loyalty Cashback Points credited.`);
     setCartOpen(false);
+    setCart([]);
   };
 
-  // Add Product to Storefront
   const handleAddNewProduct = async (values: any) => {
-    // Persist to backend database catalog
-    api.post('/api/billing/products', {
-      name: values.name,
-      price: Number(values.price || 100),
-      code: values.code || `SKU-${Date.now().toString().slice(-4)}`,
-      category: values.category || 'General',
-      isPublishedToStore: true,
-    }).catch(() => {});
+    try {
+      await api.post('/api/billing/products', {
+        name: values.name,
+        price: Number(values.price || 100),
+        code: values.code || `SKU-${Date.now().toString().slice(-4)}`,
+        category: values.category || 'General',
+        unit: values.unit || 'piece',
+        stockInHand: Number(values.stockInHand || 50),
+        isPublishedToStore: true,
+      });
 
-    const newProd = {
-      id: `p-${Date.now()}`,
-      name: values.name,
-      price: Number(values.price || 100),
-      category: values.category || 'General',
-      code: values.code || `SKU-${Date.now().toString().slice(-4)}`,
-      inStock: true,
-      image: values.image || '',
-    };
-
-    const updated = [newProd, ...products];
-    setProducts(updated);
-    localStorage.setItem('ginie_storefront_products', JSON.stringify(updated));
-
-    // Also attempt saving to backend billing catalog
-    api.post('/api/billing/products', {
-      name: values.name,
-      price: values.price,
-      code: values.code,
-      taxRate: values.taxRate || 18,
-      unit: values.unit || 'piece',
-    }).catch(() => null);
-
-    message.success(`"${values.name}" uploaded successfully to Storefront!`);
-    productForm.resetFields();
+      message.success(`"${values.name}" uploaded to store & ERP!`);
+      productForm.resetFields();
+      loadStoreData();
+    } catch (err: any) {
+      message.error(err.message || 'Failed to upload product.');
+    }
   };
 
-  // Delete Product from Storefront
-  const handleDeleteProduct = (id: string) => {
-    const updated = products.filter((p) => p.id !== id);
-    setProducts(updated);
-    localStorage.setItem('ginie_storefront_products', JSON.stringify(updated));
-    message.info('Product removed from storefront.');
-  };
+  const filteredProducts = products.filter((p) => {
+    const matchesSearch =
+      p.name.toLowerCase().includes(search.toLowerCase()) ||
+      (p.category && p.category.toLowerCase().includes(search.toLowerCase())) ||
+      (p.description && p.description.toLowerCase().includes(search.toLowerCase()));
 
-  // Save Storefront Settings
-  const handleSaveStoreSettings = (values: any) => {
-    const storeName = values.storeName || companyName;
-    const cleanWa = values.whatsappNumber || whatsappNumber;
-    setCompanyName(storeName);
-    setWhatsappNumber(cleanWa);
+    const matchesCategory = selectedCategory === 'All' || p.category === selectedCategory;
 
-    localStorage.setItem('ginie_storefront_settings', JSON.stringify({
-      storeName,
-      whatsappNumber: cleanWa,
-    }));
-    message.success('Storefront name & WhatsApp ordering number updated!');
-  };
-
-  const filteredProducts = products.filter((p) =>
-    p.name.toLowerCase().includes(search.toLowerCase()) || p.category.toLowerCase().includes(search.toLowerCase())
-  );
+    return matchesSearch && matchesCategory;
+  });
 
   return (
     <div style={{ minHeight: '100vh', background: '#f8fafc', paddingBottom: 60 }}>
       {/* Header Banner */}
       <header
         style={{
-          background: '#0B0F19',
+          background: theme.headerBg,
           color: '#ffffff',
-          padding: '20px 20px',
+          padding: '24px 20px',
           borderBottom: '1px solid rgba(255,255,255,0.1)',
         }}
       >
-        <div style={{ maxWidth: 1000, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             <div
               style={{
-                width: 44,
-                height: 44,
-                borderRadius: 12,
-                background: 'linear-gradient(135deg, #1677ff 0%, #722ed1 100%)',
+                width: 48,
+                height: 48,
+                borderRadius: 14,
+                background: 'rgba(255,255,255,0.08)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                border: '1px solid rgba(255,255,255,0.15)',
               }}
             >
-              <ShopOutlined style={{ fontSize: 24, color: '#ffffff' }} />
+              {theme.icon}
             </div>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 19, fontWeight: 900, color: '#ffffff' }}>{companyName}</span>
-                <Tag color="green" style={{ borderRadius: 10, fontSize: 11, fontWeight: 700 }}>VERIFIED STORE</Tag>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 20, fontWeight: 800, color: '#ffffff' }}>{companyName}</span>
+                <Tag color="success" icon={<CheckCircleFilled />} style={{ borderRadius: 12, fontSize: 11, fontWeight: 700 }}>
+                  VERIFIED STORE
+                </Tag>
               </div>
-              <Text style={{ color: '#94a3b8', fontSize: 12 }}>Digital Storefront &bull; Direct WhatsApp Ordering (+{whatsappNumber})</Text>
+              <div style={{ marginTop: 2, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <Tag color="processing" style={{ fontSize: 11 }}>{theme.tagText}</Tag>
+                <Text style={{ color: '#94a3b8', fontSize: 12 }}>
+                  Direct WhatsApp Ordering: +{whatsappNumber}
+                </Text>
+              </div>
             </div>
           </div>
 
@@ -289,16 +376,15 @@ export default function PublicStorePage({ params }: { params: { slug: string } }
                 borderColor: 'rgba(255,255,255,0.2)',
                 fontWeight: 600,
               }}
-              icon={<SettingOutlined />}
             >
-              Upload / Manage Products
+              Manage Catalog
             </Button>
             <Button
               type="primary"
               size="large"
               icon={<ShoppingCartOutlined />}
               onClick={() => setCartOpen(true)}
-              style={{ borderRadius: 8, fontWeight: 700 }}
+              style={{ borderRadius: 8, fontWeight: 700, background: theme.accentColor, borderColor: theme.accentColor }}
             >
               Cart ({cart.reduce((sum, item) => sum + item.qty, 0)})
             </Button>
@@ -306,17 +392,25 @@ export default function PublicStorePage({ params }: { params: { slug: string } }
         </div>
       </header>
 
+      {/* Loyalty Cashback Promo Bar */}
+      <div style={{ background: '#ecfdf5', borderBottom: '1px solid #a7f3d0', padding: '8px 16px', textAlign: 'center' }}>
+        <Text style={{ color: '#065f46', fontSize: 13, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <GiftOutlined style={{ color: '#059669' }} />
+          <span>GINIE Loyalty Club: Earn <b>5% Instant Cashback Points</b> to your phone number on every order!</span>
+        </Text>
+      </div>
+
       {/* Main Catalog */}
-      <div style={{ maxWidth: 1000, margin: '24px auto', padding: '0 16px' }}>
-        {/* Search Bar & Share Link */}
-        <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
+      <div style={{ maxWidth: 1100, margin: '24px auto', padding: '0 16px' }}>
+        {/* Search & Category Filter Pills */}
+        <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
           <Input
             size="large"
-            placeholder="Search products or services in store..."
+            placeholder="Search products, items or services..."
             prefix={<SearchOutlined style={{ color: '#94a3b8' }} />}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{ borderRadius: 10, boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}
+            style={{ borderRadius: 10, flex: 1, minWidth: 260, boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}
           />
           <Button
             size="large"
@@ -324,7 +418,7 @@ export default function PublicStorePage({ params }: { params: { slug: string } }
             onClick={() => {
               if (typeof window !== 'undefined') {
                 navigator.clipboard.writeText(window.location.href);
-                message.success('Storefront public link copied! Share with customers on WhatsApp.');
+                message.success('Storefront link copied! Share on WhatsApp.');
               }
             }}
             style={{ borderRadius: 10 }}
@@ -333,81 +427,169 @@ export default function PublicStorePage({ params }: { params: { slug: string } }
           </Button>
         </div>
 
-        {/* Product Cards Grid */}
-        <Row gutter={[16, 16]}>
-          {filteredProducts.map((p) => (
-            <Col xs={12} sm={8} md={6} key={p.id}>
-              <Card
-                hoverable
+        {/* Category Pills Bar */}
+        {categories.length > 2 && (
+          <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 12, marginBottom: 12 }}>
+            {categories.map((cat) => (
+              <Button
+                key={cat}
+                size="middle"
+                type={selectedCategory === cat ? 'primary' : 'default'}
+                onClick={() => setSelectedCategory(cat)}
                 style={{
-                  borderRadius: 12,
-                  border: '1px solid #e2e8f0',
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
+                  borderRadius: 20,
+                  fontSize: 13,
+                  fontWeight: selectedCategory === cat ? 700 : 500,
+                  background: selectedCategory === cat ? theme.accentColor : '#ffffff',
+                  borderColor: selectedCategory === cat ? theme.accentColor : '#e2e8f0',
                 }}
-                styles={{ body: { padding: 14 } }}
               >
-                <div>
-                  <div
+                {cat}
+              </Button>
+            ))}
+          </div>
+        )}
+
+        {/* Product Cards Grid */}
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '80px 0' }}>
+            <Spin size="large" />
+            <Paragraph style={{ marginTop: 16, color: '#64748b' }}>Loading digital storefront catalog...</Paragraph>
+          </div>
+        ) : filteredProducts.length === 0 ? (
+          <Card style={{ textAlign: 'center', padding: '60px 20px', borderRadius: 16 }}>
+            <ShopOutlined style={{ fontSize: 48, color: '#cbd5e1', marginBottom: 12 }} />
+            <Title level={4}>No items found</Title>
+            <Paragraph type="secondary">Try searching with a different keyword or upload items from Manage Catalog.</Paragraph>
+          </Card>
+        ) : (
+          <Row gutter={[16, 16]}>
+            {filteredProducts.map((p) => {
+              const inStock = p.stockInHand === undefined || p.stockInHand > 0;
+              return (
+                <Col xs={12} sm={8} md={6} key={p.id}>
+                  <Card
+                    hoverable
                     style={{
-                      height: 110,
-                      background: '#f1f5f9',
-                      borderRadius: 8,
+                      borderRadius: 14,
+                      border: '1px solid #e2e8f0',
+                      height: '100%',
                       display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginBottom: 12,
-                      overflow: 'hidden',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+                      opacity: inStock ? 1 : 0.75,
                     }}
+                    styles={{ body: { padding: 14, display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' } }}
                   >
-                    {p.image ? (
-                      <img src={p.image} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    ) : (
-                      <ShopOutlined style={{ fontSize: 36, color: '#94a3b8' }} />
-                    )}
-                  </div>
-                  <Tag color="blue" style={{ fontSize: 10, marginBottom: 4 }}>{p.category}</Tag>
-                  <Text strong style={{ fontSize: 14, display: 'block', lineHeight: 1.3, marginBottom: 6 }}>
-                    {p.name}
-                  </Text>
-                </div>
-                <div style={{ marginTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: 16, fontWeight: 900, color: '#1677ff' }}>₹{p.price}</span>
-                  <Button
-                    size="small"
-                    type="primary"
-                    icon={<PlusOutlined />}
-                    onClick={() => addToCart(p)}
-                    style={{ borderRadius: 6, fontWeight: 600 }}
-                  >
-                    Add
-                  </Button>
-                </div>
-              </Card>
-            </Col>
-          ))}
-        </Row>
+                    <div>
+                      {/* Thumbnail Placeholder */}
+                      <div
+                        style={{
+                          height: 120,
+                          background: '#f8fafc',
+                          borderRadius: 10,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          marginBottom: 10,
+                          overflow: 'hidden',
+                          border: '1px solid #f1f5f9',
+                          position: 'relative',
+                        }}
+                      >
+                        {p.imageUrl ? (
+                          <img src={p.imageUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : (
+                          <div style={{ textAlign: 'center', color: '#94a3b8' }}>
+                            {theme.icon}
+                          </div>
+                        )}
+
+                        {/* Stock Tag Overlay */}
+                        <div style={{ position: 'absolute', top: 6, right: 6 }}>
+                          {inStock ? (
+                            <Tag color="green" style={{ fontSize: 10, margin: 0, fontWeight: 700 }}>
+                              {p.stockInHand !== undefined ? `${p.stockInHand} in stock` : 'In Stock'}
+                            </Tag>
+                          ) : (
+                            <Tag color="error" style={{ fontSize: 10, margin: 0, fontWeight: 700 }}>
+                              Sold Out
+                            </Tag>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Category & Title */}
+                      <Tag color="blue" style={{ fontSize: 10, marginBottom: 4 }}>
+                        {p.category || 'Item'}
+                      </Tag>
+                      <Text strong style={{ fontSize: 14, display: 'block', lineHeight: 1.3, marginBottom: 6 }}>
+                        {p.name}
+                      </Text>
+                      {p.description && (
+                        <Text type="secondary" style={{ fontSize: 11, display: 'block', lineHeight: 1.4, marginBottom: 8 }}>
+                          {p.description.slice(0, 75)}{p.description.length > 75 ? '...' : ''}
+                        </Text>
+                      )}
+                    </div>
+
+                    {/* Price & Action */}
+                    <div style={{ marginTop: 12, paddingTop: 8, borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <span style={{ fontSize: 17, fontWeight: 900, color: '#0f172a' }}>
+                          ₹{Number(p.price || 0).toLocaleString('en-IN')}
+                        </span>
+                        {p.unit && <span style={{ fontSize: 11, color: '#64748b', marginLeft: 3 }}>/{p.unit}</span>}
+                      </div>
+
+                      <Button
+                        size="small"
+                        type="primary"
+                        icon={<PlusOutlined />}
+                        disabled={!inStock}
+                        onClick={() => addToCart(p)}
+                        style={{
+                          borderRadius: 8,
+                          fontWeight: 700,
+                          background: inStock ? theme.accentColor : '#d1d5db',
+                          borderColor: inStock ? theme.accentColor : '#d1d5db',
+                        }}
+                      >
+                        {inStock ? theme.buttonLabel : 'Out of Stock'}
+                      </Button>
+                    </div>
+                  </Card>
+                </Col>
+              );
+            })}
+          </Row>
+        )}
       </div>
 
-      {/* Cart Drawer */}
+      {/* Cart & Checkout Drawer */}
       <Drawer
-        title={<span style={{ fontWeight: 800 }}>Your Shopping Cart</span>}
+        title={
+          <Space>
+            <ShoppingCartOutlined style={{ color: theme.accentColor, fontSize: 20 }} />
+            <span style={{ fontWeight: 800 }}>{theme.cartLabel}</span>
+          </Space>
+        }
         placement="right"
-        width={380}
+        width={420}
         onClose={() => setCartOpen(false)}
         open={cartOpen}
       >
         {cart.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '60px 0', color: '#94a3b8' }}>
-            <ShoppingCartOutlined style={{ fontSize: 48, marginBottom: 16, color: '#cbd5e1' }} />
-            <Paragraph style={{ fontWeight: 600 }}>Your cart is empty</Paragraph>
+            <ShoppingCartOutlined style={{ fontSize: 52, marginBottom: 16, color: '#cbd5e1' }} />
+            <Paragraph style={{ fontWeight: 600, fontSize: 15 }}>Your cart is empty</Paragraph>
+            <Text type="secondary">Browse the catalog and add items to place an order directly on WhatsApp.</Text>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
-            <div style={{ overflowY: 'auto' }}>
+            {/* Items List */}
+            <div style={{ overflowY: 'auto', flex: 1, paddingRight: 4 }}>
               {cart.map((item) => (
                 <div
                   key={item.id}
@@ -415,77 +597,116 @@ export default function PublicStorePage({ params }: { params: { slug: string } }
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    padding: '10px 0',
+                    padding: '12px 0',
                     borderBottom: '1px solid #f1f5f9',
                   }}
                 >
-                  <div style={{ maxWidth: '60%' }}>
+                  <div style={{ maxWidth: '55%' }}>
                     <Text strong style={{ fontSize: 13, display: 'block' }}>{item.name}</Text>
-                    <Text type="secondary" style={{ fontSize: 12 }}>₹{item.price} each</Text>
+                    <Text type="secondary" style={{ fontSize: 11 }}>₹{item.price} each</Text>
                   </div>
                   <Space>
                     <Button size="small" onClick={() => updateCartQty(item.id, -1)}>-</Button>
-                    <span style={{ fontWeight: 700 }}>{item.qty}</span>
+                    <span style={{ fontWeight: 700, minWidth: 20, textAlign: 'center' }}>{item.qty}</span>
                     <Button size="small" onClick={() => updateCartQty(item.id, 1)}>+</Button>
-                    <span style={{ fontWeight: 800, width: 60, textAlign: 'right' }}>
-                      ₹{item.price * item.qty}
+                    <span style={{ fontWeight: 800, width: 65, textAlign: 'right', color: '#0f172a' }}>
+                      ₹{(item.price * item.qty).toLocaleString('en-IN')}
                     </span>
                   </Space>
                 </div>
               ))}
             </div>
 
-            <div style={{ paddingTop: 16, borderTop: '1px solid #e2e8f0' }}>
-              <div style={{ marginBottom: 12 }}>
+            {/* Customer Inputs & Checkout Bar */}
+            <div style={{ paddingTop: 16, borderTop: '2px solid #e2e8f0' }}>
+              <div style={{ background: '#f8fafc', padding: 12, borderRadius: 10, marginBottom: 14 }}>
+                <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 6 }}>
+                  Customer Details (For Order & Loyalty Points)
+                </Text>
                 <Input
-                  placeholder="Your Name (optional)"
+                  placeholder="Your 10-Digit Mobile / WhatsApp Number *"
+                  value={customerPhone}
+                  onChange={(e) => setCustomerPhone(e.target.value)}
+                  style={{ marginBottom: 8, borderRadius: 6 }}
+                />
+                <Input
+                  placeholder="Your Name *"
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
                   style={{ marginBottom: 8, borderRadius: 6 }}
                 />
+                <Input.TextArea
+                  rows={2}
+                  placeholder="Delivery Address / Table Number *"
+                  value={customerAddress}
+                  onChange={(e) => setCustomerAddress(e.target.value)}
+                  style={{ marginBottom: 8, borderRadius: 6 }}
+                />
+                {businessType === 'wholesale' && (
+                  <Input
+                    placeholder="GSTIN Number (Optional for Tax Invoice)"
+                    value={gstNumber}
+                    onChange={(e) => setGstNumber(e.target.value)}
+                    style={{ marginBottom: 8, borderRadius: 6 }}
+                  />
+                )}
                 <Input
-                  placeholder="Your Phone Number"
-                  value={customerPhone}
-                  onChange={(e) => setCustomerPhone(e.target.value)}
+                  placeholder={theme.notePlaceholder}
+                  value={industryNotes}
+                  onChange={(e) => setIndustryNotes(e.target.value)}
                   style={{ borderRadius: 6 }}
                 />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <Text strong style={{ fontSize: 16 }}>Total Amount:</Text>
-                <span style={{ fontSize: 22, fontWeight: 900, color: '#16a34a' }}>
-                  ₹{cartTotal.toLocaleString('en-IN')}
-                </span>
+              {/* Total & Loyalty Points summary */}
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text strong style={{ fontSize: 15 }}>Order Subtotal:</Text>
+                  <span style={{ fontSize: 20, fontWeight: 900, color: '#0f172a' }}>
+                    ₹{cartTotal.toLocaleString('en-IN')}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
+                  <Text style={{ fontSize: 12, color: '#059669', display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <GiftOutlined /> Loyalty Cashback Earned:
+                  </Text>
+                  <Tag color="green" style={{ margin: 0, fontWeight: 700 }}>
+                    +{cashbackPoints} Wallet Points
+                  </Tag>
+                </div>
               </div>
 
+              {/* WhatsApp Checkout Button */}
               <Button
                 type="primary"
                 size="large"
                 block
+                loading={submittingOrder}
                 icon={<WhatsAppOutlined style={{ fontSize: 20 }} />}
                 onClick={handleSendOrderWhatsApp}
                 style={{
                   height: 48,
-                  borderRadius: 8,
+                  borderRadius: 10,
                   background: '#25D366',
                   borderColor: '#25D366',
                   fontWeight: 800,
-                  fontSize: 16,
+                  fontSize: 15,
+                  boxShadow: '0 4px 12px rgba(37, 211, 102, 0.3)',
                 }}
               >
-                Send Order on WhatsApp
+                Place Order on WhatsApp
               </Button>
             </div>
           </div>
         )}
       </Drawer>
 
-      {/* Storefront Merchant Admin Modal: Upload Products & Configure WhatsApp */}
+      {/* Catalog Manager Modal */}
       <Modal
         title={
           <Space>
             <SettingOutlined style={{ color: '#1677ff' }} />
-            <span>Storefront Manager: Upload Products & Settings</span>
+            <span>Storefront Catalog & Settings</span>
           </Space>
         }
         open={adminModalOpen}
@@ -498,33 +719,22 @@ export default function PublicStorePage({ params }: { params: { slug: string } }
           items={[
             {
               key: 'upload',
-              label: '+ Upload New Product / Service',
+              label: '+ Add New Item / Product',
               children: (
-                <Form form={productForm} layout="vertical" onFinish={handleAddNewProduct} initialValues={{ category: 'Apparel', unit: 'piece', taxRate: 18 }}>
+                <Form form={productForm} layout="vertical" onFinish={handleAddNewProduct} initialValues={{ unit: 'piece', stockInHand: 50 }}>
                   <Row gutter={16}>
                     <Col xs={24} md={14}>
                       <Form.Item
                         name="name"
-                        label="Product or Service Name"
-                        rules={[{ required: true, message: 'Please enter product name' }]}
+                        label="Product / Item Name"
+                        rules={[{ required: true, message: 'Please enter name' }]}
                       >
-                        <Input placeholder="e.g. Formal Cotton Shirt, AC Service, Brass Valve" />
+                        <Input placeholder="e.g. Basmati Rice, Paneer Masala, Cotton Shirt" />
                       </Form.Item>
                     </Col>
                     <Col xs={24} md={10}>
-                      <Form.Item name="category" label="Category">
-                        <Select
-                          options={[
-                            { label: 'Apparel & Clothing', value: 'Apparel' },
-                            { label: 'Accessories', value: 'Accessories' },
-                            { label: 'Electronics & Gadgets', value: 'Electronics' },
-                            { label: 'Food & Groceries', value: 'Food' },
-                            { label: 'Services & Consulting', value: 'Services' },
-                            { label: 'Industrial & Hardware', value: 'Hardware' },
-                            { label: 'Healthcare & Pharma', value: 'Healthcare' },
-                            { label: 'Automobile & Spares', value: 'Automobile' },
-                          ]}
-                        />
+                      <Form.Item name="category" label="Category" rules={[{ required: true }]}>
+                        <Input placeholder="e.g. Main Course, Groceries, B2B Bulk" />
                       </Form.Item>
                     </Col>
                   </Row>
@@ -533,15 +743,15 @@ export default function PublicStorePage({ params }: { params: { slug: string } }
                     <Col xs={24} md={8}>
                       <Form.Item
                         name="price"
-                        label="Selling Price (₹)"
+                        label="Price (₹)"
                         rules={[{ required: true, message: 'Please enter price' }]}
                       >
-                        <InputNumber style={{ width: '100%' }} min={1} placeholder="899" />
+                        <InputNumber style={{ width: '100%' }} min={1} placeholder="250" />
                       </Form.Item>
                     </Col>
                     <Col xs={24} md={8}>
-                      <Form.Item name="code" label="SKU / HSN Code">
-                        <Input placeholder="e.g. SKU-101" />
+                      <Form.Item name="stockInHand" label="Stock in Hand (ERP)">
+                        <InputNumber style={{ width: '100%' }} min={0} placeholder="50" />
                       </Form.Item>
                     </Col>
                     <Col xs={24} md={8}>
@@ -549,24 +759,20 @@ export default function PublicStorePage({ params }: { params: { slug: string } }
                         <Select
                           options={[
                             { label: 'Piece (pcs)', value: 'piece' },
+                            { label: 'Plate / Food', value: 'plate' },
                             { label: 'Kg', value: 'kg' },
-                            { label: 'Pack', value: 'pack' },
-                            { label: 'Hour / Service', value: 'hour' },
-                            { label: 'Month', value: 'month' },
+                            { label: 'Box / Carton', value: 'box' },
+                            { label: 'Session / Service', value: 'session' },
                           ]}
                         />
                       </Form.Item>
                     </Col>
                   </Row>
 
-                  <Form.Item name="image" label="Product Image URL (Optional)">
-                    <Input placeholder="https://example.com/images/shirt.jpg" />
-                  </Form.Item>
-
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 12 }}>
                     <Button onClick={() => setAdminModalOpen(false)}>Close</Button>
                     <Button type="primary" htmlType="submit">
-                      Upload to Storefront
+                      Save & Publish to Store
                     </Button>
                   </div>
                 </Form>
@@ -583,53 +789,15 @@ export default function PublicStorePage({ params }: { params: { slug: string } }
                   columns={[
                     { title: 'Item Name', dataIndex: 'name', key: 'name', render: (t) => <Text strong>{t}</Text> },
                     { title: 'Category', dataIndex: 'category', key: 'category', render: (c) => <Tag color="blue">{c}</Tag> },
-                    { title: 'Price', dataIndex: 'price', key: 'price', render: (p) => <span style={{ fontWeight: 800, color: '#1677ff' }}>₹{p}</span> },
+                    { title: 'Price', dataIndex: 'price', key: 'price', render: (p) => <span style={{ fontWeight: 800 }}>₹{p}</span> },
                     {
-                      title: 'Action',
-                      key: 'action',
-                      render: (_, r) => (
-                        <Button
-                          size="small"
-                          danger
-                          icon={<DeleteOutlined />}
-                          onClick={() => handleDeleteProduct(r.id)}
-                        >
-                          Delete
-                        </Button>
-                      ),
+                      title: 'Stock (ERP)',
+                      dataIndex: 'stockInHand',
+                      key: 'stockInHand',
+                      render: (s) => (s !== undefined && s > 0 ? <Tag color="green">{s} in stock</Tag> : <Tag color="red">0 (Sold Out)</Tag>),
                     },
                   ]}
                 />
-              ),
-            },
-            {
-              key: 'settings',
-              label: 'Store & WhatsApp Settings',
-              children: (
-                <Form form={settingsForm} layout="vertical" onFinish={handleSaveStoreSettings}>
-                  <Form.Item
-                    name="storeName"
-                    label="Store Display Name"
-                    rules={[{ required: true }]}
-                  >
-                    <Input placeholder="e.g. Acme Enterprise / Dawood Traders" />
-                  </Form.Item>
-
-                  <Form.Item
-                    name="whatsappNumber"
-                    label="WhatsApp Ordering Number (where orders are received)"
-                    rules={[{ required: true }]}
-                    extra="Include 91 country code (e.g. 918797186001)"
-                  >
-                    <Input placeholder="918797186001" />
-                  </Form.Item>
-
-                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <Button type="primary" htmlType="submit">
-                      Save Store Settings
-                    </Button>
-                  </div>
-                </Form>
               ),
             },
           ]}

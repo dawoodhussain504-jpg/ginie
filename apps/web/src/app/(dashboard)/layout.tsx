@@ -142,7 +142,7 @@ export default function DashboardLayout({
     if (!skipped) {
       api.get('/api/settings/company')
         .then((company: any) => {
-          if (company && company.onboardingCompleted === false) {
+          if (company && (company.onboardingCompleted === false || !company.businessType)) {
             setOnboardingOpen(true);
           }
         })
@@ -404,7 +404,7 @@ export default function DashboardLayout({
 
             {/* Online / Offline Status Badge */}
             <Tag color={isOnline ? 'green' : 'orange'} style={{ borderRadius: 12, margin: 0, fontWeight: 700 }}>
-              {isOnline ? '🟢 Live Cloud' : '🟠 Offline Mode'}
+              {isOnline ? 'Live Cloud' : 'Offline Mode'}
             </Tag>
 
             {/* AI Assistant Button */}

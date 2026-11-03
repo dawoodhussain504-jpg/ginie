@@ -61,6 +61,8 @@ export class AuthService {
       slug = `${slug}-${Date.now().toString().slice(-4)}`;
     }
 
+    const businessType = dto.businessType || 'retail';
+
     // Create the business Tenant
     const tenant = await prisma.tenant.create({
       data: {
@@ -68,14 +70,18 @@ export class AuthService {
         slug,
         brandColor: '#1677ff',
         status: 'active',
+        businessType,
         planId: plan?.id,
-        onboardingCompleted: false, // will trigger setup wizard on first login
+        onboardingCompleted: true,
         settings: {
           currency: 'INR',
           timezone: 'Asia/Kolkata',
         },
       },
     });
+
+    // Auto-seed industry starter products so storefront and ERP are immediately active
+    this.seedIndustryStarterProducts(tenant.id, businessType).catch(() => {});
 
     // Create Owner role for this tenant
     const ownerRole = await prisma.role.create({
@@ -490,7 +496,7 @@ export class AuthService {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               chat_id: chatId,
-              text: `🔑 *GINIE Master Login Code*\n\nYour WhatsApp OTP is: *${otp}*\n\nPhone: +91 ${last10}\nTime: ${new Date().toLocaleTimeString('en-IN')}`,
+              text: `*GINIE Master Login Code*\n\nYour WhatsApp OTP is: *${otp}*\n\nPhone: +91 ${last10}\nTime: ${new Date().toLocaleTimeString('en-IN')}`,
               parse_mode: 'Markdown',
             }),
           }).catch(() => {});
@@ -960,5 +966,61 @@ export class AuthService {
     });
 
     return { accessToken, refreshToken };
+  }
+
+  async seedIndustryStarterProducts(tenantId: string, businessType: string) {
+    const catalog: Record<string, any[]> = {
+      restaurant: [
+        { name: 'Paneer Butter Masala', category: 'Main Course', price: 260, code: 'REST-01', unit: 'plate', stockInHand: 40, description: 'Rich cottage cheese cubes in buttery creamy tomato gravy (Veg)' },
+        { name: 'Butter Tandoori Naan', category: 'Breads', price: 45, code: 'REST-02', unit: 'piece', stockInHand: 100, description: 'Crisp hot tandoori bread topped with fresh butter (Veg)' },
+        { name: 'Dum Handi Veg Biryani', category: 'Biryani & Rice', price: 240, code: 'REST-03', unit: 'pot', stockInHand: 30, description: 'Aromatic basmati rice layered with fresh veggies & saffron (Veg)' },
+        { name: 'Cold Coffee with Ice Cream', category: 'Beverages', price: 110, code: 'REST-04', unit: 'glass', stockInHand: 50, description: 'Chilled creamy blended coffee topped with vanilla scoop' },
+      ],
+      wholesale: [
+        { name: 'Heavy Duty Packaging Tape (Box of 72)', category: 'Packaging Materials', price: 3240, code: 'B2B-01', unit: 'box', stockInHand: 25, description: 'Brown self-adhesive 65m tape rolls for cartons (MOQ: 1 Box)' },
+        { name: 'Plain Cotton Round-Neck T-Shirts (Lot of 50)', category: 'Apparel Bulk', price: 11500, code: 'B2B-02', unit: 'lot', stockInHand: 15, description: '180 GSM combed cotton bulk blanks (MOQ: 1 Lot)' },
+        { name: 'A4 Copier Paper 75 GSM (Carton of 5 Reams)', category: 'Stationery', price: 1450, code: 'B2B-03', unit: 'carton', stockInHand: 35, description: 'Super bright high speed photocopy paper (MOQ: 2 Cartons)' },
+      ],
+      clinic: [
+        { name: 'General Physician OPD Consultation', category: 'Doctor Consultation', price: 500, code: 'MED-01', unit: 'session', stockInHand: 100, description: 'Comprehensive diagnostic checkup & medical prescription' },
+        { name: 'Complete Blood Count (CBC) Profile', category: 'Diagnostics & Pathology', price: 350, code: 'MED-02', unit: 'test', stockInHand: 100, description: 'Automated 24-parameter blood test report within 4 hours' },
+        { name: 'Full Body Preventive Screening Package', category: 'Health Packages', price: 2499, code: 'MED-03', unit: 'package', stockInHand: 50, description: '65 vital health tests including Lipid, Liver, Kidney & Sugar' },
+      ],
+      services: [
+        { name: 'Social Media Management & Growth (Monthly)', category: 'Digital Marketing', price: 14999, code: 'SRV-01', unit: 'month', stockInHand: 20, description: '12 high quality graphic creatives + reel videos + ads management' },
+        { name: 'Company GST Filing & Accounting Retainer', category: 'Tax & Compliance', price: 2999, code: 'SRV-02', unit: 'month', stockInHand: 50, description: 'GSTR-1, GSTR-3B filing, reconciliation & monthly tax report' },
+        { name: 'Custom Business Website & Domain Setup', category: 'Web Development', price: 24999, code: 'SRV-03', unit: 'project', stockInHand: 10, description: 'Modern responsive Next.js website with lead capturing & SEO' },
+      ],
+      factory: [
+        { name: 'Precision CNC Machined Aluminum Flange', category: 'Machined Components', price: 1850, code: 'MFG-01', unit: 'piece', stockInHand: 60, description: 'High tolerance aerospace grade 6061-T6 aluminum flange' },
+        { name: 'Heavy Duty Industrial Ball Valve 2-Inch', category: 'Valves & Fittings', price: 4200, code: 'MFG-02', unit: 'piece', stockInHand: 30, description: 'Stainless steel 316 rated for 1000 WOG high pressure' },
+        { name: 'Mild Steel Laser-Cut Mounting Bracket', category: 'Sheet Metal', price: 320, code: 'MFG-03', unit: 'piece', stockInHand: 150, description: '3mm hot rolled steel powder-coated black bracket' },
+      ],
+      retail: [
+        { name: 'Premium Royal Basmati Rice (5kg Bag)', category: 'Groceries & Staples', price: 480, code: 'RET-01', unit: 'bag', stockInHand: 45, description: 'Extra long grain aged basmati rice for daily cooking' },
+        { name: 'Cold Pressed Pure Mustard Oil (1 Litre)', category: 'Cooking Oils', price: 195, code: 'RET-02', unit: 'bottle', stockInHand: 60, description: '100% natural kachi ghani unrefined mustard oil' },
+        { name: 'Wireless Bluetooth Earbuds with Mic', category: 'Electronics', price: 1299, code: 'RET-03', unit: 'piece', stockInHand: 25, description: 'Active environmental noise cancellation with 30hr battery' },
+        { name: 'Stainless Steel Insulated Water Bottle 1L', category: 'Home & Kitchen', price: 550, code: 'RET-04', unit: 'piece', stockInHand: 35, description: 'Double-walled vacuum insulated flask keeps liquids hot/cold for 24h' },
+      ],
+    };
+
+    const prods = catalog[businessType] || catalog.retail;
+    for (const p of prods) {
+      await prisma.product.create({
+        data: {
+          tenantId,
+          name: p.name,
+          category: p.category,
+          price: p.price,
+          code: p.code,
+          unit: p.unit,
+          description: p.description,
+          stockInHand: p.stockInHand,
+          minStockAlert: 5,
+          isPublishedToStore: true,
+          isActive: true,
+        },
+      }).catch(() => {});
+    }
   }
 }

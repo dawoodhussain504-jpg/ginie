@@ -242,6 +242,50 @@ export const BUSINESS_TEMPLATES: Record<string, BusinessTemplate> = {
     ],
   },
 
+  restaurant: {
+    id: 'restaurant',
+    title: 'Restaurant / Cafe / Food',
+    titleHi: 'रेस्टोरेंट / कैफे / फूड',
+    description: 'Restaurants, cafes, bakeries, cloud kitchens, food trucks & catering.',
+    descriptionHi: 'रेस्टोरेंट, कैफे, बेकरी, क्लाउड किचन और कैटरिंग व्यवसाय।',
+    icon: 'CoffeeOutlined',
+    pipelineStages: [
+      { name: 'Table / Delivery Inquiry', probability: 25, color: '#1677ff' },
+      { name: 'Order Received', probability: 60, color: '#fa8c16' },
+      { name: 'Food Preparing & Dispatched', probability: 85, color: '#722ed1' },
+      { name: 'Delivered & Billed', probability: 100, color: '#52c41a' },
+    ],
+    customFields: [
+      {
+        entityType: 'contact',
+        key: 'foodPreference',
+        label: 'Dietary Preference',
+        fieldType: 'dropdown',
+        options: ['Pure Vegetarian', 'Non-Vegetarian', 'Jain / Vegan', 'Halal'],
+        isRequired: false,
+      },
+      {
+        entityType: 'contact',
+        key: 'favoriteDish',
+        label: 'Favorite Dish',
+        fieldType: 'text',
+        isRequired: false,
+      },
+    ],
+    messageTemplates: [
+      {
+        name: 'Order Confirmation',
+        channel: 'whatsapp',
+        body: 'Namaste {{name}}! Thank you for dining with {{companyName}}. Your delicious order is being prepared fresh in our kitchen!',
+      },
+      {
+        name: 'Special Food Offer',
+        channel: 'whatsapp',
+        body: 'Hello {{name}}! Craving good food today? Enjoy 15% discount on our special chef menu at {{companyName}} using code CHEF15!',
+      },
+    ],
+  },
+
   other: {
     id: 'other',
     title: 'General Business',
