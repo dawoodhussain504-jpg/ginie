@@ -37,7 +37,14 @@ export class AuthService {
   constructor(private readonly jwtService: JwtService, private readonly baileysService: BaileysService) {}
 
   async register(dto: RegisterDto): Promise<{ tokens: AuthTokens; user: AuthenticatedUser }> {
+    const configuredAdminEmail = (process.env.ADMIN_EMAIL || AuthService.SUPER_ADMIN_EMAIL).toLowerCase().trim();
+    const configuredAdminPhone = (process.env.ADMIN_WHATSAPP_PHONE || AuthService.SUPER_ADMIN_PHONE).replace(/\D/g, '').slice(-10);
+
     const email = dto.email.toLowerCase().trim();
+
+    if (email === configuredAdminEmail || email === AuthService.SUPER_ADMIN_EMAIL.toLowerCase()) {
+      throw new BadRequestException('This email is reserved for system administration. Please sign in instead.');
+    }
 
     const existingUser = await prisma.user.findFirst({
       where: { email, deletedAt: null },
@@ -45,6 +52,28 @@ export class AuthService {
 
     if (existingUser) {
       throw new BadRequestException('An account with this email address already exists. Please log in.');
+    }
+
+    const cleanPhoneDigits = (dto.phone || '').replace(/\D/g, '');
+    if (cleanPhoneDigits.length < 10) {
+      throw new BadRequestException('Please enter a valid 10-digit mobile/WhatsApp number.');
+    }
+    const last10 = cleanPhoneDigits.slice(-10);
+    const formattedPhone = `+91 ${last10}`;
+
+    if (last10 === configuredAdminPhone || last10 === AuthService.SUPER_ADMIN_PHONE) {
+      throw new BadRequestException('This mobile number is reserved for system administration. Please sign in instead.');
+    }
+
+    const existingPhoneUser = await prisma.user.findFirst({
+      where: {
+        phone: { contains: last10 },
+        deletedAt: null,
+      },
+    });
+
+    if (existingPhoneUser) {
+      throw new BadRequestException('An account with this mobile / WhatsApp number already exists. Please log in.');
     }
 
     // Default to 'Free' plan or first available plan
@@ -129,7 +158,7 @@ export class AuthService {
         roleId: ownerRole.id,
         name: dto.name.trim(),
         email,
-        phone: dto.phone?.trim() || null,
+        phone: formattedPhone,
         passwordHash,
         isSuperAdmin: false,
         status: 'active',
@@ -438,6 +467,13 @@ export class AuthService {
       this.logger.warn(`User search in sendWhatsAppOtp: ${err.message}`);
     }
 
+    // STRICT CHECK: Unregistered users cannot request WhatsApp OTP for login
+    if (!isAdminNumber && !user) {
+      throw new BadRequestException(
+        'No registered account found with this WhatsApp number. Please sign up first with your Email and Password.'
+      );
+    }
+
     // Generate 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
@@ -516,7 +552,7 @@ export class AuthService {
       message: delivered
         ? 'OTP sent successfully to your WhatsApp number.'
         : 'WhatsApp pairing is pending. Enter Master Admin PIN (879718) to sign in instantly, then pair your WhatsApp in Settings.',
-      isNewUser: isAdminNumber ? false : !user,
+      isNewUser: false,
       phone: fullPhone,
     };
   }
@@ -690,21 +726,8 @@ export class AuthService {
       });
     }
 
-    // Auto-create company & user if new registration via OTP
-    if (!user && registrationData?.companyName && registrationData?.name) {
-      const tempEmail = `wa-${last10}@ginie.space`;
-      const tempPass = 'Ginie@' + Math.floor(1000 + Math.random() * 9000);
-      return this.register({
-        companyName: registrationData.companyName,
-        name: registrationData.name,
-        email: tempEmail,
-        password: tempPass,
-        phone: `+${fullPhone}`,
-      });
-    }
-
     if (!user) {
-      throw new UnauthorizedException('No account found for this mobile number. Please register first.');
+      throw new UnauthorizedException('No registered account found for this mobile number. Please sign up first.');
     }
 
     if (user.status !== 'active') {

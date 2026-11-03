@@ -29,7 +29,14 @@ export default function RegisterPage() {
     setLoading(true);
     setErrorMessage(null);
     try {
-      const res = await api.post('/api/auth/register', values);
+      const cleanDigits = (values.phone || '').replace(/\D/g, '');
+      const last10 = cleanDigits.slice(-10);
+      const payload = {
+        ...values,
+        email: values.email.trim(),
+        phone: `+91 ${last10}`,
+      };
+      const res = await api.post('/api/auth/register', payload);
       login(res.tokens.accessToken, res.user);
       router.push('/dashboard');
     } catch (err: any) {
@@ -105,6 +112,17 @@ export default function RegisterPage() {
             message={errorMessage}
             type="error"
             showIcon
+            closable
+            onClose={() => setErrorMessage(null)}
+            action={
+              (errorMessage.toLowerCase().includes('already exists') || errorMessage.toLowerCase().includes('log in') || errorMessage.toLowerCase().includes('sign in')) ? (
+                <Link href="/login">
+                  <Button size="small" type="primary" style={{ background: '#2563eb', fontWeight: 600 }}>
+                    {locale === 'hi' ? 'साइन इन करें' : 'Sign In Now'}
+                  </Button>
+                </Link>
+              ) : undefined
+            }
             style={{ marginBottom: 20 }}
           />
         )}
@@ -157,13 +175,33 @@ export default function RegisterPage() {
           </Form.Item>
 
           <Form.Item
-            label={locale === 'hi' ? 'मोबाइल / व्हाट्सएप नंबर' : 'Phone / WhatsApp Number'}
+            label={locale === 'hi' ? 'मोबाइल / व्हाट्सएप नंबर (अनिवार्य)' : 'Phone / WhatsApp Number (Required)'}
             name="phone"
-            rules={[{ required: false }]}
+            rules={[
+              { required: true, message: locale === 'hi' ? 'कृपया अपना 10-अंकों का व्हाट्सएप नंबर दर्ज करें' : 'Please enter your 10-digit WhatsApp number' },
+              {
+                validator: (_, value) => {
+                  const digits = (value || '').replace(/\D/g, '');
+                  if (!digits || digits.length < 10) {
+                    return Promise.reject(new Error(locale === 'hi' ? 'कम से कम 10 अंकों का मान्य मोबाइल नंबर दर्ज करें' : 'Must be a valid 10-digit mobile number'));
+                  }
+                  return Promise.resolve();
+                },
+              },
+            ]}
+            extra={
+              <Text type="secondary" style={{ fontSize: 11 }}>
+                {locale === 'hi'
+                  ? 'इस नंबर से आप बाद में 1-क्लिक व्हाट्सएप OTP से लॉगिन कर सकेंगे'
+                  : 'You will use this number for 1-click passwordless WhatsApp OTP sign in'}
+              </Text>
+            }
           >
             <Input
               prefix={<PhoneOutlined />}
-              placeholder="e.g. +91 98765 43210"
+              addonBefore="+91"
+              placeholder="98765 43210"
+              maxLength={15}
             />
           </Form.Item>
 

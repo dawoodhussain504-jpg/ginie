@@ -45,12 +45,7 @@ export default function LoginPage() {
   const [phone, setPhone] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [otpCode, setOtpCode] = useState('');
-  const [isNewUser, setIsNewUser] = useState(false);
   const [countdown, setCountdown] = useState(0);
-
-  // New user registration fields when signing up via WhatsApp
-  const [newCompanyName, setNewCompanyName] = useState('');
-  const [newUserName, setNewUserName] = useState('');
 
   // Forgot password modal
   const [forgotModalVisible, setForgotModalVisible] = useState(false);
@@ -129,7 +124,6 @@ export default function LoginPage() {
       const res = await api.post('/api/auth/otp/send', { phone: rawPhone });
       setPhone(rawPhone);
       setOtpSent(true);
-      setIsNewUser(!!res.isNewUser);
       setCountdown(45);
       message.success(res.message || 'OTP sent to your WhatsApp number!');
     } catch (err: any) {
@@ -146,11 +140,6 @@ export default function LoginPage() {
       return;
     }
 
-    if (isNewUser && (!newCompanyName.trim() || !newUserName.trim())) {
-      message.error('Please enter your Business Name and Full Name to complete setup.');
-      return;
-    }
-
     setLoading(true);
     setErrorMessage(null);
     try {
@@ -159,21 +148,10 @@ export default function LoginPage() {
         otp: otpCode.trim(),
       };
 
-      if (isNewUser) {
-        payload.registrationData = {
-          companyName: newCompanyName.trim(),
-          name: newUserName.trim(),
-        };
-      }
-
       const res = await api.post('/api/auth/otp/verify', payload);
 
       login(res.tokens.accessToken, res.user);
-      message.success(
-        isNewUser
-          ? 'Business Account created & signed in! Welcome to GINIE!'
-          : (locale === 'hi' ? 'सफलतापूर्वक साइन इन किया!' : 'Signed in successfully!')
-      );
+      message.success(locale === 'hi' ? 'सफलतापूर्वक साइन इन किया!' : 'Signed in successfully!');
 
       if (res.user?.isSuperAdmin) {
         router.push('/admin');
@@ -301,6 +279,15 @@ export default function LoginPage() {
             showIcon
             closable
             onClose={() => setErrorMessage(null)}
+            action={
+              (errorMessage.toLowerCase().includes('sign up') || errorMessage.toLowerCase().includes('register')) ? (
+                <Link href="/register">
+                  <Button size="small" type="primary" style={{ background: '#2563eb', fontWeight: 600 }}>
+                    {locale === 'hi' ? 'साइन अप करें' : 'Sign Up Now'}
+                  </Button>
+                </Link>
+              ) : undefined
+            }
             style={{ marginBottom: 18 }}
           />
         )}
@@ -415,25 +402,6 @@ export default function LoginPage() {
                           Change
                         </Button>
                       </div>
-
-                      {isNewUser && (
-                        <div style={{ background: '#f8fafc', padding: 12, borderRadius: 8, marginBottom: 16, border: '1px solid #e2e8f0' }}>
-                          <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 8, color: brandColor }}>
-                            New business setup:
-                          </Text>
-                          <Input
-                            placeholder="Your Business / Shop Name"
-                            value={newCompanyName}
-                            onChange={(e) => setNewCompanyName(e.target.value)}
-                            style={{ marginBottom: 8 }}
-                          />
-                          <Input
-                            placeholder="Your Full Name"
-                            value={newUserName}
-                            onChange={(e) => setNewUserName(e.target.value)}
-                          />
-                        </div>
-                      )}
 
                       <div style={{ marginBottom: 16 }}>
                         <Text strong style={{ display: 'block', marginBottom: 8, fontSize: 13 }}>
