@@ -309,8 +309,11 @@ function CustomersContent() {
               type="text"
               size="small"
               icon={<WhatsAppOutlined style={{ color: '#52c41a' }} />}
-              href={`https://wa.me/${cleanWa}`}
-              target="_blank"
+              onClick={() => {
+                setSelectedDrawerContactId(record.id);
+                setDrawerOpen(true);
+              }}
+              title="Open WhatsApp Chat in CRM"
             />
           </Space>
         );

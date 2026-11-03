@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Drawer,
+  Select,
   Timeline,
   Typography,
   Space,
@@ -19,6 +20,8 @@ import {
 } from 'antd';
 import {
   PhoneOutlined,
+  SendOutlined,
+  MailOutlined,
   WhatsAppOutlined,
   FileTextOutlined,
   CheckSquareOutlined,
@@ -54,6 +57,9 @@ export default function CustomerTimelineDrawer({
   const [submitting, setSubmitting] = useState(false);
   const [noteText, setNoteText] = useState('');
   const [taskTitle, setTaskTitle] = useState('');
+  const [waModalOpen, setWaModalOpen] = useState(false);
+  const [waMessageText, setWaMessageText] = useState('');
+  const [waSending, setWaSending] = useState(false);
 
   useEffect(() => {
     if (customerId && open) {
@@ -94,6 +100,30 @@ export default function CustomerTimelineDrawer({
       setNoteModalOpen(false);
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleSendWhatsApp = async () => {
+    if (!waMessageText.trim() || !rawPhone) {
+      message.error('Please enter a message to send.');
+      return;
+    }
+    setWaSending(true);
+    try {
+      await api.post('/api/whatsapp/messages', {
+        phone: cleanWhatsAppPhone,
+        message: waMessageText.trim(),
+        contactId: customerId || undefined,
+      });
+      message.success('WhatsApp message delivered to customer!');
+      setWaModalOpen(false);
+      loadTimeline();
+    } catch (err: any) {
+      const errMsg = err.message || 'WhatsApp sending failed';
+      message.warning(`${errMsg}. Opening fallback WhatsApp Web...`);
+      window.open(`https://wa.me/${cleanWhatsAppPhone}?text=${encodeURIComponent(waMessageText)}`, '_blank');
+    } finally {
+      setWaSending(false);
     }
   };
 
@@ -157,7 +187,7 @@ export default function CustomerTimelineDrawer({
               </Text>
               {customer?.company?.name && (
                 <Text type="secondary" style={{ display: 'block', fontSize: 12 }}>
-                  🏢 {customer.company.name}
+                  <ShopOutlined style={{ marginRight: 4 }} /> {customer.company.name}
                 </Text>
               )}
             </div>
@@ -200,8 +230,10 @@ export default function CustomerTimelineDrawer({
                   <Button
                     type="primary"
                     icon={<WhatsAppOutlined />}
-                    href={`https://wa.me/${cleanWhatsAppPhone}`}
-                    target="_blank"
+                    onClick={() => {
+                      setWaMessageText(`Namaste ${customer?.name || ''} ji, `);
+                      setWaModalOpen(true);
+                    }}
                     style={{ background: '#25D366', borderColor: '#25D366' }}
                   >
                     WhatsApp
@@ -232,17 +264,17 @@ export default function CustomerTimelineDrawer({
               <Space direction="vertical" size={4} style={{ width: '100%' }}>
                 {customer?.phone && (
                   <Text type="secondary">
-                    📞 Phone: <Text strong>{customer.phone}</Text>
+                    <PhoneOutlined style={{ marginRight: 6 }} /> Phone: <Text strong>{customer.phone}</Text>
                   </Text>
                 )}
                 {customer?.email && (
                   <Text type="secondary">
-                    ✉️ Email: <Text strong>{customer.email}</Text>
+                    <MailOutlined style={{ marginRight: 6 }} /> Email: <Text strong>{customer.email}</Text>
                   </Text>
                 )}
                 {customer?.designation && (
                   <Text type="secondary">
-                    💼 Designation: <Text strong>{customer.designation}</Text>
+                    <UserOutlined style={{ marginRight: 6 }} /> Designation: <Text strong>{customer.designation}</Text>
                   </Text>
                 )}
               </Space>
@@ -322,6 +354,101 @@ export default function CustomerTimelineDrawer({
           onChange={(e) => setNoteText(e.target.value)}
           placeholder="Write call notes, meeting takeaways, or customer preferences..."
         />
+      </Modal>
+
+      {/* In-App Quick WhatsApp Chat Modal */}
+      <Modal
+        title={
+          <Space>
+            <WhatsAppOutlined style={{ color: '#25D366', fontSize: 20 }} />
+            <span>Send WhatsApp to {customer?.name || 'Customer'}</span>
+          </Space>
+        }
+        open={waModalOpen}
+        onCancel={() => setWaModalOpen(false)}
+        footer={null}
+        width={520}
+        destroyOnClose
+      >
+        <div style={{ marginTop: 12 }}>
+          <div style={{ marginBottom: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Text type="secondary" style={{ fontSize: 13 }}>
+              To: <Text strong>+91 {digitsOnly.slice(-10)}</Text>
+            </Text>
+            <Tag color="success">Direct In-App Delivery</Tag>
+          </div>
+
+          <div style={{ marginBottom: 14 }}>
+            <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 6 }}>
+              Quick Templates:
+            </Text>
+            <Select
+              style={{ width: '100%' }}
+              placeholder="Choose a quick template..."
+              onChange={(val) => {
+                const name = customer?.name || 'ji';
+                if (val === 'payment') {
+                  setWaMessageText(`Namaste ${name} ji, this is a gentle follow-up regarding your pending invoice. Kindly let us know if you need any assistance with payment details. Thank you!`);
+                } else if (val === 'quote') {
+                  setWaMessageText(`Namaste ${name} ji, did you get a chance to review our quotation? Please let us know if you need any adjustments or clarifications.`);
+                } else if (val === 'greeting') {
+                  setWaMessageText(`Namaste ${name} ji, hope you are having a productive week! Please let us know if you need any assistance with our products or services.`);
+                } else if (val === 'catalog') {
+                  setWaMessageText(`Namaste ${name} ji, check out our latest digital storefront products here: https://ginie.space/store/catalog . Feel free to place orders directly!`);
+                }
+              }}
+              options={[
+                { label: 'Payment Follow-up / Reminder', value: 'payment' },
+                { label: 'Quotation Follow-up', value: 'quote' },
+                { label: 'General Relationship Check-in', value: 'greeting' },
+                { label: 'Share Storefront Catalog Link', value: 'catalog' },
+              ]}
+            />
+          </div>
+
+          <div style={{ marginBottom: 16 }}>
+            <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 6 }}>
+              Message Text:
+            </Text>
+            <TextArea
+              rows={5}
+              value={waMessageText}
+              onChange={(e) => setWaMessageText(e.target.value)}
+              placeholder="Type your WhatsApp message..."
+              showCount
+              maxLength={1000}
+            />
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 20 }}>
+            <Button
+              type="link"
+              size="small"
+              icon={<WhatsAppOutlined />}
+              onClick={() => {
+                window.open(`https://wa.me/${cleanWhatsAppPhone}?text=${encodeURIComponent(waMessageText)}`, '_blank');
+              }}
+              style={{ padding: 0, fontSize: 12 }}
+            >
+              Open in WhatsApp Web ↗
+            </Button>
+
+            <Space>
+              <Button onClick={() => setWaModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                type="primary"
+                loading={waSending}
+                icon={<SendOutlined />}
+                onClick={handleSendWhatsApp}
+                style={{ background: '#25D366', borderColor: '#25D366' }}
+              >
+                Send via WhatsApp
+              </Button>
+            </Space>
+          </div>
+        </div>
       </Modal>
 
       {/* Add Task Modal */}
