@@ -80,17 +80,24 @@ export class BaileysService implements OnModuleInit, OnModuleDestroy {
 
   private async restoreCredsFromDb(sessionId: string, sessionDir: string) {
     try {
-      const credsFile = path.join(sessionDir, 'creds.json');
-      if (!fs.existsSync(credsFile)) {
-        const session = await prisma.whatsAppSession.findUnique({
-          where: { id: sessionId },
-          select: { credentialsEncrypted: true },
-        });
+      const session = await prisma.whatsAppSession.findUnique({
+        where: { id: sessionId },
+        select: { credentialsEncrypted: true },
+      });
 
-        if (session?.credentialsEncrypted) {
-          const parsed = JSON.parse(session.credentialsEncrypted);
+      if (session?.credentialsEncrypted) {
+        const parsed = JSON.parse(session.credentialsEncrypted);
+        if (typeof parsed === 'object' && parsed !== null && (parsed['creds.json'] || parsed.creds)) {
+          for (const [fileName, content] of Object.entries(parsed)) {
+            if (typeof content === 'string') {
+              fs.writeFileSync(path.join(sessionDir, fileName), content, 'utf8');
+            }
+          }
+          this.logger.log(`[Session ${sessionId}] Restored full auth state (${Object.keys(parsed).length} files) from DB.`);
+        } else {
+          const credsFile = path.join(sessionDir, 'creds.json');
           fs.writeFileSync(credsFile, JSON.stringify(parsed, null, 2), 'utf8');
-          this.logger.log(`[Session ${sessionId}] Restored creds.json from database.`);
+          this.logger.log(`[Session ${sessionId}] Restored legacy creds.json from DB.`);
         }
       }
     } catch (err: any) {
@@ -100,12 +107,18 @@ export class BaileysService implements OnModuleInit, OnModuleDestroy {
 
   private async backupCredsToDb(sessionId: string, sessionDir: string) {
     try {
-      const credsFile = path.join(sessionDir, 'creds.json');
-      if (fs.existsSync(credsFile)) {
-        const content = fs.readFileSync(credsFile, 'utf8');
+      if (!fs.existsSync(sessionDir)) return;
+      const files = fs.readdirSync(sessionDir);
+      const bundle: Record<string, string> = {};
+      for (const file of files) {
+        if (file.endsWith('.json')) {
+          bundle[file] = fs.readFileSync(path.join(sessionDir, file), 'utf8');
+        }
+      }
+      if (Object.keys(bundle).length > 0) {
         await prisma.whatsAppSession.update({
           where: { id: sessionId },
-          data: { credentialsEncrypted: content },
+          data: { credentialsEncrypted: JSON.stringify(bundle) },
         });
       }
     } catch (err: any) {
@@ -262,6 +275,7 @@ export class BaileysService implements OnModuleInit, OnModuleDestroy {
             },
           }).catch(() => {});
 
+          await this.backupCredsToDb(sessionId, sessionDir);
           this.logger.log(`[Session ${sessionId}] WhatsApp CONNECTED successfully for phone: +${phone}`);
         }
       });
