@@ -112,10 +112,26 @@ export class BaileysService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  async waitForQrCode(sessionId: string, maxWaitMs = 5000): Promise<BaileysLiveStatus> {
+    const start = Date.now();
+    while (Date.now() - start < maxWaitMs) {
+      const status = this.statusMap.get(sessionId);
+      if (status) {
+        if (status.status === 'connected') return status;
+        if (status.status === 'qr_ready' && status.qrCode) return status;
+      }
+      await new Promise((r) => setTimeout(r, 200));
+    }
+    return this.statusMap.get(sessionId) || { status: 'qr_ready', qrCode: null };
+  }
+
   async initSession(sessionId: string): Promise<BaileysLiveStatus> {
     if (this.sockets.has(sessionId)) {
       const current = this.statusMap.get(sessionId);
-      if (current) return current;
+      if (current && (current.status === 'connected' || current.qrCode)) {
+        return current;
+      }
+      return this.waitForQrCode(sessionId, 5000);
     }
 
     const sessionDir = this.getSessionDir(sessionId);
@@ -249,7 +265,8 @@ export class BaileysService implements OnModuleInit, OnModuleDestroy {
         }
       });
 
-      return this.statusMap.get(sessionId) || { status: 'qr_ready' };
+      // Await live QR code handshake before returning (up to 5s)
+      return this.waitForQrCode(sessionId, 5000);
     } catch (err: any) {
       this.logger.error(`[Session ${sessionId}] initSession error: ${err.message}`);
       return { status: 'disconnected' };
@@ -261,6 +278,22 @@ export class BaileysService implements OnModuleInit, OnModuleDestroy {
     if (existing && existing.status === 'connected') {
       return existing;
     }
+    if (existing && existing.status === 'qr_ready' && existing.qrCode) {
+      return existing;
+    }
+    await this.initSession(sessionId);
+    return this.waitForQrCode(sessionId, 5000);
+  }
+
+  async refreshSession(sessionId: string): Promise<BaileysLiveStatus> {
+    const sock = this.sockets.get(sessionId);
+    if (sock) {
+      try {
+        sock.end(undefined);
+      } catch {}
+      this.sockets.delete(sessionId);
+    }
+    this.statusMap.set(sessionId, { status: 'qr_ready', qrCode: null });
     return this.initSession(sessionId);
   }
 

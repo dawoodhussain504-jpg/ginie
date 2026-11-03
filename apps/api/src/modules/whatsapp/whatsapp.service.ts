@@ -85,7 +85,13 @@ export class WhatsAppService {
               lastActiveAt: new Date(),
             },
           });
-        } else if (liveStatus.qrCode && liveStatus.qrCode !== session.qrCode) {
+          return {
+            ...session,
+            status: 'connected',
+            phone: liveStatus.phone ? (liveStatus.phone.startsWith('+') ? liveStatus.phone : '+' + liveStatus.phone) : session.phone,
+            qrCode: null,
+          };
+        } else if (liveStatus.qrCode) {
           session = await prisma.whatsAppSession.update({
             where: { id: session.id },
             data: {
@@ -93,6 +99,18 @@ export class WhatsAppService {
               qrCode: liveStatus.qrCode,
             },
           });
+          return {
+            ...session,
+            status: 'qr_ready',
+            qrCode: liveStatus.qrCode,
+          };
+        } else {
+          return {
+            ...session,
+            status: liveStatus.status || session.status,
+            qrCode: liveStatus.qrCode || session.qrCode,
+            phone: liveStatus.phone || session.phone,
+          };
         }
       } catch (err: any) {
         if (process.env.WHATSAPP_BRIDGE_URL) {
@@ -822,5 +840,32 @@ export class WhatsAppService {
       data: { status: 'disconnected', qrCode: null, sentToday: 0, phone: null, credentialsEncrypted: null },
     });
     return { success: true };
+  }
+
+  async refreshSession(tenantId: string) {
+    const session = await prisma.whatsAppSession.findFirst({ where: { tenantId } });
+    if (!session) {
+      return this.getSession(tenantId);
+    }
+    if (session.provider === 'bridge') {
+      try {
+        const liveStatus = await this.baileysService.refreshSession(session.id);
+        if (liveStatus.qrCode) {
+          await prisma.whatsAppSession.update({
+            where: { id: session.id },
+            data: { status: 'qr_ready', qrCode: liveStatus.qrCode },
+          }).catch(() => {});
+        }
+        return {
+          ...session,
+          status: liveStatus.status,
+          qrCode: liveStatus.qrCode || null,
+          phone: liveStatus.phone || session.phone,
+        };
+      } catch (err: any) {
+        this.logger.warn('refreshSession error: ' + err.message);
+      }
+    }
+    return this.getSession(tenantId);
   }
 }

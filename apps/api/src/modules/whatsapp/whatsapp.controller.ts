@@ -26,6 +26,11 @@ export class WhatsAppController {
     return this.whatsappService.getSession(tenantId);
   }
 
+  @Post('session/refresh')
+  async refreshSession(@CurrentTenant() tenantId: string) {
+    return this.whatsappService.refreshSession(tenantId);
+  }
+
   @Delete('session')
   async unlinkSession(@CurrentTenant() tenantId: string) {
     return this.whatsappService.unlinkSession(tenantId);

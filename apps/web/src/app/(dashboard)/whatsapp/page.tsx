@@ -21,6 +21,7 @@ import {
   Progress,
   Tooltip,
   Divider,
+  Spin,
 } from 'antd';
 import {
   WhatsAppOutlined,
@@ -34,6 +35,7 @@ import {
   ClockCircleOutlined,
   StopOutlined,
   CheckCircleOutlined,
+  CheckOutlined,
   ThunderboltOutlined,
   SyncOutlined,
   ScheduleOutlined,
@@ -61,6 +63,7 @@ export default function WhatsAppPage() {
   const [rules, setRules] = useState<any[]>([]);
   const [antiBan, setAntiBan] = useState<any | null>(null);
   const [checkingFollowups, setCheckingFollowups] = useState(false);
+  const [refreshingQr, setRefreshingQr] = useState(false);
   const [searchFilter, setSearchFilter] = useState('');
   const [ruleModalVisible, setRuleModalVisible] = useState(false);
   const [ruleForm] = Form.useForm();
@@ -287,6 +290,23 @@ export default function WhatsAppPage() {
     }
   };
 
+  const handleRefreshQr = async () => {
+    setRefreshingQr(true);
+    try {
+      const res = await api.post('/api/whatsapp/session/refresh');
+      setSession(res);
+      if (res.qrCode) {
+        message.success('WhatsApp Pairing QR code ready! Please scan from WhatsApp.');
+      } else {
+        message.info('Generating QR code... Please scan once displayed.');
+      }
+    } catch (err: any) {
+      message.error(err.message || 'Failed to refresh QR');
+    } finally {
+      setRefreshingQr(false);
+    }
+  };
+
   const filteredConversations = conversations.filter((c) => {
     if (!searchFilter) return true;
     const term = searchFilter.toLowerCase();
@@ -329,7 +349,12 @@ export default function WhatsAppPage() {
       {/* Tabs */}
       <Tabs
         activeKey={activeTab}
-        onChange={setActiveTab}
+        onChange={(key) => {
+          setActiveTab(key);
+          if (key === 'connect') {
+            loadSession();
+          }
+        }}
         items={[
           {
             key: 'inbox',
@@ -772,18 +797,30 @@ export default function WhatsAppPage() {
                       </div>
                     </div>
                   ) : (
-                    <div style={{ margin: '30px 0', padding: 20, background: '#fafafa', borderRadius: 12 }}>
-                      <Tag color="default" style={{ fontSize: 14, padding: '6px 16px' }}>
-                        Status: {session?.status === 'qr_ready' ? 'Generating QR Code...' : 'Disconnected / Unpaired'}
+                    <div style={{ margin: '30px 0', padding: 24, background: '#fafafa', borderRadius: 12, border: '1px dashed #d9d9d9' }}>
+                      <div style={{ marginBottom: 12 }}>
+                        <Spin indicator={<SyncOutlined spin style={{ fontSize: 26, color: '#1677ff' }} />} />
+                      </div>
+                      <Tag color="processing" style={{ fontSize: 13, padding: '4px 12px' }}>
+                        Connecting to WhatsApp Web Engine...
                       </Tag>
-                      <Paragraph type="secondary" style={{ marginTop: 10, fontSize: 12 }}>
-                        Click below to generate an active pairing QR code.
+                      <Paragraph type="secondary" style={{ marginTop: 10, fontSize: 13 }}>
+                        Generating pairing QR code. Please wait 2-3 seconds or click below.
                       </Paragraph>
+                      <Button
+                        type="primary"
+                        icon={<SyncOutlined />}
+                        loading={refreshingQr}
+                        onClick={handleRefreshQr}
+                        style={{ marginTop: 8 }}
+                      >
+                        Generate QR Code Now
+                      </Button>
                     </div>
                   )}
 
                   <Space wrap style={{ marginTop: 8 }}>
-                    <Button type="primary" onClick={loadSession} icon={<SyncOutlined />}>
+                    <Button type="primary" onClick={handleRefreshQr} loading={refreshingQr} icon={<SyncOutlined />}>
                       Refresh Pairing QR
                     </Button>
                     <Button danger onClick={handleUnlink}>
