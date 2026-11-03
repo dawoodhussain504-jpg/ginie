@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  Query,
 } from '@nestjs/common';
 import { BillingService } from './billing.service';
 import {
@@ -54,6 +55,15 @@ export class BillingController {
   @Get('store/:slug')
   async getPublicStore(@Param('slug') slug: string) {
     return this.billingService.getPublicStore(slug);
+  }
+
+  @Public()
+  @Get('store/:slug/loyalty-check')
+  async checkCustomerLoyalty(
+    @Param('slug') slug: string,
+    @Query('phone') phone: string,
+  ) {
+    return this.billingService.checkCustomerLoyalty(slug, phone);
   }
 
   @Public()

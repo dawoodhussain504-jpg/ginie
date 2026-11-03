@@ -390,6 +390,26 @@ export class BillingService {
     return tenant;
   }
 
+  async checkCustomerLoyalty(slug: string, phone: string) {
+    const tenant = await prisma.tenant.findUnique({ where: { slug } });
+    if (!tenant) throw new NotFoundException('Store not found.');
+    const rawDigits = (phone || '').replace(/\D/g, '');
+    const phone10 = rawDigits.slice(-10);
+    if (phone10.length !== 10) return { points: 0, customerName: null };
+
+    const contact = await prisma.contact.findFirst({
+      where: {
+        tenantId: tenant.id,
+        phone: { contains: phone10 },
+      },
+    });
+
+    return {
+      points: Number((contact as any)?.walletPoints || 0),
+      customerName: contact?.name || null,
+    };
+  }
+
   async createStoreOrder(slug: string, orderDto: any) {
     const tenant = await prisma.tenant.findUnique({ where: { slug } });
     if (!tenant) throw new NotFoundException('Store not found.');
@@ -397,6 +417,41 @@ export class BillingService {
     const subtotal = Number(orderDto.subtotal || 0);
     const taxTotal = Number(orderDto.taxTotal || 0);
     const total = Number(orderDto.total || (subtotal + taxTotal));
+
+    // Check loyalty points redemption
+    const rawDigits = (orderDto.customerPhone || '').replace(/\D/g, '');
+    const phone10 = rawDigits.slice(-10);
+    let pointsRedeemed = 0;
+
+    if (phone10.length === 10 && Number(orderDto.redeemPoints || 0) > 0) {
+      try {
+        const contact = await prisma.contact.findFirst({
+          where: { tenantId: tenant.id, phone: { contains: phone10 } },
+        });
+        const available = Number((contact as any)?.walletPoints || 0);
+        pointsRedeemed = Math.min(available, Math.floor(Number(orderDto.redeemPoints)), total);
+        if (pointsRedeemed > 0 && contact) {
+          await prisma.contact.update({
+            where: { id: contact.id },
+            data: { walletPoints: { decrement: pointsRedeemed } } as any,
+          });
+          await (prisma as any).loyaltyTransaction.create({
+            data: {
+              tenantId: tenant.id,
+              contactId: contact.id,
+              points: -pointsRedeemed,
+              reason: `Redeemed discount on storefront order`,
+            },
+          }).catch(() => {});
+        }
+      } catch (_) {}
+    }
+
+    const finalTotal = Math.max(0, total - pointsRedeemed);
+    const orderNotes = [
+      orderDto.notes || '',
+      pointsRedeemed > 0 ? `Redeemed ${pointsRedeemed} GINIE Loyalty Points (INR ${pointsRedeemed} discount)` : '',
+    ].filter(Boolean).join(' | ');
 
     const order = await (prisma as any).storeOrder.create({
       data: {
@@ -407,11 +462,11 @@ export class BillingService {
         items: orderDto.items || [],
         subtotal,
         taxTotal,
-        total,
+        total: finalTotal,
         status: 'pending',
         paymentMethod: orderDto.paymentMethod || 'cod',
         paymentStatus: 'unpaid',
-        notes: orderDto.notes || '',
+        notes: orderNotes,
       },
     });
 
@@ -434,9 +489,6 @@ export class BillingService {
     }
 
     // 2. CRM Sync: Contact Linking, 360° Activity Timeline & 5% Cashback Points
-    const rawDigits = (orderDto.customerPhone || '').replace(/\D/g, '');
-    const phone10 = rawDigits.slice(-10);
-
     if (phone10.length === 10) {
       try {
         let contact = await prisma.contact.findFirst({
@@ -545,12 +597,58 @@ export class BillingService {
   }
 
   async updateStoreOrderStatus(tenantId: string, orderId: string, status: string) {
+    const existingOrder = await (prisma as any).storeOrder.findUnique({
+      where: { id: orderId },
+    });
+    const previousStatus = existingOrder?.status;
+
     const updated = await (prisma as any).storeOrder.update({
       where: { id: orderId },
       data: { status },
     });
 
-    // When order is marked delivered, auto-generate official ERP Billing Invoice
+    // 1. ERP Stock Auto-Restoration on Cancellation
+    if (status === 'cancelled' && previousStatus !== 'cancelled' && existingOrder) {
+      for (const it of (existingOrder.items || [])) {
+        const pId = it.productId || it.id;
+        if (pId && !pId.startsWith('item-')) {
+          try {
+            const p = await prisma.product.findUnique({ where: { id: pId } });
+            if (p) {
+              const qty = Math.max(1, Number(it.qty || it.quantity || 1));
+              await prisma.product.update({
+                where: { id: p.id },
+                data: { stockInHand: ((p as any).stockInHand || 0) + qty } as any,
+              });
+            }
+          } catch (_) {}
+        }
+      }
+
+      // Log in Customer 360 Timeline
+      const rawDigits = (existingOrder.customerPhone || '').replace(/\D/g, '');
+      const phone10 = rawDigits.slice(-10);
+      if (phone10.length === 10) {
+        try {
+          const contact = await prisma.contact.findFirst({
+            where: { tenantId, phone: { contains: phone10 } },
+          });
+          if (contact) {
+            await prisma.activity.create({
+              data: {
+                tenantId,
+                entityType: 'contact',
+                entityId: contact.id,
+                type: 'status',
+                content: `Storefront Order #${orderId.slice(-6)} was cancelled. Items restored to inventory.`,
+              },
+            });
+          }
+        } catch (_) {}
+      }
+    }
+
+    // 2. When order is marked delivered, auto-generate official ERP Billing Invoice
     if (status === 'delivered') {
       try {
         const existingInvoice = await prisma.invoice.findFirst({

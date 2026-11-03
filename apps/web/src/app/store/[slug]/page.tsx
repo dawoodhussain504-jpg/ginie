@@ -23,6 +23,7 @@ import {
   Table,
   Spin,
   Alert,
+  Switch,
 } from 'antd';
 import {
   ShoppingCartOutlined,
@@ -67,6 +68,9 @@ export default function PublicStorePage({ params }: { params: { slug: string } }
   const [customerAddress, setCustomerAddress] = useState('');
   const [industryNotes, setIndustryNotes] = useState('');
   const [gstNumber, setGstNumber] = useState('');
+  const [loyaltyPointsAvailable, setLoyaltyPointsAvailable] = useState<number>(0);
+  const [checkingLoyalty, setCheckingLoyalty] = useState(false);
+  const [redeemPoints, setRedeemPoints] = useState(false);
 
   // Store Configuration
   const [companyName, setCompanyName] = useState('GINIE Digital Store');
@@ -79,6 +83,35 @@ export default function PublicStorePage({ params }: { params: { slug: string } }
   useEffect(() => {
     loadStoreData();
   }, [params.slug]);
+
+  useEffect(() => {
+    const rawDigits = (customerPhone || '').replace(/\D/g, '');
+    const phone10 = rawDigits.slice(-10);
+    if (phone10.length === 10) {
+      setCheckingLoyalty(true);
+      api.get(`/api/billing/store/${params.slug}/loyalty-check?phone=${phone10}`)
+        .then((res: any) => {
+          if (res?.points > 0) {
+            setLoyaltyPointsAvailable(res.points);
+            if (!customerName && res.customerName) {
+              setCustomerName(res.customerName);
+            }
+          } else {
+            setLoyaltyPointsAvailable(0);
+            setRedeemPoints(false);
+          }
+        })
+        .catch(() => {
+          setLoyaltyPointsAvailable(0);
+        })
+        .finally(() => {
+          setCheckingLoyalty(false);
+        });
+    } else {
+      setLoyaltyPointsAvailable(0);
+      setRedeemPoints(false);
+    }
+  }, [customerPhone, params.slug]);
 
   const loadStoreData = async () => {
     setLoading(true);
@@ -210,7 +243,9 @@ export default function PublicStorePage({ params }: { params: { slug: string } }
   };
 
   const cartTotal = cart.reduce((sum, item) => sum + Number(item.price || 0) * item.qty, 0);
-  const cashbackPoints = Math.max(10, Math.floor(cartTotal * 0.05)); // 5% Cashback
+  const pointsToRedeem = redeemPoints ? Math.min(loyaltyPointsAvailable, cartTotal) : 0;
+  const finalCartTotal = Math.max(0, cartTotal - pointsToRedeem);
+  const cashbackPoints = Math.max(10, Math.floor(finalCartTotal * 0.05)); // 5% Cashback
 
   const handleSendOrderWhatsApp = async () => {
     if (cart.length === 0) {
@@ -254,7 +289,9 @@ export default function PublicStorePage({ params }: { params: { slug: string } }
       `Hello ${companyName}!\n\n` +
       `I have placed an order from your online store catalog:\n\n` +
       `${orderItems}\n\n` +
-      `*Total Amount:* INR ${cartTotal.toLocaleString('en-IN')}\n` +
+      `*Subtotal:* INR ${cartTotal.toLocaleString('en-IN')}\n` +
+      (pointsToRedeem > 0 ? `*Loyalty Discount Redeemed:* -INR ${pointsToRedeem.toLocaleString('en-IN')}\n` : '') +
+      `*Total Due:* INR ${finalCartTotal.toLocaleString('en-IN')}\n` +
       `*Cashback Reward:* +${cashbackPoints} Points to CRM Wallet\n` +
       `--------------------------------\n` +
       `*Customer Name:* ${customerName || 'Store Customer'}\n` +
@@ -270,7 +307,8 @@ export default function PublicStorePage({ params }: { params: { slug: string } }
         customerAddress,
         items: cart,
         subtotal: cartTotal,
-        total: cartTotal,
+        redeemPoints: pointsToRedeem,
+        total: finalCartTotal,
         notes: industryNotes + (gstNumber ? ` | GSTIN: ${gstNumber}` : ''),
       });
 
@@ -656,17 +694,54 @@ export default function PublicStorePage({ params }: { params: { slug: string } }
                   onChange={(e) => setIndustryNotes(e.target.value)}
                   style={{ borderRadius: 6 }}
                 />
+
+                {loyaltyPointsAvailable > 0 && (
+                  <div style={{ background: '#f0fdf4', padding: '10px 12px', borderRadius: 8, border: '1px solid #bbf7d0', marginTop: 10 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                      <span style={{ fontWeight: 700, color: '#166534', fontSize: 12 }}>
+                        Loyalty Points Available:
+                      </span>
+                      <Tag color="green" style={{ fontWeight: 700, margin: 0 }}>
+                        {loyaltyPointsAvailable} Points (₹{loyaltyPointsAvailable})
+                      </Tag>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: 12, color: '#15803d' }}>
+                        Redeem ₹{Math.min(loyaltyPointsAvailable, cartTotal)} discount?
+                      </span>
+                      <Switch
+                        checked={redeemPoints}
+                        onChange={(checked) => setRedeemPoints(checked)}
+                        size="small"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Total & Loyalty Points summary */}
               <div style={{ marginBottom: 12 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Text strong style={{ fontSize: 15 }}>Order Subtotal:</Text>
-                  <span style={{ fontSize: 20, fontWeight: 900, color: '#0f172a' }}>
+                  <Text style={{ fontSize: 13, color: '#64748b' }}>Subtotal:</Text>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: '#334155' }}>
                     ₹{cartTotal.toLocaleString('en-IN')}
                   </span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
+                {pointsToRedeem > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 2 }}>
+                    <Text style={{ fontSize: 13, color: '#16a34a' }}>Loyalty Discount ({pointsToRedeem} pts):</Text>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: '#16a34a' }}>
+                      -₹{pointsToRedeem.toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                )}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6, paddingTop: 6, borderTop: '1px dashed #cbd5e1' }}>
+                  <Text strong style={{ fontSize: 16 }}>Total to Pay:</Text>
+                  <span style={{ fontSize: 22, fontWeight: 900, color: '#0f172a' }}>
+                    ₹{finalCartTotal.toLocaleString('en-IN')}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
                   <Text style={{ fontSize: 12, color: '#059669', display: 'flex', alignItems: 'center', gap: 4 }}>
                     <GiftOutlined /> Loyalty Cashback Earned:
                   </Text>

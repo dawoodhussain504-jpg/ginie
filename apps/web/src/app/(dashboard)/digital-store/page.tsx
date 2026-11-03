@@ -42,6 +42,7 @@ import {
   AppstoreOutlined,
   PhoneOutlined,
   LockOutlined,
+  PrinterOutlined,
 } from '@ant-design/icons';
 import { api } from '@/lib/api';
 
@@ -63,6 +64,8 @@ export default function DigitalStoreDashboardPage() {
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [previewDrawerOpen, setPreviewDrawerOpen] = useState(false);
   const [qrModalOpen, setQrModalOpen] = useState(false);
+  const [receiptModalOpen, setReceiptModalOpen] = useState(false);
+  const [selectedReceiptOrder, setSelectedReceiptOrder] = useState<any>(null);
 
   const [productForm] = Form.useForm();
   const [settingsForm] = Form.useForm();
@@ -360,9 +363,17 @@ export default function DigitalStoreDashboardPage() {
       render: (_: any, r: any) => {
         const cleanPhone = r.customerPhone ? r.customerPhone.replace(/[^0-9]/g, '') : '';
         const targetPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
-        const waText = encodeURIComponent(
-          `Namaste ${r.customerName || 'Sir/Madam'}, this is regarding your order #${r.id?.slice(-6)?.toUpperCase()} for INR ${r.total} placed on our store. We are processing your delivery!`
-        );
+        const ordCode = r.id?.slice(-6)?.toUpperCase();
+
+        let waMessage = `Namaste ${r.customerName || 'Customer'}, regarding your store order #${ordCode} (INR ${r.total}). We are reviewing your order!`;
+        if (r.status === 'confirmed') {
+          waMessage = `Namaste ${r.customerName || 'Customer'}, your store order #${ordCode} for INR ${r.total} is CONFIRMED and is being prepared for delivery!`;
+        } else if (r.status === 'delivered') {
+          waMessage = `Namaste ${r.customerName || 'Customer'}, your store order #${ordCode} has been DELIVERED. Thank you for shopping with us! Your loyalty cashback points are credited.`;
+        } else if (r.status === 'cancelled') {
+          waMessage = `Namaste ${r.customerName || 'Customer'}, your store order #${ordCode} was CANCELLED. Any queries, please contact us.`;
+        }
+        const waText = encodeURIComponent(waMessage);
 
         return (
           <Space size="small">
@@ -384,10 +395,22 @@ export default function DigitalStoreDashboardPage() {
                 icon={<WhatsAppOutlined style={{ color: '#25D366' }} />}
                 href={`https://wa.me/${targetPhone}?text=${waText}`}
                 target="_blank"
+                title="Send status update on WhatsApp"
               >
-                Chat
+                WhatsApp
               </Button>
             )}
+            <Button
+              size="small"
+              icon={<PrinterOutlined />}
+              onClick={() => {
+                setSelectedReceiptOrder(r);
+                setReceiptModalOpen(true);
+              }}
+              title="Print Order Receipt / Packing Slip"
+            >
+              Print Slip
+            </Button>
           </Space>
         );
       },
@@ -837,6 +860,130 @@ export default function DigitalStoreDashboardPage() {
             Direct WhatsApp Ordering & Dynamic UPI Payments
           </div>
         </div>
+      </Modal>
+
+      {/* 1-Click Printable Order Slip Modal (3-inch Thermal & A4) */}
+      <Modal
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <PrinterOutlined style={{ color: '#1677ff' }} />
+            <span>Store Order Receipt & Packing Slip</span>
+          </div>
+        }
+        open={receiptModalOpen}
+        onCancel={() => {
+          setReceiptModalOpen(false);
+          setSelectedReceiptOrder(null);
+        }}
+        footer={[
+          <Button key="close" onClick={() => setReceiptModalOpen(false)}>
+            Close
+          </Button>,
+          <Button
+            key="print"
+            type="primary"
+            icon={<PrinterOutlined />}
+            onClick={() => {
+              if (typeof window !== 'undefined') {
+                window.print();
+              }
+            }}
+            style={{ borderRadius: 8, fontWeight: 700 }}
+          >
+            Print Receipt / Slip
+          </Button>,
+        ]}
+        width={420}
+      >
+        {selectedReceiptOrder && (
+          <div id="printable-receipt" style={{ padding: '16px', background: '#ffffff', color: '#0f172a', fontFamily: 'monospace, sans-serif' }}>
+            <div style={{ textAlign: 'center', borderBottom: '1px dashed #cbd5e1', paddingBottom: 12, marginBottom: 12 }}>
+              <div style={{ fontWeight: 800, fontSize: 18, textTransform: 'uppercase' }}>
+                {storeSettings.storeName || 'DIGITAL STORE'}
+              </div>
+              <div style={{ fontSize: 12, color: '#64748b' }}>
+                Tel: +{storeSettings.whatsappNumber || '918797186001'}
+              </div>
+              {storeSettings.upiId && (
+                <div style={{ fontSize: 11, color: '#64748b' }}>
+                  UPI: {storeSettings.upiId}
+                </div>
+              )}
+            </div>
+
+            <div style={{ fontSize: 12, marginBottom: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#64748b' }}>Order ID:</span>
+                <span style={{ fontWeight: 700 }}>#{selectedReceiptOrder.id?.slice(-8)?.toUpperCase()}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#64748b' }}>Date & Time:</span>
+                <span>{new Date(selectedReceiptOrder.createdAt || Date.now()).toLocaleString('en-IN')}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#64748b' }}>Payment:</span>
+                <span style={{ textTransform: 'uppercase', fontWeight: 600 }}>{selectedReceiptOrder.paymentMethod || 'COD'}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#64748b' }}>Status:</span>
+                <span style={{ textTransform: 'uppercase', fontWeight: 700, color: '#16a34a' }}>{selectedReceiptOrder.status || 'PENDING'}</span>
+              </div>
+            </div>
+
+            <div style={{ borderTop: '1px dashed #cbd5e1', borderBottom: '1px dashed #cbd5e1', padding: '8px 0', margin: '10px 0' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: 4 }}>
+                Customer Details
+              </div>
+              <div style={{ fontWeight: 700, fontSize: 13 }}>{selectedReceiptOrder.customerName}</div>
+              <div style={{ fontSize: 12 }}>{selectedReceiptOrder.customerPhone}</div>
+              {selectedReceiptOrder.customerAddress && (
+                <div style={{ fontSize: 12, color: '#475569', marginTop: 2 }}>
+                  {selectedReceiptOrder.customerAddress}
+                </div>
+              )}
+              {selectedReceiptOrder.notes && (
+                <div style={{ fontSize: 11, color: '#b45309', marginTop: 4, background: '#fef3c7', padding: '4px 8px', borderRadius: 4 }}>
+                  Note: {selectedReceiptOrder.notes}
+                </div>
+              )}
+            </div>
+
+            {/* Items Table */}
+            <div style={{ margin: '12px 0' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: 12, borderBottom: '1px solid #e2e8f0', paddingBottom: 4 }}>
+                <span>Item</span>
+                <span style={{ width: 40, textAlign: 'center' }}>Qty</span>
+                <span style={{ width: 60, textAlign: 'right' }}>Price</span>
+                <span style={{ width: 65, textAlign: 'right' }}>Amount</span>
+              </div>
+              {(selectedReceiptOrder.items || []).map((it: any, idx: number) => {
+                const qty = Number(it.quantity || it.qty || 1);
+                const price = Number(it.price || 0);
+                return (
+                  <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '4px 0', borderBottom: '1px dotted #f1f5f9' }}>
+                    <span style={{ flex: 1, paddingRight: 4 }}>{it.name || `Item #${idx + 1}`}</span>
+                    <span style={{ width: 40, textAlign: 'center' }}>{qty}</span>
+                    <span style={{ width: 60, textAlign: 'right' }}>₹{price}</span>
+                    <span style={{ width: 65, textAlign: 'right', fontWeight: 600 }}>₹{qty * price}</span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Summary */}
+            <div style={{ borderTop: '1px dashed #cbd5e1', paddingTop: 8, marginTop: 8 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, fontWeight: 800 }}>
+                <span>TOTAL DUE:</span>
+                <span>₹{Number(selectedReceiptOrder.total || 0).toLocaleString('en-IN')}</span>
+              </div>
+            </div>
+
+            <div style={{ textAlign: 'center', marginTop: 16, paddingTop: 10, borderTop: '1px dashed #cbd5e1', fontSize: 11, color: '#64748b' }}>
+              Thank You For Your Business!
+              <div style={{ fontSize: 10, marginTop: 2 }}>Powered by GINIE Smart Cloud</div>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );
