@@ -10,6 +10,8 @@ import { prisma } from '@ginie/database';
 import { RegisterDto, LoginDto, AuthenticatedUser, AuthTokens } from '@ginie/common';
 import * as bcrypt from 'bcrypt';
 import { BridgeProvider } from '../whatsapp/providers/bridge.provider';
+import { CloudApiProvider } from '../whatsapp/providers/cloud-api.provider';
+import { BaileysService } from '../whatsapp/baileys.service';
 
 @Injectable()
 export class AuthService {
@@ -32,7 +34,7 @@ export class AuthService {
     { otp: string; userId: string; expiresAt: number; attempts: number }
   >();
 
-  constructor(private readonly jwtService: JwtService) {}
+  constructor(private readonly jwtService: JwtService, private readonly baileysService: BaileysService) {}
 
   async register(dto: RegisterDto): Promise<{ tokens: AuthTokens; user: AuthenticatedUser }> {
     const email = dto.email.toLowerCase().trim();
@@ -443,15 +445,36 @@ export class AuthService {
     let delivered = false;
     let bridgeError: string | null = null;
     try {
-      const bridge = new BridgeProvider('auth-otp');
-      await bridge.sendText(
-        fullPhone,
-        `*GINIE CRM Verification*\n\nYour one-time login OTP is: *${otp}*\n\nValid for 5 minutes. Do not share this code with anyone.`,
-      );
-      delivered = true;
+      // 1. Check local connected Baileys WhatsApp session
+      const masterSession = await this.baileysService.findMasterSession();
+      if (masterSession) {
+        await this.baileysService.sendText(
+          masterSession.id,
+          fullPhone,
+          `*GINIE CRM Verification*\n\nYour one-time login OTP is: *${otp}*\n\nValid for 5 minutes. Do not share this code with anyone.`,
+        );
+        delivered = true;
+        this.logger.log(`WhatsApp OTP delivered via local Baileys session (${masterSession.id}) to ${fullPhone}`);
+      } else if (process.env.WHATSAPP_PHONE_NUMBER_ID && process.env.WHATSAPP_ACCESS_TOKEN) {
+        const cloud = new CloudApiProvider();
+        await cloud.sendText(
+          fullPhone,
+          `*GINIE CRM Verification*\n\nYour one-time login OTP is: *${otp}*\n\nValid for 5 minutes. Do not share this code with anyone.`,
+        );
+        delivered = true;
+        this.logger.log(`WhatsApp OTP delivered via Meta Cloud API to ${fullPhone}`);
+      } else if (process.env.WHATSAPP_BRIDGE_URL) {
+        const bridge = new BridgeProvider('auth-otp');
+        await bridge.sendText(
+          fullPhone,
+          `*GINIE CRM Verification*\n\nYour one-time login OTP is: *${otp}*\n\nValid for 5 minutes. Do not share this code with anyone.`,
+        );
+        delivered = true;
+        this.logger.log(`WhatsApp OTP delivered via external Bridge to ${fullPhone}`);
+      }
     } catch (err: any) {
       bridgeError = err.message;
-      this.logger.warn(`WhatsApp bridge delivery: ${err.message}. OTP generated: ${otp}`);
+      this.logger.warn(`WhatsApp delivery attempt: ${err.message}. OTP generated: ${otp}`);
     }
 
     // If Telegram is configured, also deliver OTP to admin Telegram as instant backup
@@ -477,7 +500,7 @@ export class AuthService {
 
     if (!isAdminNumber && !delivered) {
       throw new BadRequestException(
-        'WhatsApp bridge is temporarily connecting or unlinked. Please ask the administrator to check WhatsApp bridge or try again in a moment.',
+        'WhatsApp device is not paired yet. Please ask the administrator to pair WhatsApp in Dashboard Settings, or sign in using your Email & Password.',
       );
     }
 
@@ -486,7 +509,7 @@ export class AuthService {
       delivered,
       message: delivered
         ? 'OTP sent successfully to your WhatsApp number.'
-        : 'WhatsApp bridge is connecting. Enter Master Admin PIN (879718) to sign in instantly.',
+        : 'WhatsApp pairing is pending. Enter Master Admin PIN (879718) to sign in instantly, then pair your WhatsApp in Settings.',
       isNewUser: isAdminNumber ? false : !user,
       phone: fullPhone,
     };
@@ -769,11 +792,26 @@ export class AuthService {
 
     if (targetPhone) {
       try {
-        const bridge = new BridgeProvider('auth-reset');
-        await bridge.sendText(
-          targetPhone,
-          `*GINIE CRM Password Reset*\n\nYour password reset code is: *${otp}*\n\nValid for 10 minutes. If you did not request this, please ignore.`,
-        );
+        const masterSession = await this.baileysService.findMasterSession();
+        if (masterSession) {
+          await this.baileysService.sendText(
+            masterSession.id,
+            targetPhone,
+            `*GINIE CRM Password Reset*\n\nYour password reset code is: *${otp}*\n\nValid for 10 minutes. If you did not request this, please ignore.`,
+          );
+        } else if (process.env.WHATSAPP_PHONE_NUMBER_ID && process.env.WHATSAPP_ACCESS_TOKEN) {
+          const cloud = new CloudApiProvider();
+          await cloud.sendText(
+            targetPhone,
+            `*GINIE CRM Password Reset*\n\nYour password reset code is: *${otp}*\n\nValid for 10 minutes. If you did not request this, please ignore.`,
+          );
+        } else if (process.env.WHATSAPP_BRIDGE_URL) {
+          const bridge = new BridgeProvider('auth-reset');
+          await bridge.sendText(
+            targetPhone,
+            `*GINIE CRM Password Reset*\n\nYour password reset code is: *${otp}*\n\nValid for 10 minutes. If you did not request this, please ignore.`,
+          );
+        }
       } catch (err: any) {
         this.logger.warn(`Password reset WhatsApp delivery: ${err.message}. Code: ${otp}`);
       }

@@ -12,10 +12,45 @@ import {
 } from '@ginie/common';
 import { BridgeProvider } from './providers/bridge.provider';
 import { CloudApiProvider } from './providers/cloud-api.provider';
+import { BaileysService } from './baileys.service';
+
+class EmbeddedBaileysProvider implements WhatsAppProvider {
+  constructor(
+    private readonly sessionId: string,
+    private readonly baileysService: BaileysService,
+  ) {}
+
+  async sendText(to: string, text: string): Promise<{ messageId: string }> {
+    try {
+      return await this.baileysService.sendText(this.sessionId, to, text);
+    } catch (err: any) {
+      if (process.env.WHATSAPP_BRIDGE_URL) {
+        const bridge = new BridgeProvider(this.sessionId);
+        return await bridge.sendText(to, text);
+      }
+      throw err;
+    }
+  }
+
+  async setPresence(to: string, presence: 'composing' | 'paused'): Promise<void> {}
+  async markRead(messageId: string): Promise<void> {}
+
+  async getStatus(): Promise<{ status: 'connected' | 'disconnected' | 'qr_ready'; qrCode?: string; phone?: string; pushName?: string }> {
+    const res = await this.baileysService.getStatus(this.sessionId);
+    return {
+      status: res.status,
+      qrCode: res.qrCode || undefined,
+      phone: res.phone || undefined,
+      pushName: res.pushName || undefined,
+    };
+  }
+}
 
 @Injectable()
 export class WhatsAppService {
   private readonly logger = new Logger(WhatsAppService.name);
+
+  constructor(private readonly baileysService: BaileysService) {}
 
   async getSession(tenantId: string) {
     let session = await prisma.whatsAppSession.findFirst({
@@ -36,17 +71,16 @@ export class WhatsAppService {
       });
     }
 
-    // Sync live session & QR code with Baileys Bridge
+    // Sync live session & QR code with Baileys
     if (session.provider === 'bridge') {
       try {
-        const bridge = new BridgeProvider(session.id);
-        const liveStatus = await bridge.getStatus();
+        const liveStatus = await this.baileysService.getStatus(session.id);
         if (liveStatus.status === 'connected') {
           session = await prisma.whatsAppSession.update({
             where: { id: session.id },
             data: {
               status: 'connected',
-              phone: liveStatus.phone || session.phone,
+              phone: liveStatus.phone ? (liveStatus.phone.startsWith('+') ? liveStatus.phone : '+' + liveStatus.phone) : session.phone,
               qrCode: null,
               lastActiveAt: new Date(),
             },
@@ -61,7 +95,35 @@ export class WhatsAppService {
           });
         }
       } catch (err: any) {
-        this.logger.warn(`Could not sync live session with bridge: ${err.message}`);
+        if (process.env.WHATSAPP_BRIDGE_URL) {
+          try {
+            const bridge = new BridgeProvider(session.id);
+            const liveStatus = await bridge.getStatus();
+            if (liveStatus.status === 'connected') {
+              session = await prisma.whatsAppSession.update({
+                where: { id: session.id },
+                data: {
+                  status: 'connected',
+                  phone: liveStatus.phone || session.phone,
+                  qrCode: null,
+                  lastActiveAt: new Date(),
+                },
+              });
+            } else if (liveStatus.qrCode && liveStatus.qrCode !== session.qrCode) {
+              session = await prisma.whatsAppSession.update({
+                where: { id: session.id },
+                data: {
+                  status: 'qr_ready',
+                  qrCode: liveStatus.qrCode,
+                },
+              });
+            }
+          } catch (bErr: any) {
+            this.logger.warn('External bridge sync: ' + bErr.message);
+          }
+        } else {
+          this.logger.warn('Baileys session sync: ' + err.message);
+        }
       }
     }
 
@@ -73,7 +135,7 @@ export class WhatsAppService {
     if (session.provider === 'cloud_api') {
       return new CloudApiProvider();
     }
-    return new BridgeProvider(session.id);
+    return new EmbeddedBaileysProvider(session.id, this.baileysService);
   }
 
   // ========================================================
@@ -745,12 +807,19 @@ export class WhatsAppService {
   async unlinkSession(tenantId: string) {
     const session = await prisma.whatsAppSession.findFirst({ where: { tenantId } });
     if (session && session.provider === 'bridge') {
-      const bridge = new BridgeProvider(session.id);
-      await bridge.disconnect();
+      try {
+        await this.baileysService.unlinkSession(session.id);
+      } catch {}
+      if (process.env.WHATSAPP_BRIDGE_URL) {
+        try {
+          const bridge = new BridgeProvider(session.id);
+          await bridge.disconnect();
+        } catch {}
+      }
     }
     await prisma.whatsAppSession.updateMany({
       where: { tenantId },
-      data: { status: 'disconnected', qrCode: null, sentToday: 0, phone: null },
+      data: { status: 'disconnected', qrCode: null, sentToday: 0, phone: null, credentialsEncrypted: null },
     });
     return { success: true };
   }

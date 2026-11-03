@@ -116,7 +116,7 @@ export default function WhatsAppPage() {
     if (broadcastTemplate === 'voucher') {
       msg = `*Namaste ${customer.name} ji!*\n\nWe haven't seen you recently and wanted to check in. As our valued partner at ${customer.company}, here is a special *15% Comeback Discount* on your next purchase!\n\nCoupon Code: *WINBACK15*\nWallet Cashback: ₹${customer.walletPoints} ready to redeem.\n\nBrowse catalog: https://ginie.space/store/catalog\n\nLooking forward to serving you again!`;
     } else if (broadcastTemplate === 'store') {
-      msg = `*Namaste ${customer.name} ji!*\n\nWe have updated our product catalog on our new digital storefront! Check out our new arrivals and place orders directly on WhatsApp:\n👉 https://ginie.space/store/catalog\n\nHave a wonderful week ahead!`;
+      msg = `*Namaste ${customer.name} ji!*\n\nWe have updated our product catalog on our new digital storefront! Check out our new arrivals and place orders directly on WhatsApp:\nhttps://ginie.space/store/catalog\n\nHave a wonderful week ahead!`;
     } else {
       msg = `*Namaste ${customer.name} ji!*\n\n${customWinbackMsg}\n\nYou have ₹${customer.walletPoints} in your GINIE wallet ready to use.`;
     }
@@ -535,7 +535,7 @@ export default function WhatsAppPage() {
                                   <span>{formatDateIndian(msg.createdAt)}</span>
                                   {isOutbound && (
                                     <span style={{ color: msg.status === 'sent' || msg.status === 'delivered' ? '#1677ff' : '#9ca3af' }}>
-                                      ✓✓
+                                      <CheckOutlined style={{ fontSize: 10 }} />
                                     </span>
                                   )}
                                 </div>
@@ -549,7 +549,7 @@ export default function WhatsAppPage() {
                       {/* Quick Reply Templates Bar */}
                       <div style={{ padding: '6px 12px', background: '#fafafa', borderTop: '1px solid #f0f0f0', display: 'flex', gap: 8, overflowX: 'auto', alignItems: 'center' }}>
                         <Text type="secondary" style={{ fontSize: 11, whiteSpace: 'nowrap' }}>
-                          ⚡ Quick Replies:
+                          Quick Replies:
                         </Text>
                         {templates.map((tpl) => (
                           <Tag
@@ -735,31 +735,55 @@ export default function WhatsAppPage() {
             ),
             children: (
               <div style={{ maxWidth: 640, margin: '0 auto' }}>
-                <Card style={{ borderRadius: 12, textAlign: 'center' }}>
-                  <Title level={4}>Pair WhatsApp Device</Title>
-                  <Paragraph type="secondary">
-                    Scan the QR code below using WhatsApp on your phone (Linked Devices) to connect your business number.
+                <Card style={{ borderRadius: 12, textAlign: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.04)' }}>
+                  <Title level={4} style={{ marginBottom: 4 }}>Pair WhatsApp Device (Baileys Web Engine)</Title>
+                  <Paragraph type="secondary" style={{ maxWidth: 480, margin: '0 auto 16px' }}>
+                    Open WhatsApp on your phone, go to <b>Linked Devices &gt; Link a Device</b>, and point your camera at the QR code below.
                   </Paragraph>
 
-                  {session?.qrCode ? (
+                  {session?.status === 'connected' ? (
+                    <div style={{ margin: '24px 0', padding: 20, background: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: 12 }}>
+                      <Tag color="success" icon={<CheckCircleOutlined />} style={{ fontSize: 15, padding: '6px 16px', marginBottom: 12 }}>
+                        WhatsApp Active & Connected: {session?.phone || 'Linked Device'}
+                      </Tag>
+                      <Paragraph style={{ margin: '8px 0 0', color: '#27272a', fontSize: 13 }}>
+                        All automated OTPs, win-back broadcasts, and CRM messages will be sent from this phone number.
+                      </Paragraph>
+                      <div style={{ marginTop: 12 }}>
+                        <Tag color="processing">Anti-Sleep KeepAlive: Active (Pings every 8m)</Tag>
+                        <Tag color="blue">Persistent Database Sync: Active</Tag>
+                      </div>
+                    </div>
+                  ) : session?.qrCode ? (
                     <div style={{ margin: '20px 0' }}>
-                      <Image
-                        src={session.qrCode}
-                        alt="WhatsApp Pairing QR"
-                        width={240}
-                        style={{ border: '2px solid #e5e7eb', borderRadius: 12, padding: 8 }}
-                      />
+                      <div style={{ display: 'inline-block', padding: 12, background: '#fff', border: '2px solid #22c55e', borderRadius: 16 }}>
+                        <Image
+                          src={session.qrCode}
+                          alt="WhatsApp Pairing QR"
+                          width={240}
+                          preview={false}
+                          style={{ borderRadius: 8 }}
+                        />
+                      </div>
+                      <div style={{ marginTop: 12 }}>
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          QR code refreshes automatically. Scan within 40 seconds.
+                        </Text>
+                      </div>
                     </div>
                   ) : (
-                    <div style={{ margin: '30px 0' }}>
-                      <Tag color="green" icon={<CheckCircleOutlined />} style={{ fontSize: 14, padding: '6px 16px' }}>
-                        Connected Status: {session?.status || 'Active'}
+                    <div style={{ margin: '30px 0', padding: 20, background: '#fafafa', borderRadius: 12 }}>
+                      <Tag color="default" style={{ fontSize: 14, padding: '6px 16px' }}>
+                        Status: {session?.status === 'qr_ready' ? 'Generating QR Code...' : 'Disconnected / Unpaired'}
                       </Tag>
+                      <Paragraph type="secondary" style={{ marginTop: 10, fontSize: 12 }}>
+                        Click below to generate an active pairing QR code.
+                      </Paragraph>
                     </div>
                   )}
 
-                  <Space>
-                    <Button onClick={loadSession} icon={<SyncOutlined />}>
+                  <Space wrap style={{ marginTop: 8 }}>
+                    <Button type="primary" onClick={loadSession} icon={<SyncOutlined />}>
                       Refresh Pairing QR
                     </Button>
                     <Button danger onClick={handleUnlink}>
@@ -783,7 +807,7 @@ export default function WhatsAppPage() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
                     <div>
                       <Title level={4} style={{ margin: 0 }}>
-                        📢 Smart Inactive Customer Re-engagement
+                        Smart Inactive Customer Re-engagement
                       </Title>
                       <Paragraph type="secondary" style={{ marginBottom: 0 }}>
                         Automatically identify clients with zero orders in 30+ days and dispatch personalized win-back offers with voucher codes.
@@ -796,9 +820,9 @@ export default function WhatsAppPage() {
                         onChange={setBroadcastTemplate}
                         style={{ width: 280 }}
                         options={[
-                          { label: '🎁 15% Comeback Discount (WINBACK15)', value: 'voucher' },
-                          { label: '🛍️ New Online Storefront Catalog Link', value: 'store' },
-                          { label: '✍️ Custom Offer Message', value: 'custom' },
+                          { label: '15% Comeback Discount (WINBACK15)', value: 'voucher' },
+                          { label: 'New Online Storefront Catalog Link', value: 'store' },
+                          { label: 'Custom Offer Message', value: 'custom' },
                         ]}
                       />
                     </Space>

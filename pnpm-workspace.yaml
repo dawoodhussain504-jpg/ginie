@@ -8,3 +8,5 @@ allowBuilds:
   '@prisma/engines': true
   bcrypt: true
   prisma: true
+  '@whiskeysockets/baileys': true
+  protobufjs: true

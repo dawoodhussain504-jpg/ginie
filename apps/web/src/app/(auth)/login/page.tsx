@@ -369,6 +369,16 @@ export default function LoginPage() {
                         >
                           {locale === 'hi' ? 'व्हाट्सएप पर कोड भेजें' : 'Send Code on WhatsApp'}
                         </Button>
+                        <div style={{ textAlign: 'center', marginTop: 12 }}>
+                          <Button
+                            type="link"
+                            size="small"
+                            onClick={() => setActiveTab('email')}
+                            style={{ fontSize: 12, padding: 0 }}
+                          >
+                            {locale === 'hi' ? 'ईमेल और पासवर्ड से लॉगिन करें' : 'Or sign in with Email & Password'}
+                          </Button>
+                        </div>
                       </Form.Item>
                     </Form>
                   ) : (
@@ -388,7 +398,7 @@ export default function LoginPage() {
                       >
                         <div>
                           <Text strong style={{ color: '#389e0d', display: 'block', fontSize: 12 }}>
-                            ✓ Code sent to WhatsApp
+                            Code sent to WhatsApp
                           </Text>
                           <Text style={{ fontSize: 13, color: '#333' }}>+91 {phone.replace(/\D/g, '').slice(-10)}</Text>
                         </div>
@@ -409,7 +419,7 @@ export default function LoginPage() {
                       {isNewUser && (
                         <div style={{ background: '#f8fafc', padding: 12, borderRadius: 8, marginBottom: 16, border: '1px solid #e2e8f0' }}>
                           <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 8, color: brandColor }}>
-                            ★ New business setup:
+                            New business setup:
                           </Text>
                           <Input
                             placeholder="Your Business / Shop Name"
@@ -686,7 +696,7 @@ export default function LoginPage() {
             <div>
               <div style={{ background: '#f6ffed', padding: 10, borderRadius: 8, marginBottom: 14, border: '1px solid #b7eb8f' }}>
                 <Text strong style={{ color: '#389e0d', fontSize: 12 }}>
-                  ✓ Verification code sent to {forgotIdentifier}
+                  Verification code sent to {forgotIdentifier}
                 </Text>
               </div>
 

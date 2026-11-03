@@ -20,6 +20,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { TenantAuthGuard } from './common/tenant.guard';
 import { PlainLanguageExceptionFilter } from './common/plain-language-exception.filter';
 import { HealthController } from './health.controller';
+import { KeepAliveService } from './common/keep-alive.service';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { HealthController } from './health.controller';
   ],
   controllers: [HealthController],
   providers: [
+    KeepAliveService,
     {
       provide: APP_GUARD,
       useClass: TenantAuthGuard,
