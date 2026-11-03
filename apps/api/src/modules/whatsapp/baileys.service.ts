@@ -8,7 +8,8 @@ import makeWASocket, {
   ConnectionState,
 } from '@whiskeysockets/baileys';
 import pino from 'pino';
-import QRCode from 'qrcode';
+import * as QRCodeLib from 'qrcode';
+const QRCode = (QRCodeLib as any).default || QRCodeLib;
 import * as path from 'path';
 import * as fs from 'fs';
 
