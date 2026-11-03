@@ -409,14 +409,14 @@ export default function DashboardLayout({
                 boxShadow: '0 2px 8px rgba(114, 46, 209, 0.25)',
               }}
             >
-              Ask GINIE AI ✨
+              Ask GINIE AI
             </Button>
 
             {/* Digital Storefront Link */}
             <Tooltip title="View your Public Digital Storefront & Catalog">
               <Link href="/store/catalog" target="_blank">
                 <Button icon={<ShopOutlined />} style={{ borderRadius: 8, fontWeight: 600 }}>
-                  Storefront 🛍️
+                  Storefront
                 </Button>
               </Link>
             </Tooltip>
@@ -492,10 +492,10 @@ export default function DashboardLayout({
               onChange={setLocale}
               options={[
                 { value: 'en', label: 'English' },
-                { value: 'hi', label: 'हिन्दी' },
+                { value: 'hi', label: 'हिंदी (HI)' },
               ]}
               prefix={<GlobalOutlined />}
-              style={{ width: 110 }}
+              style={{ width: 120 }}
             />
 
             <Button

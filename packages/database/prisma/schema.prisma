@@ -71,6 +71,10 @@ model Tenant {
   auditLogs             AuditLog[]
   subscriptions         Subscription[]
   payments              PaymentRecord[]
+  storeOrders           StoreOrder[]
+  loyaltyTransactions   LoyaltyTransaction[]
+  fieldCheckIns         FieldSalesCheckIn[]
+  purchaseOrders        PurchaseOrder[]
 
   @@map("tenants")
 }
@@ -119,6 +123,7 @@ model User {
   activities       Activity[]
   searches         DiscoverySearch[]
   auditLogs        AuditLog[]
+  checkIns         FieldSalesCheckIn[]
 
   @@unique([tenantId, email])
   @@index([tenantId, email])
@@ -227,8 +232,10 @@ model Contact {
 
   deals        Deal[]
   messages     WhatsAppMessage[]
-  quotations   Quotation[]
-  invoices     Invoice[]
+  quotations          Quotation[]
+  invoices            Invoice[]
+  loyaltyPoints       Int                  @default(0)
+  loyaltyTransactions LoyaltyTransaction[]
 
   @@index([tenantId])
   @@map("contacts")
@@ -501,8 +508,14 @@ model Product {
   price       Decimal  @default(0) @db.Decimal(12, 2)
   taxRate     Decimal  @default(18.0) @db.Decimal(5, 2) // Standard 18% GST default
   unit        String   @default("piece") // piece, month, hour, project
-  description String?
-  isActive    Boolean  @default(true)
+  description        String?
+  sku                String?
+  category           String?
+  imageUrl           String?
+  stockInHand        Int      @default(0)
+  minStockAlert      Int      @default(5)
+  isPublishedToStore Boolean  @default(true)
+  isActive           Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -700,5 +713,87 @@ model PaymentRecord {
   createdAt         DateTime @default(now())
 
   @@map("payment_records")
+}
+
+// ----------------------------------------------------
+// 15. Digital Storefront, ERP & Field Operations
+// ----------------------------------------------------
+model StoreOrder {
+  id              String   @id @default(uuid())
+  tenantId        String
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customerName    String
+  customerPhone   String
+  customerAddress String?
+  items           Json     @default("[]")
+  subtotal        Decimal  @default(0) @db.Decimal(12, 2)
+  taxTotal        Decimal  @default(0) @db.Decimal(12, 2)
+  total           Decimal  @default(0) @db.Decimal(12, 2)
+  status          String   @default("pending") // pending, confirmed, delivered, cancelled
+  paymentMethod   String   @default("cod") // cod, upi
+  paymentStatus   String   @default("unpaid") // unpaid, paid
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([tenantId])
+  @@map("store_orders")
+}
+
+model LoyaltyTransaction {
+  id          String   @id @default(uuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contactId   String
+  contact     Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  points      Int      // positive for earned, negative for redeemed
+  reason      String   // purchase, redemption, bonus, adjustment
+  invoiceId   String?
+  createdAt   DateTime @default(now())
+
+  @@index([tenantId, contactId])
+  @@map("loyalty_transactions")
+}
+
+model FieldSalesCheckIn {
+  id          String   @id @default(uuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clientName  String
+  clientPhone String?
+  lat         Float
+  lng         Float
+  address     String?
+  battery     Int?     // battery percentage
+  notes       String?
+  photoUrl    String?
+  createdAt   DateTime @default(now())
+
+  @@index([tenantId, userId])
+  @@map("field_sales_check_ins")
+}
+
+model PurchaseOrder {
+  id          String    @id @default(uuid())
+  tenantId    String
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  poNumber    String
+  vendorName  String
+  vendorPhone String?
+  vendorEmail String?
+  items       Json      @default("[]")
+  subtotal    Decimal   @default(0) @db.Decimal(12, 2)
+  taxTotal    Decimal   @default(0) @db.Decimal(12, 2)
+  total       Decimal   @default(0) @db.Decimal(12, 2)
+  status      String    @default("draft") // draft, ordered, received, cancelled
+  notes       String?
+  receivedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([tenantId])
+  @@map("purchase_orders")
 }
 

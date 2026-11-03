@@ -455,7 +455,7 @@ export default function ReportsPage() {
       <Card
         title={
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span>💼 Staff Sales Commission & Incentive Tracker</span>
+            <span>Staff Sales Commission & Incentive Tracker</span>
             <Button size="small" icon={<DownloadOutlined />} onClick={handleExportCommissionStatement}>
               Export Statement
             </Button>

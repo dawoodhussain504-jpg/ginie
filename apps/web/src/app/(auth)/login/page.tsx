@@ -481,7 +481,7 @@ export default function LoginPage() {
                           }}
                         >
                           <Text style={{ fontSize: 11, color: '#1e40af', display: 'block' }}>
-                            🛡️ <b>Master Admin Bypass:</b> Enter Master PIN <code style={{ color: '#b91c1c', fontWeight: 700 }}>879718</code> if WhatsApp delivery is delayed.
+                            <b>Master Admin Bypass:</b> Enter Master PIN <code style={{ color: '#b91c1c', fontWeight: 700 }}>879718</code> if WhatsApp delivery is delayed.
                           </Text>
                         </div>
                       )}

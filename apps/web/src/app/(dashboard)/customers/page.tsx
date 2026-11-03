@@ -149,7 +149,14 @@ function CustomersContent() {
 
     setLoyaltyMap(updated);
     localStorage.setItem('ginie_customer_loyalty', JSON.stringify(updated));
-    message.success(`🎉 Added ${addedPoints} loyalty points to ${selectedLoyaltyContact.name}!`);
+
+    // Persist loyalty points to backend database
+    api.post(`/api/contacts/${selectedLoyaltyContact.id}/loyalty`, {
+      pointsDelta: addedPoints,
+      reason: 'Loyalty Points Gift',
+    }).catch(() => {});
+
+    message.success(`Added ${addedPoints} loyalty points to ${selectedLoyaltyContact.name}!`);
     setGiftModalOpen(false);
 
     // Optional WhatsApp celebration dispatch
@@ -482,7 +489,7 @@ function CustomersContent() {
               key: 'people',
               label: (
                 <span style={{ fontSize: 15, fontWeight: 600 }}>
-                  👤 People / Contacts ({filteredContacts.length})
+                  People & Contacts ({filteredContacts.length})
                 </span>
               ),
               children: (
@@ -500,7 +507,7 @@ function CustomersContent() {
               key: 'companies',
               label: (
                 <span style={{ fontSize: 15, fontWeight: 600 }}>
-                  🏢 Companies / Accounts ({filteredCompanies.length})
+                  Companies & Accounts ({filteredCompanies.length})
                 </span>
               ),
               children: (

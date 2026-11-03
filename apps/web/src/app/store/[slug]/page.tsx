@@ -153,15 +153,24 @@ export default function PublicStorePage({ params }: { params: { slug: string } }
     const cleanNumber = whatsappNumber.replace(/[^0-9]/g, '');
     const targetNumber = cleanNumber.length === 10 ? `91${cleanNumber}` : cleanNumber;
 
-    const orderItems = cart.map((item) => `• ${item.name} x ${item.qty} = ₹${item.price * item.qty}`).join('\n');
+    const orderItems = cart.map((item) => `- ${item.name} x ${item.qty} = INR ${item.price * item.qty}`).join('\n');
     const orderText =
-      `Hello ${companyName}! 🛍️\n\n` +
+      `Hello ${companyName}!\n\n` +
       `I want to place an order from your digital storefront catalog:\n\n` +
       `${orderItems}\n\n` +
-      `*Total Amount:* ₹${cartTotal.toLocaleString('en-IN')}\n` +
+      `*Total Amount:* INR ${cartTotal.toLocaleString('en-IN')}\n` +
       `*Customer Name:* ${customerName || 'Shopper'}\n` +
       `*Phone:* ${customerPhone || 'Not provided'}\n\n` +
       `Please confirm my order and share your UPI payment QR details!`;
+
+    // Persist order into backend database
+    api.post(`/api/billing/store/${params.slug}/order`, {
+      customerName: customerName || 'Store Shopper',
+      customerPhone,
+      items: cart,
+      subtotal: cartTotal,
+      total: cartTotal,
+    }).catch(() => {});
 
     const encoded = encodeURIComponent(orderText);
     const waUrl = `https://wa.me/${targetNumber}?text=${encoded}`;
@@ -172,6 +181,15 @@ export default function PublicStorePage({ params }: { params: { slug: string } }
 
   // Add Product to Storefront
   const handleAddNewProduct = async (values: any) => {
+    // Persist to backend database catalog
+    api.post('/api/billing/products', {
+      name: values.name,
+      price: Number(values.price || 100),
+      code: values.code || `SKU-${Date.now().toString().slice(-4)}`,
+      category: values.category || 'General',
+      isPublishedToStore: true,
+    }).catch(() => {});
+
     const newProd = {
       id: `p-${Date.now()}`,
       name: values.name,
@@ -195,7 +213,7 @@ export default function PublicStorePage({ params }: { params: { slug: string } }
       unit: values.unit || 'piece',
     }).catch(() => null);
 
-    message.success(`🎉 "${values.name}" uploaded successfully to Storefront!`);
+    message.success(`"${values.name}" uploaded successfully to Storefront!`);
     productForm.resetFields();
   };
 
@@ -271,8 +289,9 @@ export default function PublicStorePage({ params }: { params: { slug: string } }
                 borderColor: 'rgba(255,255,255,0.2)',
                 fontWeight: 600,
               }}
+              icon={<SettingOutlined />}
             >
-              Upload / Manage Products ⚙️
+              Upload / Manage Products
             </Button>
             <Button
               type="primary"

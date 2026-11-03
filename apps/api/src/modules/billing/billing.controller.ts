@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Body,
   Param,
 } from '@nestjs/common';
@@ -13,6 +14,7 @@ import {
   CreateInvoiceSchema,
 } from '@ginie/common';
 import { CurrentTenant } from '../../common/current-user.decorator';
+import { Public } from '../../common/tenant.guard';
 
 @Controller('api/billing')
 export class BillingController {
@@ -28,6 +30,90 @@ export class BillingController {
   async createProduct(@CurrentTenant() tenantId: string, @Body() body: any) {
     const validated = CreateProductSchema.parse(body);
     return this.billingService.createProduct(tenantId, validated);
+  }
+
+  @Patch('products/:id')
+  async updateProduct(
+    @CurrentTenant() tenantId: string,
+    @Param('id') id: string,
+    @Body() body: any,
+  ) {
+    return this.billingService.updateProduct(tenantId, id, body);
+  }
+
+  @Delete('products/:id')
+  async deleteProduct(
+    @CurrentTenant() tenantId: string,
+    @Param('id') id: string,
+  ) {
+    return this.billingService.deleteProduct(tenantId, id);
+  }
+
+  // Public Digital Storefront Endpoints
+  @Public()
+  @Get('store/:slug')
+  async getPublicStore(@Param('slug') slug: string) {
+    return this.billingService.getPublicStore(slug);
+  }
+
+  @Public()
+  @Post('store/:slug/order')
+  async createStoreOrder(
+    @Param('slug') slug: string,
+    @Body() body: any,
+  ) {
+    return this.billingService.createStoreOrder(slug, body);
+  }
+
+  // Authenticated Store Order Management
+  @Get('store-orders')
+  async getStoreOrders(@CurrentTenant() tenantId: string) {
+    return this.billingService.getStoreOrders(tenantId);
+  }
+
+  @Patch('store-orders/:id/status')
+  async updateStoreOrderStatus(
+    @CurrentTenant() tenantId: string,
+    @Param('id') id: string,
+    @Body() body: { status: string },
+  ) {
+    return this.billingService.updateStoreOrderStatus(tenantId, id, body.status);
+  }
+
+  // ERP Operations: Inventory & Purchase Orders
+  @Get('erp/inventory')
+  async getInventory(@CurrentTenant() tenantId: string) {
+    return this.billingService.getInventory(tenantId);
+  }
+
+  @Post('erp/inventory/adjust')
+  async adjustStock(
+    @CurrentTenant() tenantId: string,
+    @Body() body: { productId: string; delta: number; reason?: string },
+  ) {
+    return this.billingService.adjustStock(tenantId, body.productId, body.delta, body.reason);
+  }
+
+  @Get('erp/purchase-orders')
+  async getPurchaseOrders(@CurrentTenant() tenantId: string) {
+    return this.billingService.getPurchaseOrders(tenantId);
+  }
+
+  @Post('erp/purchase-orders')
+  async createPurchaseOrder(
+    @CurrentTenant() tenantId: string,
+    @Body() body: any,
+  ) {
+    return this.billingService.createPurchaseOrder(tenantId, body);
+  }
+
+  @Patch('erp/purchase-orders/:id/status')
+  async updatePurchaseOrderStatus(
+    @CurrentTenant() tenantId: string,
+    @Param('id') id: string,
+    @Body() body: { status: string },
+  ) {
+    return this.billingService.updatePurchaseOrderStatus(tenantId, id, body.status);
   }
 
   // Quotations

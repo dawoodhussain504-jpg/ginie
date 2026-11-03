@@ -279,4 +279,209 @@ export class BillingService {
       },
     });
   }
+
+  // Extended Product Management
+  async updateProduct(tenantId: string, id: string, data: any) {
+    const existing = await prisma.product.findFirst({ where: { id, tenantId } });
+    if (!existing) throw new NotFoundException('Product not found.');
+    return prisma.product.update({
+      where: { id },
+      data: {
+        name: data.name ?? existing.name,
+        code: data.code ?? existing.code,
+        price: data.price !== undefined ? data.price : existing.price,
+        taxRate: data.taxRate !== undefined ? data.taxRate : existing.taxRate,
+        unit: data.unit ?? existing.unit,
+        description: data.description ?? existing.description,
+        sku: data.sku ?? (existing as any).sku,
+        category: data.category ?? (existing as any).category,
+        imageUrl: data.imageUrl ?? (existing as any).imageUrl,
+        stockInHand: data.stockInHand !== undefined ? Number(data.stockInHand) : (existing as any).stockInHand,
+        minStockAlert: data.minStockAlert !== undefined ? Number(data.minStockAlert) : (existing as any).minStockAlert,
+        isPublishedToStore: data.isPublishedToStore !== undefined ? Boolean(data.isPublishedToStore) : (existing as any).isPublishedToStore,
+      } as any,
+    });
+  }
+
+  async deleteProduct(tenantId: string, id: string) {
+    const existing = await prisma.product.findFirst({ where: { id, tenantId } });
+    if (!existing) throw new NotFoundException('Product not found.');
+    return prisma.product.update({
+      where: { id },
+      data: { isActive: false },
+    });
+  }
+
+  // Digital Storefront
+  async getPublicStore(slug: string) {
+    const tenant = await prisma.tenant.findUnique({
+      where: { slug },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        logoUrl: true,
+        brandColor: true,
+        businessType: true,
+        workingHours: true,
+        settings: true,
+        products: {
+          where: { isActive: true },
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            name: true,
+            code: true,
+            price: true,
+            taxRate: true,
+            unit: true,
+            description: true,
+            sku: true,
+            category: true,
+            imageUrl: true,
+            stockInHand: true,
+            isPublishedToStore: true,
+          } as any,
+        },
+      },
+    });
+    if (!tenant) throw new NotFoundException('Store not found.');
+    return tenant;
+  }
+
+  async createStoreOrder(slug: string, orderDto: any) {
+    const tenant = await prisma.tenant.findUnique({ where: { slug } });
+    if (!tenant) throw new NotFoundException('Store not found.');
+
+    const subtotal = Number(orderDto.subtotal || 0);
+    const taxTotal = Number(orderDto.taxTotal || 0);
+    const total = Number(orderDto.total || (subtotal + taxTotal));
+
+    const order = await (prisma as any).storeOrder.create({
+      data: {
+        tenantId: tenant.id,
+        customerName: orderDto.customerName || 'Store Customer',
+        customerPhone: orderDto.customerPhone || '',
+        customerAddress: orderDto.customerAddress || '',
+        items: orderDto.items || [],
+        subtotal,
+        taxTotal,
+        total,
+        status: 'pending',
+        paymentMethod: orderDto.paymentMethod || 'cod',
+        paymentStatus: 'unpaid',
+        notes: orderDto.notes || '',
+      },
+    });
+
+    if (orderDto.customerPhone || orderDto.customerName) {
+      try {
+        await prisma.lead.create({
+          data: {
+            tenantId: tenant.id,
+            name: orderDto.customerName || 'Storefront Buyer',
+            phone: orderDto.customerPhone || '',
+            address: orderDto.customerAddress || '',
+            source: 'Online Storefront',
+            score: 85,
+            aiScoreCategory: 'hot',
+            aiScoreReason: `Placed online store order for INR ${total}`,
+            tags: ['storefront-order'],
+          },
+        });
+      } catch (_) {}
+    }
+
+    return order;
+  }
+
+  async getStoreOrders(tenantId: string) {
+    return (prisma as any).storeOrder.findMany({
+      where: { tenantId },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async updateStoreOrderStatus(tenantId: string, orderId: string, status: string) {
+    return (prisma as any).storeOrder.update({
+      where: { id: orderId },
+      data: { status },
+    });
+  }
+
+  // ERP Operations: Inventory & Purchase Orders
+  async getInventory(tenantId: string) {
+    const products = await prisma.product.findMany({
+      where: { tenantId, isActive: true },
+      orderBy: { name: 'asc' },
+    });
+    return products.map((p: any) => ({
+      ...p,
+      stockInHand: p.stockInHand || 0,
+      minStockAlert: p.minStockAlert || 5,
+      isLowStock: (p.stockInHand || 0) <= (p.minStockAlert || 5),
+    }));
+  }
+
+  async adjustStock(tenantId: string, productId: string, delta: number, reason?: string) {
+    const prod = await prisma.product.findFirst({ where: { id: productId, tenantId } });
+    if (!prod) throw new NotFoundException('Product not found.');
+    const newStock = Math.max(0, ((prod as any).stockInHand || 0) + delta);
+    return prisma.product.update({
+      where: { id: productId },
+      data: { stockInHand: newStock } as any,
+    });
+  }
+
+  async getPurchaseOrders(tenantId: string) {
+    return (prisma as any).purchaseOrder.findMany({
+      where: { tenantId },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async createPurchaseOrder(tenantId: string, dto: any) {
+    const poNumber = `PO-${Date.now().toString().slice(-6)}`;
+    return (prisma as any).purchaseOrder.create({
+      data: {
+        tenantId,
+        poNumber,
+        vendorName: dto.vendorName || 'Supplier',
+        vendorPhone: dto.vendorPhone,
+        vendorEmail: dto.vendorEmail,
+        items: dto.items || [],
+        subtotal: dto.subtotal || 0,
+        taxTotal: dto.taxTotal || 0,
+        total: dto.total || 0,
+        status: 'ordered',
+        notes: dto.notes,
+      },
+    });
+  }
+
+  async updatePurchaseOrderStatus(tenantId: string, poId: string, status: string) {
+    const po = await (prisma as any).purchaseOrder.findFirst({ where: { id: poId, tenantId } });
+    if (!po) throw new NotFoundException('PO not found.');
+
+    if (status === 'received' && po.status !== 'received' && Array.isArray(po.items)) {
+      for (const item of po.items) {
+        if (item.productId && item.quantity) {
+          await prisma.product.updateMany({
+            where: { id: item.productId, tenantId },
+            data: {
+              stockInHand: { increment: Number(item.quantity) },
+            } as any,
+          });
+        }
+      }
+    }
+
+    return (prisma as any).purchaseOrder.update({
+      where: { id: poId },
+      data: {
+        status,
+        receivedAt: status === 'received' ? new Date() : undefined,
+      },
+    });
+  }
 }

@@ -310,4 +310,57 @@ export class ContactsService {
       timeline: timelineItems,
     };
   }
+
+  // Customer Loyalty Points
+  async getLoyalty(tenantId: string, contactId: string) {
+    const contact = await prisma.contact.findFirst({
+      where: { id: contactId, tenantId },
+      select: { id: true, name: true, phone: true, loyaltyPoints: true } as any,
+    });
+    if (!contact) throw new NotFoundException('Contact not found');
+
+    const transactions = await (prisma as any).loyaltyTransaction.findMany({
+      where: { tenantId, contactId },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+    });
+
+    return {
+      contactId: contact.id,
+      name: contact.name,
+      points: (contact as any).loyaltyPoints || 0,
+      transactions,
+    };
+  }
+
+  async adjustLoyalty(tenantId: string, contactId: string, pointsDelta: number, reason: string, invoiceId?: string) {
+    const contact = await prisma.contact.findFirst({
+      where: { id: contactId, tenantId },
+    });
+    if (!contact) throw new NotFoundException('Contact not found');
+
+    const newPoints = Math.max(0, ((contact as any).loyaltyPoints || 0) + pointsDelta);
+
+    const [updatedContact, transaction] = await Promise.all([
+      prisma.contact.update({
+        where: { id: contactId },
+        data: { loyaltyPoints: newPoints } as any,
+      }),
+      (prisma as any).loyaltyTransaction.create({
+        data: {
+          tenantId,
+          contactId,
+          points: pointsDelta,
+          reason: reason || 'Adjustment',
+          invoiceId,
+        },
+      }),
+    ]);
+
+    return {
+      success: true,
+      points: (updatedContact as any).loyaltyPoints,
+      transaction,
+    };
+  }
 }

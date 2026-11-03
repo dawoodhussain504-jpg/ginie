@@ -40,4 +40,22 @@ export class ContactsController {
   async getCompanies(@CurrentTenant() tenantId: string) {
     return this.contactsService.findAllCompanies(tenantId);
   }
+
+  // Customer Loyalty Points
+  @Get('contacts/:id/loyalty')
+  async getLoyalty(
+    @CurrentTenant() tenantId: string,
+    @Param('id') contactId: string,
+  ) {
+    return this.contactsService.getLoyalty(tenantId, contactId);
+  }
+
+  @Post('contacts/:id/loyalty')
+  async adjustLoyalty(
+    @CurrentTenant() tenantId: string,
+    @Param('id') contactId: string,
+    @Body() body: { pointsDelta: number; reason: string; invoiceId?: string },
+  ) {
+    return this.contactsService.adjustLoyalty(tenantId, contactId, body.pointsDelta, body.reason, body.invoiceId);
+  }
 }

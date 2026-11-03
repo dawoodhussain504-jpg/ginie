@@ -198,11 +198,11 @@ export default function AdminMasterConsolePage() {
     }
   };
 
-  const handleApproveDiscovery = async (tenantId: string) => {
+  const handleApproveDiscovery = async (tenantId: string, days = 30) => {
     setApprovingTenantId(tenantId);
     try {
-      const res = await api.post(`/api/admin/discovery-requests/${tenantId}/approve`, { days: 30 });
-      message.success(res.message || 'Discovery plan approved and activated for 30 days!');
+      const res = await api.post(`/api/admin/discovery-requests/${tenantId}/approve`, { days });
+      message.success(res.message || `Discovery plan approved and activated for ${days} days!`);
       loadUpiAndDiscovery();
     } catch (err: any) {
       message.error(err.message || 'Failed to approve request');
@@ -1257,21 +1257,33 @@ export default function AdminMasterConsolePage() {
                             key: 'actions',
                             render: (_: any, r: any) => (
                               <Space wrap>
-                                <Button
-                                  type="primary"
-                                  size="small"
-                                  icon={<CheckOutlined />}
-                                  loading={approvingTenantId === r.id}
-                                  onClick={() => handleApproveDiscovery(r.id)}
-                                  style={{
-                                    background: '#16a34a',
-                                    borderColor: '#16a34a',
-                                    fontWeight: 600,
-                                    fontSize: 12,
+                                <Dropdown
+                                  menu={{
+                                    items: [
+                                      { key: '30', label: 'Approve 30 Days (Standard)' },
+                                      { key: '60', label: 'Approve 60 Days (2 Months)' },
+                                      { key: '90', label: 'Approve 90 Days (Quarterly)' },
+                                      { key: '365', label: 'Approve 365 Days (1 Year)' },
+                                      { key: '9999', label: 'Approve Lifetime Access' },
+                                    ],
+                                    onClick: ({ key }) => handleApproveDiscovery(r.id, Number(key)),
                                   }}
                                 >
-                                  {r.plan?.status === 'active' ? 'Extend +30d' : 'Approve (30d)'}
-                                </Button>
+                                  <Button
+                                    type="primary"
+                                    size="small"
+                                    icon={<CheckOutlined />}
+                                    loading={approvingTenantId === r.id}
+                                    style={{
+                                      background: '#16a34a',
+                                      borderColor: '#16a34a',
+                                      fontWeight: 600,
+                                      fontSize: 12,
+                                    }}
+                                  >
+                                    {r.plan?.status === 'active' ? 'Extend Plan' : 'Approve Plan'}
+                                  </Button>
+                                </Dropdown>
                                 {r.plan?.status !== 'rejected' && (
                                   <Button
                                     danger

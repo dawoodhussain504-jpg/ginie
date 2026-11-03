@@ -141,7 +141,7 @@ function SalesAndTasksContent() {
           accuracy: Math.round(pos.coords.accuracy),
         });
         setVisitModalVisible(true);
-        message.success(`📍 GPS Fixed (±${Math.round(pos.coords.accuracy)}m accuracy)!`);
+        message.success(`GPS Fixed (+/-${Math.round(pos.coords.accuracy)}m accuracy)!`);
       },
       (err) => {
         setCheckingInGps(false);
@@ -171,9 +171,18 @@ function SalesAndTasksContent() {
     const updated = [newVisit, ...visits];
     setVisits(updated);
     localStorage.setItem('ginie_field_visits', JSON.stringify(updated));
+
+    // Persist to backend database
+    api.post('/api/deals/check-in', {
+      clientName: values.client,
+      lat: currentCoords?.lat || 18.5204,
+      lng: currentCoords?.lng || 73.8567,
+      notes: `${values.purpose || ''} - ${values.outcome || ''}`,
+    }).catch(() => {});
+
     setVisitModalVisible(false);
     visitForm.resetFields();
-    message.success('📍 Client visit check-in saved with verified GPS timestamp!');
+    message.success('Client visit check-in saved with verified GPS timestamp!');
   };
 
   const loadPipelines = async () => {
@@ -406,7 +415,7 @@ function SalesAndTasksContent() {
               key: 'pipeline',
               label: (
                 <span style={{ fontSize: 15, fontWeight: 600 }}>
-                  📊 Pipeline & Deals
+                  Pipeline & Deals
                 </span>
               ),
               children: (
@@ -525,7 +534,7 @@ function SalesAndTasksContent() {
               key: 'tasks',
               label: (
                 <span style={{ fontSize: 15, fontWeight: 600 }}>
-                  📋 Tasks ({tasks.length})
+                  Tasks ({tasks.length})
                 </span>
               ),
               children: (
@@ -543,7 +552,7 @@ function SalesAndTasksContent() {
               key: 'visits',
               label: (
                 <span style={{ fontSize: 15, fontWeight: 600 }}>
-                  📍 Field Visits & GPS ({visits.length})
+                  Field Visits & GPS ({visits.length})
                 </span>
               ),
               children: (
@@ -577,7 +586,7 @@ function SalesAndTasksContent() {
                       onClick={handleStartCheckIn}
                       style={{ background: '#059669', borderColor: '#059669', fontWeight: 600 }}
                     >
-                      📍 Check-in at Client Location (GPS)
+                      Check-in at Client Location (GPS)
                     </Button>
                   </div>
 
@@ -771,7 +780,7 @@ function SalesAndTasksContent() {
       >
         <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', padding: 12, borderRadius: 8, marginBottom: 16 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: '#065f46' }}>
-            🛰️ GPS Location Fixed:
+            GPS Location Fixed:
           </div>
           <div style={{ fontSize: 13, color: '#047857', marginTop: 2 }}>
             Lat: {currentCoords?.lat}, Lng: {currentCoords?.lng} (Accuracy: ±{currentCoords?.accuracy}m)

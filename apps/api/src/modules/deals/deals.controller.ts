@@ -43,4 +43,19 @@ export class DealsController {
   async remove(@CurrentTenant() tenantId: string, @Param('id') id: string) {
     return this.dealsService.remove(tenantId, id);
   }
+
+  // Field Sales GPS Check-ins
+  @Post('check-in')
+  async createCheckIn(
+    @CurrentTenant() tenantId: string,
+    @CurrentUser('id') userId: string,
+    @Body() body: any,
+  ) {
+    return this.dealsService.createCheckIn(tenantId, userId, body);
+  }
+
+  @Get('check-ins')
+  async getCheckIns(@CurrentTenant() tenantId: string) {
+    return this.dealsService.getCheckIns(tenantId);
+  }
 }

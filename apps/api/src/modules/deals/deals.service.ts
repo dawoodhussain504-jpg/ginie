@@ -132,4 +132,36 @@ export class DealsService {
 
     return { success: true, message: 'Sale moved to bin.' };
   }
+
+  // Field Sales GPS Check-ins
+  async createCheckIn(tenantId: string, userId: string, data: any) {
+    return (prisma as any).fieldSalesCheckIn.create({
+      data: {
+        tenantId,
+        userId,
+        clientName: data.clientName || 'Store Visit',
+        clientPhone: data.clientPhone,
+        lat: Number(data.lat || 0),
+        lng: Number(data.lng || 0),
+        address: data.address,
+        battery: data.battery ? Number(data.battery) : null,
+        notes: data.notes,
+        photoUrl: data.photoUrl,
+      },
+      include: {
+        user: { select: { name: true, email: true } },
+      },
+    });
+  }
+
+  async getCheckIns(tenantId: string) {
+    return (prisma as any).fieldSalesCheckIn.findMany({
+      where: { tenantId },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+      include: {
+        user: { select: { name: true, email: true } },
+      },
+    });
+  }
 }
