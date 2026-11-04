@@ -126,68 +126,6 @@ export default function AdminMasterConsolePage() {
   const [rejectReason, setRejectReason] = useState('');
   const [rejecting, setRejecting] = useState(false);
 
-  // Auto-restore Super Admin session if arriving from an impersonated context
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    if (user && !user.isSuperAdmin) {
-      const backupStr = localStorage.getItem('ginie_master_backup');
-      const sessionMasterToken = sessionStorage.getItem('admin_master_token');
-      let fallbackToken = sessionMasterToken;
-      if (!fallbackToken && backupStr) {
-        try { fallbackToken = JSON.parse(backupStr)?.token; } catch {}
-      }
-
-      // 1. Try server-side exit-impersonation first
-      api.post('/api/auth/exit-impersonation', { masterToken: fallbackToken })
-        .then((res) => {
-          if (res?.tokens?.accessToken && res?.user) {
-            login(res.tokens.accessToken, res.user, res.tokens.refreshToken);
-            localStorage.removeItem('ginie_master_backup');
-            sessionStorage.removeItem('admin_master_token');
-            sessionStorage.removeItem('admin_master_user');
-            sessionStorage.removeItem('admin_master_refresh_token');
-            message.success('Master Admin session restored!');
-            window.location.reload();
-          }
-        })
-        .catch(() => {});
-
-      // 2. Try local master backup
-      const masterToken = sessionMasterToken;
-
-      if (backupStr || masterToken) {
-        try {
-          let token = masterToken;
-          let userData: any = null;
-          let refreshToken: string | undefined = undefined;
-
-          if (backupStr) {
-            const parsed = JSON.parse(backupStr);
-            token = parsed.token || token;
-            userData = parsed.user;
-            refreshToken = parsed.refreshToken || undefined;
-          } else {
-            const userStr = sessionStorage.getItem('admin_master_user');
-            if (userStr) userData = JSON.parse(userStr);
-            refreshToken = sessionStorage.getItem('admin_master_refresh_token') || undefined;
-          }
-
-          if (token && userData && userData.isSuperAdmin) {
-            login(token, userData, refreshToken);
-            localStorage.removeItem('ginie_master_backup');
-            sessionStorage.removeItem('admin_master_token');
-            sessionStorage.removeItem('admin_master_user');
-            sessionStorage.removeItem('admin_master_refresh_token');
-            message.success('Master Admin session restored!');
-            window.location.reload();
-            return;
-          }
-        } catch {}
-      }
-    }
-  }, [user, login]);
-
   useEffect(() => {
     if (user && user.isSuperAdmin) {
       loadAdminData();
@@ -450,8 +388,8 @@ export default function AdminMasterConsolePage() {
 
         // Login as client
         login(res.accessToken, res.user);
-        message.success(`Switched context to "${record.name}". You are now viewing their CRM.`);
-        router.push('/dashboard');
+        message.success(`Switched context to "${record.name}". Opening client workspace...`);
+        window.location.href = '/dashboard';
       }
     } catch (err: any) {
       message.error(err.message || 'Failed to switch to client workspace.');

@@ -97,6 +97,14 @@ export default function DashboardLayout({
     }
   }, [pathname, user]);
 
+  const isImpersonatingActive =
+    isImpersonating ||
+    (typeof window !== 'undefined' && (
+      !!sessionStorage.getItem('admin_master_token') ||
+      !!localStorage.getItem('ginie_master_backup') ||
+      !!(user as any)?.impersonated
+    ));
+
   const handleExitImpersonation = async () => {
     try {
       let masterToken = sessionStorage.getItem('admin_master_token');
@@ -312,7 +320,7 @@ export default function DashboardLayout({
         },
       ],
     },
-    ...(user?.isSuperAdmin || isImpersonating || (user as any)?.impersonated
+    ...(user?.isSuperAdmin || isImpersonatingActive
       ? [
           {
             type: 'group',
@@ -325,7 +333,7 @@ export default function DashboardLayout({
               {
                 key: '/admin',
                 icon: <SafetyCertificateOutlined style={{ color: '#faad14' }} />,
-                label: isImpersonating ? (
+                label: isImpersonatingActive ? (
                   <span onClick={handleExitImpersonation} style={{ cursor: 'pointer', color: '#d48806', fontWeight: 600 }}>
                     Exit to Master Console
                   </span>
@@ -370,7 +378,7 @@ export default function DashboardLayout({
           </div>
         ),
       },
-      ...(isImpersonating || (user as any)?.impersonated
+      ...(isImpersonatingActive
         ? [
             {
               key: 'exit-impersonation-dropdown',
@@ -663,7 +671,7 @@ export default function DashboardLayout({
             </div>
 
             {/* Impersonation Exit if active */}
-            {isImpersonating && (
+            {isImpersonatingActive && (
               <Button
                 type="primary"
                 danger
@@ -734,7 +742,7 @@ export default function DashboardLayout({
         </Header>
 
         {/* Impersonation Warning Banner */}
-        {isImpersonating && (
+        {isImpersonatingActive && (
           <div
             style={{
               background: 'linear-gradient(90deg, #722ed1 0%, #1677ff 100%)',
@@ -1002,28 +1010,41 @@ export default function DashboardLayout({
               <span style={{ fontSize: 12, fontWeight: 600 }}>Settings</span>
             </Link>
 
-            {user?.isSuperAdmin && (
-              <Link
-                href="/admin"
-                onClick={() => setMoreDrawerOpen(false)}
+            {(user?.isSuperAdmin || isImpersonatingActive) && (
+              <div
+                onClick={() => {
+                  setMoreDrawerOpen(false);
+                  if (isImpersonatingActive) {
+                    handleExitImpersonation();
+                  } else {
+                    router.push('/admin');
+                  }
+                }}
                 style={{
+                  cursor: 'pointer',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
                   gap: 6,
                   padding: '12px 6px',
                   borderRadius: 12,
-                  background: '#fffbeb',
-                  border: '1px solid #fef3c7',
-                  color: '#92400e',
+                  background: isImpersonatingActive ? '#fef2f2' : '#fffbeb',
+                  border: isImpersonatingActive ? '1px solid #fee2e2' : '1px solid #fef3c7',
+                  color: isImpersonatingActive ? '#dc2626' : '#92400e',
                   textAlign: 'center',
                 }}
               >
-                <div style={{ width: 44, height: 44, borderRadius: 10, background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <SafetyCertificateOutlined style={{ fontSize: 22, color: '#d97706' }} />
+                <div style={{ width: 44, height: 44, borderRadius: 10, background: isImpersonatingActive ? '#fee2e2' : '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {isImpersonatingActive ? (
+                    <ArrowLeftOutlined style={{ fontSize: 22, color: '#dc2626' }} />
+                  ) : (
+                    <SafetyCertificateOutlined style={{ fontSize: 22, color: '#d97706' }} />
+                  )}
                 </div>
-                <span style={{ fontSize: 12, fontWeight: 600 }}>Master Admin</span>
-              </Link>
+                <span style={{ fontSize: 12, fontWeight: 600 }}>
+                  {isImpersonatingActive ? 'Exit Admin' : 'Master Admin'}
+                </span>
+              </div>
             )}
           </div>
         </Drawer>
