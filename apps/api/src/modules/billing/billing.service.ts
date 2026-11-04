@@ -430,6 +430,36 @@ export class BillingService {
           { id: 'item-mfg-2', name: 'Heavy Duty Industrial Ball Valve 2-Inch', category: 'Valves & Fittings', price: 4200, code: 'MFG-02', unit: 'piece', stockInHand: 30, description: 'Stainless steel 316 rated for 1000 WOG high pressure', isPublishedToStore: true },
           { id: 'item-mfg-3', name: 'Mild Steel Laser-Cut Mounting Bracket', category: 'Sheet Metal', price: 320, code: 'MFG-03', unit: 'piece', stockInHand: 150, description: '3mm hot rolled steel powder-coated black bracket', isPublishedToStore: true },
         ],
+        automobile: [
+          { id: 'item-auto-1', name: 'Comprehensive Periodic Car Service', category: 'Car Maintenance', price: 2999, code: 'AUTO-01', unit: 'service', stockInHand: 50, description: 'Engine oil replacement + 40-point safety check + brake inspection', isPublishedToStore: true },
+          { id: 'item-auto-2', name: 'AC Gas Refill & Cooling System Flush', category: 'AC & Climate', price: 1499, code: 'AUTO-02', unit: 'service', stockInHand: 40, description: 'Complete AC refrigerant gas top-up with bacterial condenser disinfection', isPublishedToStore: true },
+          { id: 'item-auto-3', name: 'Front Disc Brake Pads Replacement (OEM)', category: 'Brakes & Suspension', price: 1850, code: 'AUTO-03', unit: 'set', stockInHand: 25, description: 'Original ceramic disc brake pads with labor installation included', isPublishedToStore: true },
+          { id: 'item-auto-4', name: 'Deep Foam Body Wash & Interior Detailing', category: 'Washing & Detailing', price: 799, code: 'AUTO-04', unit: 'vehicle', stockInHand: 100, description: 'High pressure snow foam body wash with interior vacuuming & dashboard polish', isPublishedToStore: true },
+        ],
+        pharmacy: [
+          { id: 'item-pharma-1', name: 'Paracetamol 650mg Fast Relief (Strip of 15)', category: 'Fever & Pain Relief', price: 35, code: 'PHARMA-01', unit: 'strip', stockInHand: 200, description: 'Analgesic and antipyretic for fast fever and body ache relief (Rx)', isPublishedToStore: true },
+          { id: 'item-pharma-2', name: 'Vitamin C 500mg + Zinc Immunity (60 Chewables)', category: 'Vitamins & Supplements', price: 240, code: 'PHARMA-02', unit: 'bottle', stockInHand: 80, description: 'Antioxidant immune booster chewable tablets for daily defense', isPublishedToStore: true },
+          { id: 'item-pharma-3', name: 'Digital Infrared Non-Contact Thermometer', category: 'Medical Devices', price: 850, code: 'PHARMA-03', unit: 'piece', stockInHand: 30, description: '1-second instant fever scanner with color LCD display & fever alarm', isPublishedToStore: true },
+          { id: 'item-pharma-4', name: 'Antiseptic First Aid Liquid 500ml', category: 'First Aid & Wound Care', price: 175, code: 'PHARMA-04', unit: 'bottle', stockInHand: 60, description: 'Hospital grade antibacterial disinfectant for cuts and abrasions', isPublishedToStore: true },
+        ],
+        jewellery: [
+          { id: 'item-jewel-1', name: '22K BIS Hallmarked Solid Gold Rope Chain 10g', category: 'Gold Chains', price: 72500, code: 'JWL-01', unit: 'piece', stockInHand: 8, description: '916 Hallmark certified 22 karat yellow gold chain with certificate', isPublishedToStore: true },
+          { id: 'item-jewel-2', name: 'Pure 999 Fine Silver Coin 50 Grams', category: 'Silver Coins & Bars', price: 4800, code: 'JWL-02', unit: 'coin', stockInHand: 50, description: 'Govt mint certified 99.9% pure silver coin in tamper-proof assay blister', isPublishedToStore: true },
+          { id: 'item-jewel-3', name: '18K Yellow Gold Diamond Solitaire Ring 0.25ct', category: 'Diamond Rings', price: 38500, code: 'JWL-03', unit: 'ring', stockInHand: 12, description: 'IGI certified VVS-EF natural diamond set in classic 18 karat gold prong', isPublishedToStore: true },
+          { id: 'item-jewel-4', name: 'Traditional 22K Gold Auspicious Mangalsutra 12g', category: 'Bridal & Traditional', price: 86900, code: 'JWL-04', unit: 'piece', stockInHand: 6, description: 'Intricate filigree work with black beads and BIS Hallmark seal', isPublishedToStore: true },
+        ],
+        salon: [
+          { id: 'item-salon-1', name: 'Signature Executive Haircut & Beard Grooming', category: 'Hair & Beard', price: 450, code: 'SALON-01', unit: 'service', stockInHand: 100, description: 'Precision fade haircut + beard trim, contouring and soothing hot towel wrap', isPublishedToStore: true },
+          { id: 'item-salon-2', name: 'Deep Hydrating Fruit Facial & De-Tan Therapy', category: 'Skin & Facial', price: 1200, code: 'SALON-02', unit: 'session', stockInHand: 80, description: '6-step antioxidant herbal fruit extract treatment to restore natural glow', isPublishedToStore: true },
+          { id: 'item-salon-3', name: 'Moroccan Argan Oil Keratin Hair Spa (60 Mins)', category: 'Hair Treatments', price: 1800, code: 'SALON-03', unit: 'session', stockInHand: 50, description: 'Intense moisture repair treatment for frizz control and silky shine', isPublishedToStore: true },
+          { id: 'item-salon-4', name: 'Complete Royal Bridal Glow Makeup Package', category: 'Bridal & Occasion', price: 8500, code: 'SALON-04', unit: 'package', stockInHand: 15, description: 'HD waterproof bridal makeup with hairstyling, draping & premium lashes', isPublishedToStore: true },
+        ],
+        education: [
+          { id: 'item-edu-1', name: 'Class 10 CBSE Board Exam Prep Crash Course', category: 'School Boards', price: 4999, code: 'EDU-01', unit: 'course', stockInHand: 100, description: '3-month rigorous revision covering Maths, Science & English with test series', isPublishedToStore: true },
+          { id: 'item-edu-2', name: 'IIT-JEE / NEET Foundation Physics & Chemistry', category: 'Competitive Exams', price: 24999, code: 'EDU-02', unit: 'annual', stockInHand: 50, description: '1-year comprehensive conceptual coaching with daily practice problems & DPPs', isPublishedToStore: true },
+          { id: 'item-edu-3', name: 'Spoken English & Corporate Communication Mastery', category: 'Language & Skills', price: 2499, code: 'EDU-03', unit: 'batch', stockInHand: 80, description: '60 days interactive online/offline sessions for interview confidence & fluency', isPublishedToStore: true },
+          { id: 'item-edu-4', name: 'Python Programming & AI Basics for Young Coders', category: 'Technology & Coding', price: 7999, code: 'EDU-04', unit: 'course', stockInHand: 40, description: 'Hands-on practical coding from scratch with 5 real-world mini-projects', isPublishedToStore: true },
+        ],
         retail: [
           { id: 'item-ret-1', name: 'Premium Royal Basmati Rice (5kg Bag)', category: 'Groceries & Staples', price: 480, code: 'RET-01', unit: 'bag', stockInHand: 45, description: 'Extra long grain aged basmati rice for daily cooking', isPublishedToStore: true },
           { id: 'item-ret-2', name: 'Cold Pressed Pure Mustard Oil (1 Litre)', category: 'Cooking Oils', price: 195, code: 'RET-02', unit: 'bottle', stockInHand: 60, description: '100% natural kachi ghani unrefined mustard oil', isPublishedToStore: true },

@@ -46,6 +46,16 @@ import {
   QrcodeOutlined,
   CheckCircleOutlined,
   FileTextOutlined,
+  CarOutlined,
+  CrownOutlined,
+  ScissorOutlined,
+  ReadOutlined,
+  BookOutlined,
+  ExperimentOutlined,
+  GoldOutlined,
+  SafetyCertificateOutlined,
+  CalendarOutlined,
+  UploadOutlined,
 } from '@ant-design/icons';
 import { api } from '@/lib/api';
 
@@ -71,6 +81,21 @@ export default function PublicStorePage({ params }: { params: { slug: string } }
   const [loyaltyPointsAvailable, setLoyaltyPointsAvailable] = useState<number>(0);
   const [checkingLoyalty, setCheckingLoyalty] = useState(false);
   const [redeemPoints, setRedeemPoints] = useState(false);
+
+  // Industry-Specific Dynamic Storefront States
+  const [diningMode, setDiningMode] = useState<string>('Dine-In');
+  const [tableNumber, setTableNumber] = useState<string>('');
+  const [dietaryFilter, setDietaryFilter] = useState<string>('All');
+  const [appointmentSlot, setAppointmentSlot] = useState<string>('Morning (10:00 AM - 1:00 PM)');
+  const [patientAgeGender, setPatientAgeGender] = useState<string>('');
+  const [vehicleRegNo, setVehicleRegNo] = useState<string>('');
+  const [vehicleModel, setVehicleModel] = useState<string>('');
+  const [needPickup, setNeedPickup] = useState<boolean>(false);
+  const [panNumber, setPanNumber] = useState<string>('');
+  const [preferredStylist, setPreferredStylist] = useState<string>('');
+  const [studentClass, setStudentClass] = useState<string>('');
+  const [transporterName, setTransporterName] = useState<string>('');
+  const [rxPrescriptionNote, setRxPrescriptionNote] = useState<string>('');
 
   // Store Configuration
   const [companyName, setCompanyName] = useState('GINIE Digital Store');
@@ -143,7 +168,8 @@ export default function PublicStorePage({ params }: { params: { slug: string } }
           icon: <CoffeeOutlined style={{ fontSize: 22, color: '#fa541c' }} />,
           buttonLabel: 'Add to Plate',
           cartLabel: 'Your Food Order & Table/Delivery Details',
-          notePlaceholder: 'Table number / Cooking instructions (e.g. less spicy, extra chutney)...',
+          notePlaceholder: 'Special cooking instructions (e.g. less spicy, extra chutney)...',
+          heroSubtitle: 'Freshly prepared dishes for dine-in, takeaway & fast doorstep delivery.',
         };
       case 'wholesale':
         return {
@@ -151,31 +177,90 @@ export default function PublicStorePage({ params }: { params: { slug: string } }
           accentColor: '#722ed1',
           tagText: 'B2B Wholesale Catalog & Bulk Orders (थोक व्यापार कैटलॉग)',
           icon: <AppstoreOutlined style={{ fontSize: 22, color: '#722ed1' }} />,
-          buttonLabel: 'Add to Bulk Cart',
+          buttonLabel: 'Add Bulk Order',
           cartLabel: 'Wholesale Order & Dispatch Destination',
-          notePlaceholder: 'Transport name / Delivery instructions / Purchase order ref...',
+          notePlaceholder: 'Transport name / Delivery godown / Purchase order ref...',
+          heroSubtitle: 'Tiered wholesale pricing, direct factory dispatch & GST tax invoice enabled.',
         };
       case 'clinic':
         return {
           headerBg: '#0f172a',
-          accentColor: '#13c2c2',
-          tagText: 'Clinic Appointments & Health Packages (क्लिनिक व स्वास्थ्य केंद्र)',
-          icon: <MedicineBoxOutlined style={{ fontSize: 22, color: '#13c2c2' }} />,
-          buttonLabel: 'Book Consultation / Test',
-          cartLabel: 'Patient Appointment Booking & Health Tests',
-          notePlaceholder: 'Patient age / Chief symptoms / Preferred slot (Morning / Evening)...',
+          accentColor: '#0d9488',
+          tagText: 'Clinical Appointments & Diagnostic Care (क्लिनिक व स्वास्थ्य केंद्र)',
+          icon: <MedicineBoxOutlined style={{ fontSize: 22, color: '#0d9488' }} />,
+          buttonLabel: 'Book Appointment',
+          cartLabel: 'Patient Consultation Booking & Tests',
+          notePlaceholder: 'Chief symptoms / Preferred doctor / Past medical history...',
+          heroSubtitle: 'Verified medical OPD consultations, pathology tests & wellness packages.',
+        };
+      case 'automobile':
+        return {
+          headerBg: '#0f172a',
+          accentColor: '#ea580c',
+          tagText: 'Vehicle Service, Repairs & Garage (ऑटोमोबाइल व वर्कशॉप)',
+          icon: <CarOutlined style={{ fontSize: 22, color: '#ea580c' }} />,
+          buttonLabel: 'Book Service',
+          cartLabel: 'Vehicle Service Job Card & Booking',
+          notePlaceholder: 'Issues faced (e.g. brake noise, AC cooling low) / Doorstep pickup note...',
+          heroSubtitle: 'Scheduled maintenance, genuine spare parts, expert mechanics & doorstep pickup.',
+        };
+      case 'pharmacy':
+        return {
+          headerBg: '#0f172a',
+          accentColor: '#059669',
+          tagText: 'Licensed Pharmacy & Medical Store (दवा दुकान व केमिस्ट)',
+          icon: <ExperimentOutlined style={{ fontSize: 22, color: '#059669' }} />,
+          buttonLabel: 'Add Medicine',
+          cartLabel: 'Prescription Medicines & Doorstep Delivery',
+          notePlaceholder: 'Dosage instructions / Prescription ref / Delivery urgency...',
+          heroSubtitle: '100% genuine medicines, verified batch expiry dates & 2-hour local delivery.',
+        };
+      case 'jewellery':
+        return {
+          headerBg: '#0f172a',
+          accentColor: '#d97706',
+          tagText: 'BIS Hallmarked Gold & Fine Silver Showroom (सर्राफा व आभूषण)',
+          icon: <CrownOutlined style={{ fontSize: 22, color: '#d97706' }} />,
+          buttonLabel: 'Book / Lock Rate',
+          cartLabel: 'Jewellery Booking & Gold Rate Lock',
+          notePlaceholder: 'Custom ring size / Engraving text / Old gold exchange inquiry...',
+          heroSubtitle: '100% BIS 916 Hallmark certified gold, pure silver coins & certified diamonds.',
+        };
+      case 'salon':
+        return {
+          headerBg: '#0f172a',
+          accentColor: '#db2777',
+          tagText: 'Salon, Spa & Beauty Lounge (सैलून व ब्यूटी पार्लर)',
+          icon: <ScissorOutlined style={{ fontSize: 22, color: '#db2777' }} />,
+          buttonLabel: 'Book Service',
+          cartLabel: 'Stylist Appointment & Spa Booking',
+          notePlaceholder: 'Preferred stylist name / Special skin or hair requests...',
+          heroSubtitle: 'Expert hair styling, revitalizing skin facials, keratin spas & bridal packages.',
+        };
+      case 'education':
+        return {
+          headerBg: '#0f172a',
+          accentColor: '#4f46e5',
+          tagText: 'Coaching Institute & Learning Academy (कोचिंग व ट्यूशन)',
+          icon: <ReadOutlined style={{ fontSize: 22, color: '#4f46e5' }} />,
+          buttonLabel: 'Enroll in Batch',
+          cartLabel: 'Course Admission & Fee Installment',
+          notePlaceholder: 'Student standard / Target exams / Online or Offline batch...',
+          heroSubtitle: 'Structured concept coaching, test series, study materials & batch mentorship.',
         };
       case 'services':
         return {
           headerBg: '#0f172a',
-          accentColor: '#2f54eb',
+          accentColor: '#0284c7',
           tagText: 'Professional Services & Consulting (सर्विस व एजेंसी पोर्टफोलियो)',
-          icon: <CustomerServiceOutlined style={{ fontSize: 22, color: '#2f54eb' }} />,
-          buttonLabel: 'Select Service Package',
+          icon: <CustomerServiceOutlined style={{ fontSize: 22, color: '#0284c7' }} />,
+          buttonLabel: 'Select Package',
           cartLabel: 'Service Engagement & Scope Brief',
           notePlaceholder: 'Project goals / Requirements brief / Deadline...',
+          heroSubtitle: 'Tailored business consulting, digital growth, legal compliance & design solutions.',
         };
       case 'factory':
+      case 'manufacturing':
         return {
           headerBg: '#0f172a',
           accentColor: '#fa8c16',
@@ -184,6 +269,7 @@ export default function PublicStorePage({ params }: { params: { slug: string } }
           buttonLabel: 'Add to RFQ Batch',
           cartLabel: 'Industrial Dispatch & Specs Order',
           notePlaceholder: 'Custom material specs / Target delivery date...',
+          heroSubtitle: 'High precision machining, sheet metal fabrication & bulk industrial components.',
         };
       default:
         return {
@@ -194,6 +280,7 @@ export default function PublicStorePage({ params }: { params: { slug: string } }
           buttonLabel: 'Add to Cart',
           cartLabel: 'Your Shopping Cart & Delivery Address',
           notePlaceholder: 'Delivery instructions / Landmark / Special requests...',
+          heroSubtitle: 'Browse catalog items, order directly on WhatsApp & earn instant loyalty cashback.',
         };
     }
   };
@@ -269,17 +356,53 @@ export default function PublicStorePage({ params }: { params: { slug: string } }
 
     let extraDetails = '';
     if (businessType === 'restaurant') {
-      extraDetails = `*Dining / Delivery:* ${customerAddress || 'Dine-In'}\n` +
+      extraDetails =
+        `*Order Mode:* ${diningMode}\n` +
+        (diningMode === 'Dine-In' ? `*Table Number:* ${tableNumber || 'Counter / Unassigned'}\n` : `*Delivery Address:* ${customerAddress || 'Not specified'}\n`) +
         (industryNotes ? `*Cooking Notes:* ${industryNotes}\n` : '');
     } else if (businessType === 'wholesale') {
-      extraDetails = (gstNumber ? `*Buyer GSTIN:* ${gstNumber}\n` : '') +
-        `*Delivery Address:* ${customerAddress || 'Not specified'}\n` +
+      extraDetails =
+        (gstNumber ? `*Buyer GSTIN:* ${gstNumber}\n` : '') +
+        (transporterName ? `*Transporter:* ${transporterName}\n` : '') +
+        `*Delivery Godown:* ${customerAddress || 'Not specified'}\n` +
         (industryNotes ? `*Transport Notes:* ${industryNotes}\n` : '');
     } else if (businessType === 'clinic') {
-      extraDetails = (industryNotes ? `*Patient / Symptoms:* ${industryNotes}\n` : '') +
-        `*Preferred Timing:* ${customerAddress || 'Earliest Available'}\n`;
+      extraDetails =
+        (patientAgeGender ? `*Patient Details:* ${patientAgeGender}\n` : '') +
+        `*Preferred Slot:* ${appointmentSlot}\n` +
+        (industryNotes ? `*Chief Symptoms:* ${industryNotes}\n` : '');
+    } else if (businessType === 'automobile') {
+      extraDetails =
+        `*Vehicle Reg No:* ${vehicleRegNo || 'Not Provided'}\n` +
+        (vehicleModel ? `*Vehicle Model:* ${vehicleModel}\n` : '') +
+        `*Doorstep Pickup:* ${needPickup ? 'Yes, Required' : 'No, Will Bring to Workshop'}\n` +
+        (customerAddress ? `*Pickup Address:* ${customerAddress}\n` : '') +
+        (industryNotes ? `*Service Issues:* ${industryNotes}\n` : '');
+    } else if (businessType === 'pharmacy') {
+      extraDetails =
+        (patientAgeGender ? `*Patient Name/Age:* ${patientAgeGender}\n` : '') +
+        `*Delivery Address:* ${customerAddress || 'Not specified'}\n` +
+        (rxPrescriptionNote ? `*Prescription Ref:* ${rxPrescriptionNote}\n` : '') +
+        (industryNotes ? `*Special Notes:* ${industryNotes}\n` : '');
+    } else if (businessType === 'jewellery') {
+      extraDetails =
+        `*City / Address:* ${customerAddress || 'Showroom Pickup'}\n` +
+        (panNumber ? `*Customer PAN:* ${panNumber}\n` : '') +
+        `*Rate Lock Status:* Token Advance Applied\n` +
+        (industryNotes ? `*Custom Notes:* ${industryNotes}\n` : '');
+    } else if (businessType === 'salon') {
+      extraDetails =
+        `*Appointment Slot:* ${appointmentSlot}\n` +
+        (preferredStylist ? `*Preferred Stylist:* ${preferredStylist}\n` : '') +
+        (industryNotes ? `*Styling Notes:* ${industryNotes}\n` : '');
+    } else if (businessType === 'education') {
+      extraDetails =
+        (studentClass ? `*Class / Subject:* ${studentClass}\n` : '') +
+        (customerAddress ? `*City / Location:* ${customerAddress}\n` : '') +
+        (industryNotes ? `*Admission Query:* ${industryNotes}\n` : '');
     } else {
-      extraDetails = `*Delivery Address:* ${customerAddress || 'Not specified'}\n` +
+      extraDetails =
+        `*Delivery Address:* ${customerAddress || 'Not specified'}\n` +
         (industryNotes ? `*Special Notes:* ${industryNotes}\n` : '');
     }
 
@@ -357,7 +480,14 @@ export default function PublicStorePage({ params }: { params: { slug: string } }
 
     const matchesCategory = selectedCategory === 'All' || p.category === selectedCategory;
 
-    return matchesSearch && matchesCategory;
+    const matchesDiet =
+      dietaryFilter === 'All' ||
+      (dietaryFilter === 'Veg' &&
+        (p.description?.toLowerCase().includes('veg') || p.category?.toLowerCase().includes('veg') || p.name?.toLowerCase().includes('veg')) &&
+        !p.description?.toLowerCase().includes('non-veg') &&
+        !p.name?.toLowerCase().includes('non-veg'));
+
+    return matchesSearch && matchesCategory && matchesDiet;
   });
 
   return (
@@ -400,6 +530,11 @@ export default function PublicStorePage({ params }: { params: { slug: string } }
                   Direct WhatsApp Ordering: +{whatsappNumber}
                 </Text>
               </div>
+              {theme.heroSubtitle && (
+                <div style={{ color: '#cbd5e1', fontSize: 12, marginTop: 4 }}>
+                  {theme.heroSubtitle}
+                </div>
+              )}
             </div>
           </div>
 
@@ -437,6 +572,145 @@ export default function PublicStorePage({ params }: { params: { slug: string } }
           <span>GINIE Loyalty Club: Earn <b>5% Instant Cashback Points</b> to your phone number on every order!</span>
         </Text>
       </div>
+
+      {/* Industry-Specific Live Banners */}
+      {businessType === 'jewellery' && (
+        <div style={{ background: 'linear-gradient(90deg, #78350f 0%, #b45309 100%)', color: '#fff', padding: '10px 16px', borderBottom: '1px solid #d97706' }}>
+          <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, fontSize: 13 }}>
+              <CrownOutlined style={{ color: '#fef08a' }} />
+              <span>Today's Live Bullion Rates:</span>
+            </span>
+            <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', fontSize: 13 }}>
+              <span>Gold 24K: <b>₹7,850/g</b></span>
+              <span>Gold 22K (916): <b>₹7,200/g</b></span>
+              <span>Pure Silver: <b>₹96/g</b></span>
+              <Tag color="gold" style={{ fontWeight: 800, margin: 0 }}>BIS 916 Hallmark</Tag>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {businessType === 'pharmacy' && (
+        <div style={{ maxWidth: 1100, margin: '14px auto 0', padding: '0 16px' }}>
+          <Card
+            size="small"
+            style={{
+              borderRadius: 12,
+              background: '#f0fdf4',
+              border: '1px solid #86efac',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <MedicineBoxOutlined style={{ fontSize: 24, color: '#16a34a' }} />
+                <div>
+                  <span style={{ fontWeight: 700, color: '#166534', fontSize: 14 }}>
+                    Have a Doctor's Prescription (Rx)?
+                  </span>
+                  <div style={{ fontSize: 12, color: '#15803d' }}>
+                    Attach your prescription slip on WhatsApp for instant pharmacist verification & fast doorstep delivery.
+                  </div>
+                </div>
+              </div>
+              <Button
+                type="primary"
+                size="middle"
+                icon={<UploadOutlined />}
+                onClick={() => setCartOpen(true)}
+                style={{ background: '#16a34a', borderColor: '#16a34a', fontWeight: 700, borderRadius: 8 }}
+              >
+                Order with Rx Slip
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {businessType === 'restaurant' && (
+        <div style={{ maxWidth: 1100, margin: '14px auto 0', padding: '0 16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, background: '#ffffff', padding: '10px 14px', borderRadius: 12, border: '1px solid #fed7aa' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#9a3412' }}>Dining Mode:</span>
+              <Segmented
+                options={['Dine-In', 'Takeaway', 'Home Delivery']}
+                value={diningMode}
+                onChange={(val) => setDiningMode(String(val))}
+                size="small"
+              />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#64748b' }}>Filter:</span>
+              <Button
+                size="small"
+                type={dietaryFilter === 'All' ? 'primary' : 'default'}
+                onClick={() => setDietaryFilter('All')}
+                style={{ borderRadius: 12, fontSize: 11 }}
+              >
+                All Dishes
+              </Button>
+              <Button
+                size="small"
+                type={dietaryFilter === 'Veg' ? 'primary' : 'default'}
+                onClick={() => setDietaryFilter('Veg')}
+                style={{
+                  borderRadius: 12,
+                  fontSize: 11,
+                  borderColor: '#16a34a',
+                  color: dietaryFilter === 'Veg' ? '#fff' : '#16a34a',
+                  background: dietaryFilter === 'Veg' ? '#16a34a' : 'transparent',
+                }}
+              >
+                Pure Veg
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {businessType === 'automobile' && (
+        <div style={{ maxWidth: 1100, margin: '14px auto 0', padding: '0 16px' }}>
+          <div style={{ background: '#fff7ed', border: '1px solid #ffedd5', padding: '8px 14px', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: '#c2410c', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <CarOutlined /> Genuine OEM Spares Guaranteed • 6-Month Service Warranty
+            </span>
+            <Tag color="orange" style={{ fontWeight: 700, margin: 0 }}>Free Doorstep Pickup & Drop Available</Tag>
+          </div>
+        </div>
+      )}
+
+      {businessType === 'wholesale' && (
+        <div style={{ maxWidth: 1100, margin: '14px auto 0', padding: '0 16px' }}>
+          <div style={{ background: '#f5f3ff', border: '1px solid #ddd6fe', padding: '8px 14px', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: '#6b21a8', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <AppstoreOutlined /> B2B Direct Trade: Minimum Order Quantities (MOQ) apply for bulk pricing
+            </span>
+            <Tag color="purple" style={{ fontWeight: 700, margin: 0 }}>GST Tax Invoice (ITC Eligible)</Tag>
+          </div>
+        </div>
+      )}
+
+      {businessType === 'salon' && (
+        <div style={{ maxWidth: 1100, margin: '14px auto 0', padding: '0 16px' }}>
+          <div style={{ background: '#fdf2f8', border: '1px solid #fbcfe8', padding: '8px 14px', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: '#9d174d', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <ScissorOutlined /> Premium Salon Experience • Sanitized Tools & AC Comfort
+            </span>
+            <Tag color="magenta" style={{ fontWeight: 700, margin: 0 }}>Advance Time Slot Booking</Tag>
+          </div>
+        </div>
+      )}
+
+      {businessType === 'education' && (
+        <div style={{ maxWidth: 1100, margin: '14px auto 0', padding: '0 16px' }}>
+          <div style={{ background: '#eef2ff', border: '1px solid #c7d2fe', padding: '8px 14px', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: '#3730a3', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <ReadOutlined /> New Admissions Open for Upcoming Academic Batches
+            </span>
+            <Tag color="geekblue" style={{ fontWeight: 700, margin: 0 }}>Online & Offline Batches Available</Tag>
+          </div>
+        </div>
+      )}
 
       {/* Main Catalog */}
       <div style={{ maxWidth: 1100, margin: '24px auto', padding: '0 16px' }}>
@@ -559,9 +833,36 @@ export default function PublicStorePage({ params }: { params: { slug: string } }
                       </div>
 
                       {/* Category & Title */}
-                      <Tag color="blue" style={{ fontSize: 10, marginBottom: 4 }}>
-                        {p.category || 'Item'}
-                      </Tag>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap', marginBottom: 4 }}>
+                        <Tag color="blue" style={{ fontSize: 10, margin: 0 }}>
+                          {p.category || 'Item'}
+                        </Tag>
+                        {businessType === 'restaurant' && (
+                          p.description?.toLowerCase().includes('veg') && !p.description?.toLowerCase().includes('non-veg') ? (
+                            <Tag color="success" style={{ fontSize: 9, margin: 0, fontWeight: 700 }}>VEG</Tag>
+                          ) : (
+                            <Tag color="error" style={{ fontSize: 9, margin: 0, fontWeight: 700 }}>NON-VEG</Tag>
+                          )
+                        )}
+                        {businessType === 'jewellery' && (
+                          <Tag color="gold" style={{ fontSize: 9, margin: 0, fontWeight: 700 }}>BIS 916</Tag>
+                        )}
+                        {businessType === 'pharmacy' && (
+                          <Tag color="cyan" style={{ fontSize: 9, margin: 0, fontWeight: 700 }}>Rx Verified</Tag>
+                        )}
+                        {businessType === 'automobile' && (
+                          <Tag color="orange" style={{ fontSize: 9, margin: 0, fontWeight: 700 }}>OEM Spare</Tag>
+                        )}
+                        {businessType === 'salon' && (
+                          <Tag color="magenta" style={{ fontSize: 9, margin: 0, fontWeight: 700 }}>Salon Service</Tag>
+                        )}
+                        {businessType === 'education' && (
+                          <Tag color="geekblue" style={{ fontSize: 9, margin: 0, fontWeight: 700 }}>Batch Course</Tag>
+                        )}
+                        {businessType === 'wholesale' && (
+                          <Tag color="purple" style={{ fontSize: 9, margin: 0, fontWeight: 700 }}>B2B Bulk</Tag>
+                        )}
+                      </div>
                       <Text strong style={{ fontSize: 14, display: 'block', lineHeight: 1.3, marginBottom: 6 }}>
                         {p.name}
                       </Text>
@@ -658,36 +959,235 @@ export default function PublicStorePage({ params }: { params: { slug: string } }
             {/* Customer Inputs & Checkout Bar */}
             <div style={{ paddingTop: 16, borderTop: '2px solid #e2e8f0' }}>
               <div style={{ background: '#f8fafc', padding: 12, borderRadius: 10, marginBottom: 14 }}>
-                <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 6 }}>
-                  Customer Details (For Order & Loyalty Points)
+                <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 8, color: '#334155' }}>
+                  Customer & Service Details (For Order & Loyalty Rewards)
                 </Text>
+
                 <Input
+                  prefix={<WhatsAppOutlined style={{ color: '#25D366' }} />}
                   placeholder="Your 10-Digit Mobile / WhatsApp Number *"
                   value={customerPhone}
                   onChange={(e) => setCustomerPhone(e.target.value)}
                   style={{ marginBottom: 8, borderRadius: 6 }}
                 />
+
                 <Input
-                  placeholder="Your Name *"
+                  placeholder="Your Full Name *"
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
                   style={{ marginBottom: 8, borderRadius: 6 }}
                 />
-                <Input.TextArea
-                  rows={2}
-                  placeholder="Delivery Address / Table Number *"
-                  value={customerAddress}
-                  onChange={(e) => setCustomerAddress(e.target.value)}
-                  style={{ marginBottom: 8, borderRadius: 6 }}
-                />
+
+                {/* Restaurant Mode */}
+                {businessType === 'restaurant' && (
+                  <>
+                    <div style={{ marginBottom: 8 }}>
+                      <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 4 }}>Order Type:</Text>
+                      <Segmented
+                        block
+                        options={['Dine-In', 'Takeaway', 'Home Delivery']}
+                        value={diningMode}
+                        onChange={(val) => setDiningMode(String(val))}
+                        style={{ marginBottom: 6 }}
+                      />
+                    </div>
+                    {diningMode === 'Dine-In' ? (
+                      <Input
+                        placeholder="Table Number (e.g. Table #4) *"
+                        value={tableNumber}
+                        onChange={(e) => setTableNumber(e.target.value)}
+                        style={{ marginBottom: 8, borderRadius: 6 }}
+                      />
+                    ) : (
+                      <Input.TextArea
+                        rows={2}
+                        placeholder="Delivery Address & Landmark *"
+                        value={customerAddress}
+                        onChange={(e) => setCustomerAddress(e.target.value)}
+                        style={{ marginBottom: 8, borderRadius: 6 }}
+                      />
+                    )}
+                  </>
+                )}
+
+                {/* Clinic Mode */}
+                {businessType === 'clinic' && (
+                  <>
+                    <Input
+                      placeholder="Patient Name & Age (e.g. Rahul, 34 Yrs) *"
+                      value={patientAgeGender}
+                      onChange={(e) => setPatientAgeGender(e.target.value)}
+                      style={{ marginBottom: 8, borderRadius: 6 }}
+                    />
+                    <div style={{ marginBottom: 8 }}>
+                      <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 4 }}>Preferred Appointment Slot:</Text>
+                      <Select
+                        style={{ width: '100%' }}
+                        value={appointmentSlot}
+                        onChange={(v) => setAppointmentSlot(v)}
+                      >
+                        <Select.Option value="Morning (10:00 AM - 1:00 PM)">Morning (10:00 AM - 1:00 PM)</Select.Option>
+                        <Select.Option value="Afternoon (2:00 PM - 5:00 PM)">Afternoon (2:00 PM - 5:00 PM)</Select.Option>
+                        <Select.Option value="Evening (5:00 PM - 8:30 PM)">Evening (5:00 PM - 8:30 PM)</Select.Option>
+                      </Select>
+                    </div>
+                  </>
+                )}
+
+                {/* Automobile Mode */}
+                {businessType === 'automobile' && (
+                  <>
+                    <Input
+                      placeholder="Vehicle Reg Plate No (e.g. DL-01-AB-1234) *"
+                      value={vehicleRegNo}
+                      onChange={(e) => setVehicleRegNo(e.target.value)}
+                      style={{ marginBottom: 8, borderRadius: 6 }}
+                    />
+                    <Input
+                      placeholder="Vehicle Make & Model (e.g. Swift Dzire / Activa 6G)"
+                      value={vehicleModel}
+                      onChange={(e) => setVehicleModel(e.target.value)}
+                      style={{ marginBottom: 8, borderRadius: 6 }}
+                    />
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0', marginBottom: 8 }}>
+                      <span style={{ fontSize: 12 }}>Doorstep Vehicle Pickup & Drop?</span>
+                      <Switch checked={needPickup} onChange={(chk) => setNeedPickup(chk)} size="small" />
+                    </div>
+                    {needPickup && (
+                      <Input.TextArea
+                        rows={2}
+                        placeholder="Pickup Address & Landmark *"
+                        value={customerAddress}
+                        onChange={(e) => setCustomerAddress(e.target.value)}
+                        style={{ marginBottom: 8, borderRadius: 6 }}
+                      />
+                    )}
+                  </>
+                )}
+
+                {/* Wholesale Mode */}
                 {businessType === 'wholesale' && (
-                  <Input
-                    placeholder="GSTIN Number (Optional for Tax Invoice)"
-                    value={gstNumber}
-                    onChange={(e) => setGstNumber(e.target.value)}
+                  <>
+                    <Input
+                      placeholder="Buyer GSTIN (15-Digit GST Number) *"
+                      value={gstNumber}
+                      onChange={(e) => setGstNumber(e.target.value)}
+                      style={{ marginBottom: 8, borderRadius: 6 }}
+                    />
+                    <Input
+                      placeholder="Preferred Transporter / Delivery Godown *"
+                      value={transporterName}
+                      onChange={(e) => setTransporterName(e.target.value)}
+                      style={{ marginBottom: 8, borderRadius: 6 }}
+                    />
+                    <Input.TextArea
+                      rows={2}
+                      placeholder="Delivery Address / Dispatch City *"
+                      value={customerAddress}
+                      onChange={(e) => setCustomerAddress(e.target.value)}
+                      style={{ marginBottom: 8, borderRadius: 6 }}
+                    />
+                  </>
+                )}
+
+                {/* Pharmacy Mode */}
+                {businessType === 'pharmacy' && (
+                  <>
+                    <Input
+                      placeholder="Patient Name & Age *"
+                      value={patientAgeGender}
+                      onChange={(e) => setPatientAgeGender(e.target.value)}
+                      style={{ marginBottom: 8, borderRadius: 6 }}
+                    />
+                    <Input.TextArea
+                      rows={2}
+                      placeholder="Home Delivery Address & Landmark *"
+                      value={customerAddress}
+                      onChange={(e) => setCustomerAddress(e.target.value)}
+                      style={{ marginBottom: 8, borderRadius: 6 }}
+                    />
+                    <Input
+                      placeholder="Prescription Reference / Doctor Name"
+                      value={rxPrescriptionNote}
+                      onChange={(e) => setRxPrescriptionNote(e.target.value)}
+                      style={{ marginBottom: 8, borderRadius: 6 }}
+                    />
+                  </>
+                )}
+
+                {/* Jewellery Mode */}
+                {businessType === 'jewellery' && (
+                  <>
+                    <Input.TextArea
+                      rows={2}
+                      placeholder="Customer Address / City *"
+                      value={customerAddress}
+                      onChange={(e) => setCustomerAddress(e.target.value)}
+                      style={{ marginBottom: 8, borderRadius: 6 }}
+                    />
+                    <Input
+                      placeholder="PAN Card Number (Required for bills > ₹2 Lakh)"
+                      value={panNumber}
+                      onChange={(e) => setPanNumber(e.target.value)}
+                      style={{ marginBottom: 8, borderRadius: 6 }}
+                    />
+                  </>
+                )}
+
+                {/* Salon Mode */}
+                {businessType === 'salon' && (
+                  <>
+                    <div style={{ marginBottom: 8 }}>
+                      <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 4 }}>Preferred Appointment Slot:</Text>
+                      <Select
+                        style={{ width: '100%' }}
+                        value={appointmentSlot}
+                        onChange={(v) => setAppointmentSlot(v)}
+                      >
+                        <Select.Option value="Morning (11:00 AM - 2:00 PM)">Morning (11:00 AM - 2:00 PM)</Select.Option>
+                        <Select.Option value="Afternoon (2:00 PM - 5:00 PM)">Afternoon (2:00 PM - 5:00 PM)</Select.Option>
+                        <Select.Option value="Evening (5:00 PM - 9:00 PM)">Evening (5:00 PM - 9:00 PM)</Select.Option>
+                      </Select>
+                    </div>
+                    <Input
+                      placeholder="Preferred Stylist (Optional)"
+                      value={preferredStylist}
+                      onChange={(e) => setPreferredStylist(e.target.value)}
+                      style={{ marginBottom: 8, borderRadius: 6 }}
+                    />
+                  </>
+                )}
+
+                {/* Education Mode */}
+                {businessType === 'education' && (
+                  <>
+                    <Input
+                      placeholder="Class / Subject (e.g. Class 10 CBSE Maths) *"
+                      value={studentClass}
+                      onChange={(e) => setStudentClass(e.target.value)}
+                      style={{ marginBottom: 8, borderRadius: 6 }}
+                    />
+                    <Input.TextArea
+                      rows={2}
+                      placeholder="City / Address *"
+                      value={customerAddress}
+                      onChange={(e) => setCustomerAddress(e.target.value)}
+                      style={{ marginBottom: 8, borderRadius: 6 }}
+                    />
+                  </>
+                )}
+
+                {/* General Delivery Address for other types */}
+                {!['restaurant', 'automobile', 'wholesale', 'pharmacy', 'jewellery', 'education'].includes(businessType) && (
+                  <Input.TextArea
+                    rows={2}
+                    placeholder="Delivery Address & Landmark *"
+                    value={customerAddress}
+                    onChange={(e) => setCustomerAddress(e.target.value)}
                     style={{ marginBottom: 8, borderRadius: 6 }}
                   />
                 )}
+
                 <Input
                   placeholder={theme.notePlaceholder}
                   value={industryNotes}

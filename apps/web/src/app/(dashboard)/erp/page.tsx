@@ -58,6 +58,10 @@ import {
   LockOutlined,
   CameraOutlined,
   SearchOutlined,
+  CrownOutlined,
+  ScissorOutlined,
+  ReadOutlined,
+  ExperimentOutlined,
 } from '@ant-design/icons';
 import { useApp } from '@/context/AppContext';
 import { api } from '@/lib/api';
@@ -123,6 +127,38 @@ const INDUSTRY_CATEGORIES = [
     icon: <CarOutlined style={{ fontSize: 16 }} />,
     color: '#faad14',
     desc: 'Vehicle service job cards, Spare parts billing, Mechanic log',
+  },
+  {
+    key: 'pharmacy',
+    label: 'Pharmacy & Medical',
+    labelHi: 'दवा दुकान व केमिस्ट',
+    icon: <ExperimentOutlined style={{ fontSize: 16 }} />,
+    color: '#059669',
+    desc: 'Batch & Expiry date tracking, Doctor prescription register, Strip/tablet cutting',
+  },
+  {
+    key: 'jewellery',
+    label: 'Jewellery & Gold',
+    labelHi: 'सर्राफा व आभूषण',
+    icon: <CrownOutlined style={{ fontSize: 16 }} />,
+    color: '#d97706',
+    desc: 'Live gold rate bar, Hallmark 916 purity, Making charges & Old gold exchange',
+  },
+  {
+    key: 'salon',
+    label: 'Salon & Spa',
+    labelHi: 'सैलून व ब्यूटी पार्लर',
+    icon: <ScissorOutlined style={{ fontSize: 16 }} />,
+    color: '#db2777',
+    desc: 'Stylist chair booking, Service duration, Staff commission & Bridal packages',
+  },
+  {
+    key: 'education',
+    label: 'Coaching & Education',
+    labelHi: 'कोचिंग व ट्यूशन',
+    icon: <ReadOutlined style={{ fontSize: 16 }} />,
+    color: '#4f46e5',
+    desc: 'Student batch admission, Monthly fee schedule, WhatsApp reminders & Attendance',
   },
 ];
 
@@ -308,6 +344,217 @@ export default function ErpPage() {
       estimatedCost: 2200,
       status: 'Ready for Delivery',
       deliveryDate: 'Today, 2:00 PM',
+    },
+  ]);
+
+  // Pharmacy & Medical State
+  const [pharmacyBatches, setPharmacyBatches] = useState<any[]>([
+    {
+      id: 'BAT-9021',
+      medicine: 'Paracetamol 650mg (Dolo)',
+      batchNo: 'DL-2411',
+      mfgDate: '10/2025',
+      expDate: '09/2027',
+      stockQty: 420,
+      stripRate: 32,
+      rack: 'A-12',
+      status: 'Healthy Stock',
+    },
+    {
+      id: 'BAT-8832',
+      medicine: 'Amoxicillin 500mg (Augmentin)',
+      batchNo: 'AG-8902',
+      mfgDate: '01/2025',
+      expDate: '12/2026',
+      stockQty: 180,
+      stripRate: 195,
+      rack: 'B-04',
+      status: 'Healthy Stock',
+    },
+    {
+      id: 'BAT-7714',
+      medicine: 'Cough Syrup 100ml (Ascoril-D)',
+      batchNo: 'AS-3101',
+      mfgDate: '05/2024',
+      expDate: '11/2026',
+      stockQty: 18,
+      stripRate: 110,
+      rack: 'C-02',
+      status: 'Near Expiry (Warning)',
+    },
+    {
+      id: 'BAT-6509',
+      medicine: 'Azithromycin 500mg (Azee)',
+      batchNo: 'AZ-1092',
+      mfgDate: '03/2024',
+      expDate: '10/2026',
+      stockQty: 4,
+      stripRate: 125,
+      rack: 'A-08',
+      status: 'Low Stock',
+    },
+  ]);
+
+  const [rxPrescriptions, setRxPrescriptions] = useState<any[]>([
+    {
+      id: 'RX-4091',
+      patient: 'Kavita Verma',
+      doctor: 'Dr. S. Nair (MBBS, MD)',
+      date: 'Today, 11:20 AM',
+      drugs: 'Dolo 650 x 10, Azithromycin 500 x 3, Pan-D x 5',
+      rxUploaded: true,
+      status: 'Verified & Dispensed',
+    },
+    {
+      id: 'RX-4092',
+      patient: 'Rahul Saxena',
+      doctor: 'Dr. P. Sen (Orthopedic)',
+      date: 'Today, 11:45 AM',
+      drugs: 'Pain Relief Spray, Calcium 500mg',
+      rxUploaded: true,
+      status: 'Pending Verification',
+    },
+  ]);
+
+  // Jewellery & Bullion State
+  const [bullionRates, setBullionRates] = useState({
+    gold24k: 78500,
+    gold22k: 72000,
+    gold18k: 59000,
+    silver1kg: 92400,
+    lastUpdated: '11:00 AM MCX Live',
+  });
+
+  const [jewelleryItems, setJewelleryItems] = useState<any[]>([
+    {
+      id: 'JWL-01',
+      item: '22K Gold Traditional Bridal Choker',
+      grossWeight: '28.45g',
+      netWeight: '28.00g',
+      purity: '22K (916 BIS Hallmarked)',
+      makingChargePerGm: 450,
+      totalEstimated: 214200,
+      status: 'In Showcase',
+    },
+    {
+      id: 'JWL-02',
+      item: 'Diamond Solitaire Ring 18K Yellow Gold',
+      grossWeight: '4.20g',
+      netWeight: '4.00g',
+      purity: '18K (750 BIS Hallmarked)',
+      makingChargePerGm: 1200,
+      totalEstimated: 78000,
+      status: 'In Showcase',
+    },
+    {
+      id: 'JWL-03',
+      item: '92.5 Sterling Silver Puja Thali Set',
+      grossWeight: '320.00g',
+      netWeight: '320.00g',
+      purity: '925 Silver Hallmarked',
+      makingChargePerGm: 18,
+      totalEstimated: 35328,
+      status: 'Reserved',
+    },
+  ]);
+
+  // Salon & Spa State
+  const [salonAppointments, setSalonAppointments] = useState<any[]>([
+    {
+      id: 'SAL-301',
+      client: 'Pooja Bhatt',
+      phone: '9811223344',
+      stylist: 'Senior Stylist Sneha',
+      service: 'Keratin Hair Spa & Precision Cut',
+      time: '12:00 PM',
+      chair: 'Station 2',
+      amount: 3500,
+      status: 'In Service',
+    },
+    {
+      id: 'SAL-302',
+      client: 'Rohit Khanna',
+      phone: '9877001122',
+      stylist: 'Barber Imran',
+      service: 'Beard Sculpt & Charcoal Facial',
+      time: '12:30 PM',
+      chair: 'Station 4 (Men)',
+      amount: 850,
+      status: 'Next in Queue',
+    },
+    {
+      id: 'SAL-303',
+      client: 'Meera Sen',
+      phone: '9922334455',
+      stylist: 'Nail Artist Priya',
+      service: 'Gel Nail Extensions & Art',
+      time: '01:15 PM',
+      chair: 'Nail Bar 1',
+      amount: 1800,
+      status: 'Confirmed',
+    },
+  ]);
+
+  const [stylistCommissions, setStylistCommissions] = useState<any[]>([
+    { id: 'ST-01', name: 'Sneha Rao', totalClientsToday: 4, todayRevenue: 7800, commissionEarned: 1560, rating: '4.9/5' },
+    { id: 'ST-02', name: 'Imran Khan', totalClientsToday: 6, todayRevenue: 4200, commissionEarned: 840, rating: '4.8/5' },
+    { id: 'ST-03', name: 'Priya Verma', totalClientsToday: 3, todayRevenue: 5100, commissionEarned: 1020, rating: '5.0/5' },
+  ]);
+
+  // Coaching & Education State
+  const [studentBatches, setStudentBatches] = useState<any[]>([
+    {
+      id: 'BATCH-JEE-01',
+      batchName: 'Class 12 - Physics & JEE Advanced Batch',
+      instructor: 'Er. R. K. Gupta',
+      time: 'Mon, Wed, Fri (4:00 PM - 6:00 PM)',
+      enrolled: 32,
+      capacity: 35,
+      monthlyFee: 4500,
+      status: 'Active',
+    },
+    {
+      id: 'BATCH-NEET-02',
+      batchName: 'Class 11 - Medical Biology & NEET Crash',
+      instructor: 'Dr. Sunita Bansal',
+      time: 'Tue, Thu, Sat (5:00 PM - 7:00 PM)',
+      enrolled: 28,
+      capacity: 30,
+      monthlyFee: 4200,
+      status: 'Active',
+    },
+    {
+      id: 'BATCH-COMM-03',
+      batchName: 'Class 12 - Commerce Accounts & GST Prep',
+      instructor: 'CA Mohit Aggarwal',
+      time: 'Daily (7:30 AM - 9:00 AM)',
+      enrolled: 20,
+      capacity: 25,
+      monthlyFee: 3500,
+      status: 'Active',
+    },
+  ]);
+
+  const [feeDues, setFeeDues] = useState<any[]>([
+    {
+      id: 'FEE-201',
+      student: 'Aman Sharma',
+      rollNo: 'JEE-104',
+      batch: 'Class 12 - Physics & JEE',
+      amountDue: 4500,
+      dueDate: '10 Nov 2026',
+      parentPhone: '9871100223',
+      status: 'Payment Reminder Sent',
+    },
+    {
+      id: 'FEE-202',
+      student: 'Divya Nair',
+      rollNo: 'NEET-042',
+      batch: 'Class 11 - Medical Biology',
+      amountDue: 4200,
+      dueDate: '05 Nov 2026',
+      parentPhone: '9819922334',
+      status: 'Paid (Receipt #809)',
     },
   ]);
 
@@ -1828,6 +2075,384 @@ export default function ErpPage() {
               ]}
             />
           </Card>
+        </div>
+      )}
+
+      {/* 8. PHARMACY & MEDICAL MODULE */}
+      {selectedIndustry === 'pharmacy' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <Row gutter={[16, 16]}>
+            <Col xs={12} sm={6}>
+              <Card size="small" style={{ borderRadius: 10, background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+                <Statistic title={<span style={{ color: '#166534', fontWeight: 600 }}>Active Batches</span>} value={pharmacyBatches.length} prefix={<ExperimentOutlined style={{ color: '#16a34a' }} />} />
+              </Card>
+            </Col>
+            <Col xs={12} sm={6}>
+              <Card size="small" style={{ borderRadius: 10, background: '#fffbeb', border: '1px solid #fde68a' }}>
+                <Statistic title={<span style={{ color: '#92400e', fontWeight: 600 }}>Near Expiry Warning</span>} value={1} prefix={<WarningOutlined style={{ color: '#d97706' }} />} valueStyle={{ color: '#d97706' }} />
+              </Card>
+            </Col>
+            <Col xs={12} sm={6}>
+              <Card size="small" style={{ borderRadius: 10, background: '#eff6ff', border: '1px solid #bfdbfe' }}>
+                <Statistic title={<span style={{ color: '#1e40af', fontWeight: 600 }}>Rx Queue Today</span>} value={rxPrescriptions.length} prefix={<MedicineBoxOutlined style={{ color: '#2563eb' }} />} />
+              </Card>
+            </Col>
+            <Col xs={12} sm={6}>
+              <Card size="small" style={{ borderRadius: 10, background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                <Statistic title={<span style={{ color: '#334155', fontWeight: 600 }}>Schedule H Compliance</span>} value={100} suffix="%" prefix={<CheckCircleOutlined style={{ color: '#059669' }} />} />
+              </Card>
+            </Col>
+          </Row>
+
+          <Row gutter={[16, 16]}>
+            <Col xs={24} lg={15}>
+              <Card
+                title={
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontWeight: 700 }}>Medicine Batch & Expiry Date Register</span>
+                    <Button type="primary" size="small" icon={<PlusOutlined />} onClick={() => message.info('Batch Inward entry modal opened')}>
+                      Add Batch Inward
+                    </Button>
+                  </div>
+                }
+                style={{ borderRadius: 12 }}
+              >
+                <Table
+                  dataSource={pharmacyBatches}
+                  rowKey="id"
+                  size="small"
+                  scroll={{ x: 650 }}
+                  columns={[
+                    { title: 'Medicine Name', dataIndex: 'medicine', key: 'medicine', render: (t) => <Text strong>{t}</Text> },
+                    { title: 'Batch #', dataIndex: 'batchNo', key: 'batchNo', render: (t) => <Text code>{t}</Text> },
+                    { title: 'Rack', dataIndex: 'rack', key: 'rack' },
+                    {
+                      title: 'Expiry',
+                      dataIndex: 'expDate',
+                      key: 'expDate',
+                      render: (d, r) => (
+                        <Tag color={r.status.includes('Warning') ? 'error' : 'default'}>{d}</Tag>
+                      ),
+                    },
+                    { title: 'Stock', dataIndex: 'stockQty', key: 'stockQty', render: (q) => q + ' strips' },
+                    { title: 'Strip MRP', dataIndex: 'stripRate', key: 'stripRate', render: (r) => '₹' + r },
+                    {
+                      title: 'Status',
+                      dataIndex: 'status',
+                      key: 'status',
+                      render: (s) => (
+                        <Tag color={s === 'Healthy Stock' ? 'green' : s.includes('Warning') ? 'orange' : 'red'}>{s}</Tag>
+                      ),
+                    },
+                  ]}
+                />
+              </Card>
+            </Col>
+
+            <Col xs={24} lg={9}>
+              <Card
+                title={
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontWeight: 700 }}>Doctor Prescription (Rx) Log</span>
+                    <Tag color="cyan">Schedule H1 Verified</Tag>
+                  </div>
+                }
+                style={{ borderRadius: 12 }}
+              >
+                <List
+                  dataSource={rxPrescriptions}
+                  renderItem={(item) => (
+                    <Card size="small" style={{ marginBottom: 12, borderRadius: 8, background: '#f8fafc' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <Text strong style={{ fontSize: 14 }}>{item.patient}</Text>
+                          <div style={{ fontSize: 12, color: '#64748b' }}>{item.doctor}</div>
+                        </div>
+                        <Tag color={item.status === 'Verified & Dispensed' ? 'green' : 'orange'}>{item.status}</Tag>
+                      </div>
+                      <div style={{ margin: '8px 0', fontSize: 13, background: '#ffffff', padding: '6px 10px', borderRadius: 6, border: '1px solid #e2e8f0' }}>
+                        <Text type="secondary">Rx Medicines: </Text>
+                        <Text strong>{item.drugs}</Text>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: 11, color: '#94a3b8' }}>{item.id} | {item.date}</span>
+                        <Space>
+                          <Button size="small" icon={<PrinterOutlined />} onClick={() => message.success('Prescription label generated for ' + item.patient)}>Label</Button>
+                          <Button size="small" type="primary" ghost icon={<WhatsAppOutlined />} onClick={() => message.success('WhatsApp reminder sent to ' + item.patient)}>Notify</Button>
+                        </Space>
+                      </div>
+                    </Card>
+                  )}
+                />
+              </Card>
+            </Col>
+          </Row>
+        </div>
+      )}
+
+      {/* 9. JEWELLERY & GOLD BULLION MODULE */}
+      {selectedIndustry === 'jewellery' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <Card
+            style={{
+              borderRadius: 12,
+              background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
+              border: '1px solid #fde68a',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <CrownOutlined style={{ fontSize: 22, color: '#d97706' }} />
+                <div>
+                  <Text strong style={{ fontSize: 16, color: '#92400e' }}>Live Daily Bullion & Metal Rate Board</Text>
+                  <div style={{ fontSize: 12, color: '#b45309' }}>Market benchmark: {bullionRates.lastUpdated}</div>
+                </div>
+              </div>
+              <Button size="small" type="primary" style={{ background: '#d97706', borderColor: '#d97706' }} onClick={() => message.info('Bullion rates updated')}>
+                Update Board Rates
+              </Button>
+            </div>
+            <Row gutter={[16, 12]}>
+              <Col xs={12} sm={6}>
+                <div style={{ background: '#ffffff', padding: '10px 14px', borderRadius: 8, border: '1px solid #fcd34d' }}>
+                  <Text type="secondary" style={{ fontSize: 12 }}>24K Pure Gold (10g)</Text>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: '#b45309' }}>₹{bullionRates.gold24k.toLocaleString('en-IN')}</div>
+                </div>
+              </Col>
+              <Col xs={12} sm={6}>
+                <div style={{ background: '#ffffff', padding: '10px 14px', borderRadius: 8, border: '1px solid #fcd34d' }}>
+                  <Text type="secondary" style={{ fontSize: 12 }}>22K Hallmark 916 (10g)</Text>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: '#b45309' }}>₹{bullionRates.gold22k.toLocaleString('en-IN')}</div>
+                </div>
+              </Col>
+              <Col xs={12} sm={6}>
+                <div style={{ background: '#ffffff', padding: '10px 14px', borderRadius: 8, border: '1px solid #fcd34d' }}>
+                  <Text type="secondary" style={{ fontSize: 12 }}>18K Diamond Gold (10g)</Text>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: '#b45309' }}>₹{bullionRates.gold18k.toLocaleString('en-IN')}</div>
+                </div>
+              </Col>
+              <Col xs={12} sm={6}>
+                <div style={{ background: '#ffffff', padding: '10px 14px', borderRadius: 8, border: '1px solid #cbd5e1' }}>
+                  <Text type="secondary" style={{ fontSize: 12 }}>925 Fine Silver (1 kg)</Text>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: '#475569' }}>₹{bullionRates.silver1kg.toLocaleString('en-IN')}</div>
+                </div>
+              </Col>
+            </Row>
+          </Card>
+
+          <Card
+            title={
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontWeight: 700 }}>Hallmarked Jewellery Stock & Making Charges</span>
+                <Button type="primary" size="small" icon={<PlusOutlined />} onClick={() => message.info('Add new Jewellery ornament')}>
+                  Add Jewellery Item
+                </Button>
+              </div>
+            }
+            style={{ borderRadius: 12 }}
+          >
+            <Table
+              dataSource={jewelleryItems}
+              rowKey="id"
+              scroll={{ x: 750 }}
+              columns={[
+                { title: 'Tag #', dataIndex: 'id', key: 'id', render: (t) => <Text code>{t}</Text> },
+                { title: 'Ornament Description', dataIndex: 'item', key: 'item', render: (t) => <Text strong>{t}</Text> },
+                { title: 'Gross / Net Wt', key: 'weight', render: (_, r) => <span>{r.grossWeight} / {r.netWeight}</span> },
+                { title: 'Purity & Hallmarking', dataIndex: 'purity', key: 'purity', render: (p) => <Tag color="gold">{p}</Tag> },
+                { title: 'Making Charge / g', dataIndex: 'makingChargePerGm', key: 'makingChargePerGm', render: (m) => '₹' + m + '/g' },
+                { title: 'Est. Valuation', dataIndex: 'totalEstimated', key: 'totalEstimated', render: (v) => <Tag color="green">₹{v.toLocaleString('en-IN')}</Tag> },
+                { title: 'Location', dataIndex: 'status', key: 'status', render: (s) => <Tag color={s === 'In Showcase' ? 'blue' : 'purple'}>{s}</Tag> },
+              ]}
+            />
+          </Card>
+        </div>
+      )}
+
+      {/* 10. SALON & SPA MODULE */}
+      {selectedIndustry === 'salon' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <Row gutter={[16, 16]}>
+            <Col xs={12} sm={6}>
+              <Card size="small" style={{ borderRadius: 10, background: '#fdf2f8', border: '1px solid #fbcfe8' }}>
+                <Statistic title={<span style={{ color: '#9d174d', fontWeight: 600 }}>Active Chairs In Use</span>} value={3} suffix="/ 6" prefix={<ScissorOutlined style={{ color: '#db2777' }} />} />
+              </Card>
+            </Col>
+            <Col xs={12} sm={6}>
+              <Card size="small" style={{ borderRadius: 10, background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+                <Statistic title={<span style={{ color: '#166534', fontWeight: 600 }}>Appointments Today</span>} value={salonAppointments.length} prefix={<CheckCircleOutlined style={{ color: '#16a34a' }} />} />
+              </Card>
+            </Col>
+            <Col xs={12} sm={6}>
+              <Card size="small" style={{ borderRadius: 10, background: '#eff6ff', border: '1px solid #bfdbfe' }}>
+                <Statistic title={<span style={{ color: '#1e40af', fontWeight: 600 }}>Stylist Total Revenue</span>} value={17100} prefix="₹" />
+              </Card>
+            </Col>
+            <Col xs={12} sm={6}>
+              <Card size="small" style={{ borderRadius: 10, background: '#faf5ff', border: '1px solid #e9d5ff' }}>
+                <Statistic title={<span style={{ color: '#6b21a8', fontWeight: 600 }}>Avg Service Duration</span>} value={45} suffix="mins" />
+              </Card>
+            </Col>
+          </Row>
+
+          <Row gutter={[16, 16]}>
+            <Col xs={24} lg={15}>
+              <Card
+                title={
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontWeight: 700 }}>Stylist Chair Schedule & Live Queue</span>
+                    <Button type="primary" size="small" icon={<PlusOutlined />} onClick={() => message.info('Book new salon appointment')}>
+                      Book Appointment
+                    </Button>
+                  </div>
+                }
+                style={{ borderRadius: 12 }}
+              >
+                <Table
+                  dataSource={salonAppointments}
+                  rowKey="id"
+                  size="small"
+                  scroll={{ x: 650 }}
+                  columns={[
+                    { title: 'Token & Time', key: 'time', render: (_, r) => <span><Text code>{r.id}</Text> <br /><Text strong>{r.time}</Text></span> },
+                    { title: 'Client', dataIndex: 'client', key: 'client', render: (c, r) => <span><Text strong>{c}</Text><br /><Text type="secondary" style={{ fontSize: 12 }}>{r.phone}</Text></span> },
+                    { title: 'Stylist & Station', key: 'stylist', render: (_, r) => <span><Tag color="magenta">{r.stylist}</Tag><br /><Text type="secondary" style={{ fontSize: 11 }}>{r.chair}</Text></span> },
+                    { title: 'Service Package', dataIndex: 'service', key: 'service' },
+                    { title: 'Billing', dataIndex: 'amount', key: 'amount', render: (a) => <Tag color="green">₹{a}</Tag> },
+                    {
+                      title: 'Status',
+                      dataIndex: 'status',
+                      key: 'status',
+                      render: (s) => (
+                        <Tag color={s === 'In Service' ? 'processing' : s === 'Next in Queue' ? 'orange' : 'green'}>{s}</Tag>
+                      ),
+                    },
+                  ]}
+                />
+              </Card>
+            </Col>
+
+            <Col xs={24} lg={9}>
+              <Card title={<span style={{ fontWeight: 700 }}>Stylist Daily Commission Tracker</span>} style={{ borderRadius: 12 }}>
+                <List
+                  dataSource={stylistCommissions}
+                  renderItem={(st) => (
+                    <Card size="small" style={{ marginBottom: 10, borderRadius: 8, background: '#f8fafc' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <Text strong style={{ fontSize: 14 }}>{st.name}</Text>
+                          <div style={{ fontSize: 12, color: '#64748b' }}>Rating: {st.rating} | {st.totalClientsToday} Clients Served</div>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <Tag color="cyan">Revenue: ₹{st.todayRevenue}</Tag>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: '#059669', marginTop: 4 }}>
+                            Commission: ₹{st.commissionEarned}
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  )}
+                />
+              </Card>
+            </Col>
+          </Row>
+        </div>
+      )}
+
+      {/* 11. COACHING & EDUCATION MODULE */}
+      {selectedIndustry === 'education' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <Row gutter={[16, 16]}>
+            <Col xs={12} sm={6}>
+              <Card size="small" style={{ borderRadius: 10, background: '#eef2ff', border: '1px solid #c7d2fe' }}>
+                <Statistic title={<span style={{ color: '#3730a3', fontWeight: 600 }}>Active Batches</span>} value={studentBatches.length} prefix={<ReadOutlined style={{ color: '#4f46e5' }} />} />
+              </Card>
+            </Col>
+            <Col xs={12} sm={6}>
+              <Card size="small" style={{ borderRadius: 10, background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+                <Statistic title={<span style={{ color: '#166534', fontWeight: 600 }}>Total Enrolled</span>} value={80} suffix="Students" prefix={<TeamOutlined style={{ color: '#16a34a' }} />} />
+              </Card>
+            </Col>
+            <Col xs={12} sm={6}>
+              <Card size="small" style={{ borderRadius: 10, background: '#eff6ff', border: '1px solid #bfdbfe' }}>
+                <Statistic title={<span style={{ color: '#1e40af', fontWeight: 600 }}>Fee Realization</span>} value={92} suffix="%" />
+              </Card>
+            </Col>
+            <Col xs={12} sm={6}>
+              <Card size="small" style={{ borderRadius: 10, background: '#fffbeb', border: '1px solid #fde68a' }}>
+                <Statistic title={<span style={{ color: '#92400e', fontWeight: 600 }}>Pending Dues Today</span>} value={8700} prefix="₹" valueStyle={{ color: '#d97706' }} />
+              </Card>
+            </Col>
+          </Row>
+
+          <Row gutter={[16, 16]}>
+            <Col xs={24} lg={14}>
+              <Card
+                title={
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontWeight: 700 }}>Active Student Batches & Timetable</span>
+                    <Button type="primary" size="small" icon={<PlusOutlined />} onClick={() => message.info('Create new student batch')}>
+                      Create Batch
+                    </Button>
+                  </div>
+                }
+                style={{ borderRadius: 12 }}
+              >
+                <Table
+                  dataSource={studentBatches}
+                  rowKey="id"
+                  size="small"
+                  scroll={{ x: 650 }}
+                  columns={[
+                    { title: 'Batch Details', key: 'batch', render: (_, r) => <span><Text strong>{r.batchName}</Text><br /><Text type="secondary" style={{ fontSize: 12 }}>Faculty: {r.instructor}</Text></span> },
+                    { title: 'Schedule & Time', dataIndex: 'time', key: 'time' },
+                    { title: 'Enrollment', key: 'enrolled', render: (_, r) => <Tag color="blue">{r.enrolled} / {r.capacity}</Tag> },
+                    { title: 'Monthly Fee', dataIndex: 'monthlyFee', key: 'monthlyFee', render: (f) => '₹' + f + '/mo' },
+                    {
+                      title: 'Status',
+                      dataIndex: 'status',
+                      key: 'status',
+                      render: (s) => <Tag color="green">{s}</Tag>,
+                    },
+                  ]}
+                />
+              </Card>
+            </Col>
+
+            <Col xs={24} lg={10}>
+              <Card title={<span style={{ fontWeight: 700 }}>Monthly Fee Dues & WhatsApp Reminder</span>} style={{ borderRadius: 12 }}>
+                <List
+                  dataSource={feeDues}
+                  renderItem={(fd) => (
+                    <Card size="small" style={{ marginBottom: 12, borderRadius: 8, background: '#f8fafc' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <Text strong style={{ fontSize: 14 }}>{fd.student}</Text>
+                          <div style={{ fontSize: 12, color: '#64748b' }}>Roll: {fd.rollNo} | {fd.batch}</div>
+                        </div>
+                        <Tag color={fd.status.includes('Paid') ? 'green' : 'orange'}>{fd.status}</Tag>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
+                        <div>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: '#dc2626' }}>₹{fd.amountDue} Due</span>
+                          <div style={{ fontSize: 11, color: '#94a3b8' }}>Due Date: {fd.dueDate}</div>
+                        </div>
+                        <Button
+                          size="small"
+                          type="primary"
+                          ghost
+                          icon={<WhatsAppOutlined />}
+                          onClick={() => message.success('WhatsApp fee receipt & reminder sent to parent ' + fd.parentPhone)}
+                        >
+                          Send Reminder
+                        </Button>
+                      </div>
+                    </Card>
+                  )}
+                />
+              </Card>
+            </Col>
+          </Row>
         </div>
       )}
 
