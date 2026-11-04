@@ -1061,4 +1061,59 @@ export class AuthService {
       }).catch(() => {});
     }
   }
+
+  async exitImpersonation(userPayload: any): Promise<{ success: boolean; tokens: AuthTokens; user: AuthenticatedUser }> {
+    if (!userPayload?.impersonatedBy && !userPayload?.isSuperAdmin) {
+      throw new UnauthorizedException('Not currently impersonating a business workspace.');
+    }
+
+    const configuredAdminEmail = (process.env.ADMIN_EMAIL || AuthService.SUPER_ADMIN_EMAIL).toLowerCase().trim();
+    const configuredAdminName = AuthService.SUPER_ADMIN_NAME;
+
+    let user = await prisma.user.findFirst({
+      where: { email: configuredAdminEmail, deletedAt: null },
+      include: { tenant: true, role: true },
+    });
+
+    const userId = user?.id || 'user-admin-001';
+    const tenantId = user?.tenantId || 'tenant-ginie-001';
+
+    const tokens = this.generateTokens({
+      id: userId,
+      tenantId,
+      email: configuredAdminEmail,
+      isSuperAdmin: true,
+    });
+
+    const ownerPermissions = {
+      leads: { view: true, create: true, edit: true, delete: true, export: true },
+      deals: { view: true, create: true, edit: true, delete: true, export: true },
+      contacts: { view: true, create: true, edit: true, delete: true, export: true },
+      tasks: { view: true, create: true, edit: true, delete: true, export: true },
+      discovery: { view: true, search: true, import: true },
+      whatsapp: { view: true, send: true, manage: true },
+      billing: { view: true, create: true, edit: true },
+      settings: { view: true, edit: true },
+    };
+
+    const profile: AuthenticatedUser = {
+      id: userId,
+      tenantId,
+      name: configuredAdminName,
+      email: configuredAdminEmail,
+      role: 'Master Admin',
+      permissions: ownerPermissions,
+      companyName: 'GINIE Platform HQ',
+      companyBrandColor: '#1677ff',
+      language: user?.language || 'en',
+      isSuperAdmin: true,
+    };
+
+    return {
+      success: true,
+      tokens,
+      user: profile,
+    };
+  }
+
 }

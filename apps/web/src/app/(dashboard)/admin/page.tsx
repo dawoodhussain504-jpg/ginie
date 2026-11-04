@@ -56,6 +56,8 @@ import {
   CloseOutlined,
   UploadOutlined,
   DollarCircleOutlined,
+  ArrowLeftOutlined,
+  LoginOutlined,
 } from '@ant-design/icons';
 import { useApp } from '@/context/AppContext';
 import { useRouter } from 'next/navigation';
@@ -125,36 +127,56 @@ export default function AdminMasterConsolePage() {
   // Auto-restore Super Admin session if arriving from an impersonated context
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const backupStr = localStorage.getItem('ginie_master_backup');
-    const masterToken = sessionStorage.getItem('admin_master_token');
 
-    if (backupStr || masterToken) {
-      try {
-        let token = masterToken;
-        let userData: any = null;
-        let refreshToken: string | undefined = undefined;
+    if (user && !user.isSuperAdmin) {
+      // 1. Try server-side exit-impersonation first
+      api.post('/api/auth/exit-impersonation')
+        .then((res) => {
+          if (res?.tokens?.accessToken && res?.user) {
+            login(res.tokens.accessToken, res.user, res.tokens.refreshToken);
+            localStorage.removeItem('ginie_master_backup');
+            sessionStorage.removeItem('admin_master_token');
+            sessionStorage.removeItem('admin_master_user');
+            sessionStorage.removeItem('admin_master_refresh_token');
+            message.success('Master Admin session restored!');
+            window.location.reload();
+          }
+        })
+        .catch(() => {});
 
-        if (backupStr) {
-          const parsed = JSON.parse(backupStr);
-          token = parsed.token || token;
-          userData = parsed.user;
-          refreshToken = parsed.refreshToken || undefined;
-        } else {
-          const userStr = sessionStorage.getItem('admin_master_user');
-          if (userStr) userData = JSON.parse(userStr);
-          refreshToken = sessionStorage.getItem('admin_master_refresh_token') || undefined;
-        }
+      // 2. Try local master backup
+      const backupStr = localStorage.getItem('ginie_master_backup');
+      const masterToken = sessionStorage.getItem('admin_master_token');
 
-        if (token && userData && userData.isSuperAdmin) {
-          login(token, userData, refreshToken);
-          localStorage.removeItem('ginie_master_backup');
-          sessionStorage.removeItem('admin_master_token');
-          sessionStorage.removeItem('admin_master_user');
-          sessionStorage.removeItem('admin_master_refresh_token');
-          message.success('Master Admin session restored!');
-          return;
-        }
-      } catch {}
+      if (backupStr || masterToken) {
+        try {
+          let token = masterToken;
+          let userData: any = null;
+          let refreshToken: string | undefined = undefined;
+
+          if (backupStr) {
+            const parsed = JSON.parse(backupStr);
+            token = parsed.token || token;
+            userData = parsed.user;
+            refreshToken = parsed.refreshToken || undefined;
+          } else {
+            const userStr = sessionStorage.getItem('admin_master_user');
+            if (userStr) userData = JSON.parse(userStr);
+            refreshToken = sessionStorage.getItem('admin_master_refresh_token') || undefined;
+          }
+
+          if (token && userData && userData.isSuperAdmin) {
+            login(token, userData, refreshToken);
+            localStorage.removeItem('ginie_master_backup');
+            sessionStorage.removeItem('admin_master_token');
+            sessionStorage.removeItem('admin_master_user');
+            sessionStorage.removeItem('admin_master_refresh_token');
+            message.success('Master Admin session restored!');
+            window.location.reload();
+            return;
+          }
+        } catch {}
+      }
     }
   }, [user, login]);
 
@@ -458,32 +480,87 @@ export default function AdminMasterConsolePage() {
 
   // Access Guard
   if (user && !user.isSuperAdmin) {
-    const hasBackup = typeof window !== 'undefined' && (
-      !!localStorage.getItem('ginie_master_backup') ||
-      !!sessionStorage.getItem('admin_master_token')
+    const isImpersonated = !!(
+      (user as any)?.impersonated ||
+      (typeof window !== 'undefined' && (
+        !!localStorage.getItem('ginie_master_backup') ||
+        !!sessionStorage.getItem('admin_master_token')
+      ))
     );
 
-    if (hasBackup) {
-      return (
-        <div style={{ padding: '120px 20px', textAlign: 'center' }}>
-          <Spin size="large" />
-          <div style={{ marginTop: 16 }}>
-            <Text strong style={{ fontSize: 16 }}>Restoring Master Admin Console...</Text>
-          </div>
-        </div>
-      );
-    }
-
     return (
-      <div style={{ padding: '60px 20px', maxWidth: 600, margin: '0 auto' }}>
+      <div style={{ padding: '60px 20px', maxWidth: 640, margin: '0 auto' }}>
         <Result
           status="403"
           title="Super Admin Access Only"
-          subTitle="Aapke account ke paas Platform Master Console ka access nahi hai. Ye page sirf platform owner ke liye reserved hai."
+          subTitle={
+            isImpersonated
+              ? "You are currently viewing a client workspace in impersonation mode. Click below to return to the Master Console."
+              : "Aapke account ke paas Platform Master Console ka access nahi hai. Ye page sirf platform owner ke liye reserved hai."
+          }
           extra={
-            <Button type="primary" icon={<HomeOutlined />} onClick={() => router.push('/dashboard')}>
-              Go to My CRM Workspace
-            </Button>
+            <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+              <Button
+                type="primary"
+                danger
+                size="large"
+                icon={<ArrowLeftOutlined />}
+                onClick={async () => {
+                  try {
+                    const res = await api.post('/api/auth/exit-impersonation').catch(() => null);
+                    if (res?.tokens?.accessToken && res?.user) {
+                      login(res.tokens.accessToken, res.user, res.tokens.refreshToken);
+                      localStorage.removeItem('ginie_master_backup');
+                      sessionStorage.removeItem('admin_master_token');
+                      sessionStorage.removeItem('admin_master_user');
+                      sessionStorage.removeItem('admin_master_refresh_token');
+                      message.success('Master Admin session restored!');
+                      window.location.reload();
+                      return;
+                    }
+                  } catch {}
+
+                  const backupStr = localStorage.getItem('ginie_master_backup');
+                  if (backupStr) {
+                    try {
+                      const backup = JSON.parse(backupStr);
+                      login(backup.token, backup.user, backup.refreshToken);
+                      localStorage.removeItem('ginie_master_backup');
+                      window.location.reload();
+                      return;
+                    } catch {}
+                  }
+
+                  localStorage.removeItem('ginie_token');
+                  localStorage.removeItem('ginie_user');
+                  window.location.href = '/login?admin=1';
+                }}
+                style={{ width: '100%', fontWeight: 700 }}
+              >
+                Exit Impersonation & Restore Admin Console
+              </Button>
+
+              <Button
+                icon={<LoginOutlined />}
+                onClick={() => {
+                  localStorage.removeItem('ginie_token');
+                  localStorage.removeItem('ginie_user');
+                  window.location.href = '/login';
+                }}
+                style={{ width: '100%' }}
+              >
+                Sign in as Super Admin
+              </Button>
+
+              <Button
+                type="text"
+                icon={<HomeOutlined />}
+                onClick={() => router.push('/dashboard')}
+                style={{ width: '100%' }}
+              >
+                Return to Workspace Dashboard
+              </Button>
+            </Space>
           }
         />
       </div>

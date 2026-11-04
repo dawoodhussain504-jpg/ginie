@@ -95,13 +95,28 @@ export default function DashboardLayout({
     }
   }, [pathname, user]);
 
-  const handleExitImpersonation = () => {
+  const handleExitImpersonation = async () => {
     try {
+      // 1. Call secure backend endpoint to restore Super Admin tokens & profile
+      const res = await api.post('/api/auth/exit-impersonation').catch(() => null);
+
+      if (res?.tokens?.accessToken && res?.user) {
+        sessionStorage.removeItem('admin_master_token');
+        sessionStorage.removeItem('admin_master_user');
+        sessionStorage.removeItem('admin_master_refresh_token');
+        localStorage.removeItem('ginie_master_backup');
+
+        login(res.tokens.accessToken, res.user, res.tokens.refreshToken);
+        message.success('Master Admin session restored successfully!');
+        window.location.href = '/admin';
+        return;
+      }
+
+      // 2. Local fallback if offline or backend call returned null
       let masterToken = sessionStorage.getItem('admin_master_token');
       let masterUserStr = sessionStorage.getItem('admin_master_user');
       let masterRefreshToken = sessionStorage.getItem('admin_master_refresh_token');
 
-      // Check localStorage backup if sessionStorage is missing (e.g. across new tabs or reloads)
       if (!masterToken || !masterUserStr) {
         const backupStr = localStorage.getItem('ginie_master_backup');
         if (backupStr) {
@@ -116,22 +131,18 @@ export default function DashboardLayout({
 
       if (masterToken && masterUserStr) {
         const masterUser = JSON.parse(masterUserStr);
-
-        // 1. Sync React context and localStorage directly via login()
-        login(masterToken, masterUser, masterRefreshToken || undefined);
-
-        // 2. Clean all impersonation backup artifacts
         sessionStorage.removeItem('admin_master_token');
         sessionStorage.removeItem('admin_master_user');
         sessionStorage.removeItem('admin_master_refresh_token');
         localStorage.removeItem('ginie_master_backup');
 
-        message.success('Master Admin session restored! Redirecting to Master Console...');
+        login(masterToken, masterUser, masterRefreshToken || undefined);
+        message.success('Master Admin session restored!');
         window.location.href = '/admin';
         return;
       }
 
-      // If backup is missing, navigate directly to /admin
+      // 3. Fallback: navigate to admin
       message.info('Redirecting to Master Console...');
       window.location.href = '/admin';
     } catch (err) {
@@ -301,7 +312,7 @@ export default function DashboardLayout({
         },
       ],
     },
-    ...(user?.isSuperAdmin
+    ...(user?.isSuperAdmin || isImpersonating || (user as any)?.impersonated
       ? [
           {
             type: 'group',
@@ -314,7 +325,11 @@ export default function DashboardLayout({
               {
                 key: '/admin',
                 icon: <SafetyCertificateOutlined style={{ color: '#faad14' }} />,
-                label: (
+                label: isImpersonating ? (
+                  <span onClick={handleExitImpersonation} style={{ cursor: 'pointer', color: '#d48806', fontWeight: 600 }}>
+                    Exit to Master Console
+                  </span>
+                ) : (
                   <Link href="/admin">
                     <span style={{ color: '#d48806', fontWeight: 600 }}>Master Console</span>
                   </Link>
@@ -355,6 +370,21 @@ export default function DashboardLayout({
           </div>
         ),
       },
+      ...(isImpersonating || (user as any)?.impersonated
+        ? [
+            {
+              key: 'exit-impersonation-dropdown',
+              icon: <ArrowLeftOutlined style={{ color: '#ef4444' }} />,
+              danger: true,
+              label: (
+                <div onClick={handleExitImpersonation} style={{ fontWeight: 700, color: '#ef4444' }}>
+                  Exit Impersonation & Return to Master Console
+                </div>
+              ),
+            },
+            { type: 'divider' as const },
+          ]
+        : []),
       { type: 'divider' as const },
       {
         key: 'digital-store',
