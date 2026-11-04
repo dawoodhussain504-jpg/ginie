@@ -139,6 +139,20 @@ export default function ErpPage() {
   const [redeemLoyalty, setRedeemLoyalty] = useState<boolean>(false);
   const [isListeningPos, setIsListeningPos] = useState<boolean>(false);
 
+  // Barcode & Fast Scanner State
+  const [barcodeInput, setBarcodeInput] = useState('');
+
+  // Real-time Stock Adjustment State
+  const [stockModalOpen, setStockModalOpen] = useState(false);
+  const [selectedStockProduct, setSelectedStockProduct] = useState<any>(null);
+  const [stockAdjustmentQty, setStockAdjustmentQty] = useState<number>(10);
+  const [stockAdjustmentType, setStockAdjustmentType] = useState<'inward' | 'outward'>('inward');
+  const [stockAdjustmentReason, setStockAdjustmentReason] = useState<string>('Vendor Purchase Inward');
+
+  // Daily Cash Register (Daybook) State
+  const [openingCash, setOpeningCash] = useState<number>(2000);
+  const [cashDrawerModalOpen, setCashDrawerModalOpen] = useState<boolean>(false);
+
   // Offline Bill Queue state
   const [offlineBills, setOfflineBills] = useState<any[]>([]);
   const [offlineModalOpen, setOfflineModalOpen] = useState(false);
@@ -330,8 +344,77 @@ export default function ErpPage() {
     }
   };
 
+  // Pleasant checkout scanner beep via Web Audio API
+  const playBeep = () => {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (AudioCtx) {
+        const ctx = new AudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        gain.gain.setValueAtTime(0.08, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.12);
+      }
+    } catch {}
+  };
+
+  // Instant Barcode Scan & Lookup
+  const handleBarcodeScan = () => {
+    const q = barcodeInput.trim().toLowerCase();
+    if (!q) return;
+
+    const matched = products.find(
+      (p) =>
+        (p.code && p.code.toLowerCase() === q) ||
+        (p.sku && p.sku.toLowerCase() === q) ||
+        (p.name && p.name.toLowerCase() === q) ||
+        (p.name && p.name.toLowerCase().includes(q))
+    );
+
+    if (matched) {
+      handlePosAddToCart(matched);
+      playBeep();
+      message.success(`Scanned: ${matched.name} added to cart`);
+      setBarcodeInput('');
+    } else {
+      message.warning(`Barcode or SKU "${barcodeInput}" not found in catalog.`);
+    }
+  };
+
+  const handleOpenStockModal = (product: any) => {
+    setSelectedStockProduct(product);
+    setStockAdjustmentQty(10);
+    setStockAdjustmentType('inward');
+    setStockAdjustmentReason('Vendor Purchase Inward');
+    setStockModalOpen(true);
+  };
+
+  const handleStockAdjustSubmit = async () => {
+    if (!selectedStockProduct) return;
+    const delta = stockAdjustmentType === 'inward' ? Math.abs(stockAdjustmentQty) : -Math.abs(stockAdjustmentQty);
+    try {
+      await api.post('/api/billing/erp/inventory/adjust', {
+        productId: selectedStockProduct.id,
+        delta,
+        reason: stockAdjustmentReason,
+      });
+      message.success(`Stock updated for ${selectedStockProduct.name}!`);
+      setStockModalOpen(false);
+      loadErpData();
+    } catch {
+      message.error('Failed to update stock in database.');
+    }
+  };
+
   // POS Add item to cart
   const handlePosAddToCart = (product: any) => {
+    playBeep();
     setPosCart((prev) => {
       const existing = prev.find((item) => item.id === product.id);
       if (existing) {
@@ -489,6 +572,21 @@ export default function ErpPage() {
     }
   };
 
+  // Daily Galla / Cash Register Calculations
+  const todayInvoices = invoices.filter((inv) => {
+    if (!inv.createdAt) return false;
+    const d = new Date(inv.createdAt);
+    const today = new Date();
+    return d.toDateString() === today.toDateString();
+  });
+  const cashSalesToday = todayInvoices
+    .filter((i) => (i.paymentMethod || '').toLowerCase() === 'cash')
+    .reduce((sum, i) => sum + Number(i.total || 0), 0);
+  const upiSalesToday = todayInvoices
+    .filter((i) => (i.paymentMethod || '').toLowerCase() === 'upi')
+    .reduce((sum, i) => sum + Number(i.total || 0), 0);
+  const totalCashInDrawer = openingCash + cashSalesToday;
+
   const activeCategoryMeta = INDUSTRY_CATEGORIES.find((c) => c.key === selectedIndustry) || INDUSTRY_CATEGORIES[0];
 
   return (
@@ -641,6 +739,73 @@ export default function ErpPage() {
       {/* 1. RETAIL & TRADING MODULE */}
       {selectedIndustry === 'retail' && (
         <div>
+          {/* Daily Galla / Cash Register (Daybook) Banner */}
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: 12,
+              padding: '14px 20px',
+              marginBottom: 20,
+              border: '1px solid #e2e8f0',
+              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: 12,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+              <div
+                style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 10,
+                  background: '#ecfdf5',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <DollarCircleOutlined style={{ fontSize: 20, color: '#059669' }} />
+              </div>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 14, color: '#0f172a' }}>
+                  Daily Cash Drawer & Daybook (दैनिक रोकड़ बही)
+                </div>
+                <div style={{ fontSize: 12, color: '#64748b' }}>
+                  Real-time counter cash, UPI collections & drawer reconciliation
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+              <div style={{ textAlign: 'right' }}>
+                <span style={{ fontSize: 11, color: '#64748b', display: 'block' }}>Opening Cash:</span>
+                <span style={{ fontWeight: 700, fontSize: 14 }}>₹{openingCash.toLocaleString('en-IN')}</span>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <span style={{ fontSize: 11, color: '#64748b', display: 'block' }}>Today's Cash Sale:</span>
+                <span style={{ fontWeight: 700, fontSize: 14, color: '#16a34a' }}>+₹{cashSalesToday.toLocaleString('en-IN')}</span>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <span style={{ fontSize: 11, color: '#64748b', display: 'block' }}>Today's UPI Sale:</span>
+                <span style={{ fontWeight: 700, fontSize: 14, color: '#2563eb' }}>+₹{upiSalesToday.toLocaleString('en-IN')}</span>
+              </div>
+              <div style={{ textAlign: 'right', padding: '4px 12px', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                <span style={{ fontSize: 11, color: '#64748b', display: 'block' }}>Drawer Total Cash:</span>
+                <span style={{ fontWeight: 900, fontSize: 16, color: '#0f172a' }}>₹{totalCashInDrawer.toLocaleString('en-IN')}</span>
+              </div>
+              <Button
+                size="middle"
+                onClick={() => setCashDrawerModalOpen(true)}
+                style={{ borderRadius: 8, fontWeight: 600 }}
+              >
+                Reconcile Drawer
+              </Button>
+            </div>
+          </div>
+
           <Row gutter={[20, 20]}>
             {/* Left: Quick POS Billing Counter */}
             <Col xs={24} lg={15}>
@@ -655,6 +820,26 @@ export default function ErpPage() {
                 }
                 style={{ borderRadius: 12, height: '100%' }}
               >
+                {/* Instant Barcode Scanner Input */}
+                <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                  <Input
+                    prefix={<BarcodeOutlined style={{ color: '#1677ff' }} />}
+                    placeholder="Scan Barcode or type SKU & press Enter (बारकोड स्कैन करें)..."
+                    value={barcodeInput}
+                    onChange={(e) => setBarcodeInput(e.target.value)}
+                    onPressEnter={handleBarcodeScan}
+                    style={{ borderRadius: 8 }}
+                  />
+                  <Button
+                    type="primary"
+                    icon={<BarcodeOutlined />}
+                    onClick={handleBarcodeScan}
+                    style={{ borderRadius: 8, fontWeight: 600 }}
+                  >
+                    Scan
+                  </Button>
+                </div>
+
                 {/* Customer Selector from CRM */}
                 <div style={{ marginBottom: 16 }}>
                   <Text strong style={{ display: 'block', marginBottom: 6 }}>
@@ -728,42 +913,93 @@ export default function ErpPage() {
                   ))}
                 </div>
 
-                {/* Inventory Table */}
-                <Divider style={{ margin: '16px 0 12px' }}>
-                  <span style={{ fontSize: 13, color: '#64748b' }}>Store Inventory & Stock Levels</span>
-                </Divider>
+                {/* Real-time Inventory Table */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '20px 0 12px' }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#475569' }}>
+                    Store Inventory & Stock Levels ({products.length} Items Linked)
+                  </span>
+                  <Button
+                    size="small"
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    onClick={() => {
+                      if (products.length > 0) handleOpenStockModal(products[0]);
+                    }}
+                    style={{ borderRadius: 6, fontWeight: 600 }}
+                  >
+                    + Stock Inward (माल आवक)
+                  </Button>
+                </div>
                 <Table
                   size="small"
-                  pagination={{ pageSize: 4 }}
-                  scroll={{ x: 550 }}
-                  dataSource={[
-                    { key: '1', sku: 'APP-01', name: 'Premium Cotton Shirt', stock: 45, min: 10, unit: 'Pcs', status: 'In Stock' },
-                    { key: '2', sku: 'APP-02', name: 'Formal Trousers Slim', stock: 8, min: 10, unit: 'Pcs', status: 'Low Stock' },
-                    { key: '3', sku: 'ACC-01', name: 'Leather Belt (Black)', stock: 32, min: 5, unit: 'Pcs', status: 'In Stock' },
-                    { key: '4', sku: 'ACC-02', name: 'Cotton Socks Pack', stock: 3, min: 15, unit: 'Packs', status: 'Critical' },
-                  ]}
+                  pagination={{ pageSize: 5 }}
+                  scroll={{ x: 650 }}
+                  dataSource={products}
+                  rowKey="id"
                   columns={[
-                    { title: 'SKU / Code', dataIndex: 'sku', key: 'sku' },
-                    { title: 'Item Name', dataIndex: 'name', key: 'name' },
                     {
-                      title: 'Current Stock',
-                      dataIndex: 'stock',
-                      key: 'stock',
+                      title: 'SKU / Barcode',
+                      dataIndex: 'code',
+                      key: 'code',
+                      render: (val, r) => <Text code>{val || r.sku || 'SKU-001'}</Text>,
+                    },
+                    {
+                      title: 'Item Name',
+                      dataIndex: 'name',
+                      key: 'name',
                       render: (val, r) => (
-                        <Space>
-                          <span style={{ fontWeight: 700 }}>{val} {r.unit}</span>
-                          {val <= r.min && <Badge status="error" />}
-                        </Space>
+                        <div>
+                          <Text strong>{val}</Text>
+                          {r.category && <span style={{ fontSize: 11, color: '#94a3b8', display: 'block' }}>{r.category}</span>}
+                        </div>
                       ),
                     },
                     {
+                      title: 'Selling Price',
+                      dataIndex: 'price',
+                      key: 'price',
+                      render: (val) => <span style={{ fontWeight: 600 }}>₹{Number(val).toLocaleString('en-IN')}</span>,
+                    },
+                    {
+                      title: 'Stock in Hand',
+                      dataIndex: 'stockInHand',
+                      key: 'stockInHand',
+                      render: (val, r) => {
+                        const stock = val !== undefined ? Number(val) : 0;
+                        const min = r.minStockAlert || 5;
+                        return (
+                          <Space>
+                            <span style={{ fontWeight: 800, color: stock <= 0 ? '#ef4444' : stock <= min ? '#f97316' : '#16a34a' }}>
+                              {stock} {r.unit || 'pcs'}
+                            </span>
+                            {stock <= min && <Badge status={stock <= 0 ? 'error' : 'warning'} />}
+                          </Space>
+                        );
+                      },
+                    },
+                    {
                       title: 'Status',
-                      dataIndex: 'status',
                       key: 'status',
-                      render: (val) => (
-                        <Tag color={val === 'In Stock' ? 'green' : val === 'Low Stock' ? 'orange' : 'red'}>
-                          {val}
-                        </Tag>
+                      render: (_, r) => {
+                        const stock = r.stockInHand !== undefined ? Number(r.stockInHand) : 0;
+                        const min = r.minStockAlert || 5;
+                        const status = stock <= 0 ? 'Out of Stock' : stock <= min ? 'Low Stock' : 'In Stock';
+                        const color = stock <= 0 ? 'red' : stock <= min ? 'orange' : 'green';
+                        return <Tag color={color} style={{ fontWeight: 600 }}>{status}</Tag>;
+                      },
+                    },
+                    {
+                      title: 'Action',
+                      key: 'action',
+                      render: (_, r) => (
+                        <Button
+                          size="small"
+                          icon={<PlusOutlined />}
+                          onClick={() => handleOpenStockModal(r)}
+                          style={{ fontWeight: 600 }}
+                        >
+                          Adjust
+                        </Button>
                       ),
                     },
                   ]}
@@ -1420,6 +1656,165 @@ export default function ErpPage() {
                 Sync All Bills to Cloud Now
               </Button>
             </Space>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Real-time Stock Adjustment / Inward Modal */}
+      <Modal
+        title={
+          <Space>
+            <AppstoreOutlined style={{ color: '#1677ff' }} />
+            <span>Stock Inward & Inventory Adjustment (स्टॉक आवक व मिलान)</span>
+          </Space>
+        }
+        open={stockModalOpen}
+        onCancel={() => setStockModalOpen(false)}
+        onOk={handleStockAdjustSubmit}
+        okText="Update Stock Level"
+        width={500}
+      >
+        <div style={{ padding: '8px 0' }}>
+          <div style={{ marginBottom: 16 }}>
+            <Text strong style={{ display: 'block', marginBottom: 4 }}>Select Item to Adjust:</Text>
+            <Select
+              style={{ width: '100%' }}
+              value={selectedStockProduct?.id}
+              onChange={(val) => setSelectedStockProduct(products.find((p) => p.id === val))}
+              showSearch
+              filterOption={(input, option) =>
+                String(option?.children || '').toLowerCase().includes(input.toLowerCase())
+              }
+            >
+              {products.map((p) => (
+                <Option key={p.id} value={p.id}>
+                  {p.name} (Current Stock: {p.stockInHand || 0} {p.unit || 'pcs'})
+                </Option>
+              ))}
+            </Select>
+          </div>
+
+          <Row gutter={16} style={{ marginBottom: 16 }}>
+            <Col span={12}>
+              <Text strong style={{ display: 'block', marginBottom: 4 }}>Adjustment Type:</Text>
+              <Segmented
+                block
+                value={stockAdjustmentType}
+                onChange={(v: any) => setStockAdjustmentType(v)}
+                options={[
+                  { label: '+ Add Stock', value: 'inward' },
+                  { label: '- Deduct Stock', value: 'outward' },
+                ]}
+              />
+            </Col>
+            <Col span={12}>
+              <Text strong style={{ display: 'block', marginBottom: 4 }}>Quantity (संख्या):</Text>
+              <InputNumber
+                min={1}
+                max={100000}
+                style={{ width: '100%' }}
+                value={stockAdjustmentQty}
+                onChange={(val) => setStockAdjustmentQty(val || 1)}
+              />
+            </Col>
+          </Row>
+
+          <div style={{ marginBottom: 16 }}>
+            <Text strong style={{ display: 'block', marginBottom: 4 }}>Reason / Notes (कारण):</Text>
+            <Select
+              style={{ width: '100%' }}
+              value={stockAdjustmentReason}
+              onChange={(v) => setStockAdjustmentReason(v)}
+              options={[
+                { value: 'Vendor Purchase Inward', label: 'Vendor Purchase Inward (सप्लायर से माल आया)' },
+                { value: 'Inventory Audit Adjustment', label: 'Inventory Audit / Count Correction (स्टॉक मिलान)' },
+                { value: 'Damaged / Expired Goods', label: 'Damaged / Expired Goods (खराब/एक्सपायर माल)' },
+                { value: 'Customer Return', label: 'Customer Return (ग्राहक ने वापस किया)' },
+              ]}
+            />
+          </div>
+
+          {selectedStockProduct && (
+            <div style={{ background: '#f8fafc', padding: 12, borderRadius: 8, border: '1px solid #e2e8f0' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+                <Text type="secondary">Current Stock:</Text>
+                <Text strong>{selectedStockProduct.stockInHand || 0} {selectedStockProduct.unit || 'pcs'}</Text>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginTop: 4 }}>
+                <Text type="secondary">Projected Level:</Text>
+                <Text strong style={{ color: stockAdjustmentType === 'inward' ? '#16a34a' : '#ef4444' }}>
+                  {Math.max(
+                    0,
+                    (selectedStockProduct.stockInHand || 0) +
+                      (stockAdjustmentType === 'inward' ? stockAdjustmentQty : -stockAdjustmentQty)
+                  )}{' '}
+                  {selectedStockProduct.unit || 'pcs'}
+                </Text>
+              </div>
+            </div>
+          )}
+        </div>
+      </Modal>
+
+      {/* Cash Drawer Reconciliation Modal */}
+      <Modal
+        title={
+          <Space>
+            <DollarCircleOutlined style={{ color: '#059669' }} />
+            <span>Daily Cash Register & Drawer Reconcile (दैनिक गल्ला मिलान)</span>
+          </Space>
+        }
+        open={cashDrawerModalOpen}
+        onCancel={() => setCashDrawerModalOpen(false)}
+        footer={[
+          <Button key="close" onClick={() => setCashDrawerModalOpen(false)}>Cancel</Button>,
+          <Button
+            key="save"
+            type="primary"
+            onClick={() => {
+              localStorage.setItem('ginie_opening_cash', String(openingCash));
+              message.success('Opening cash & drawer balance updated!');
+              setCashDrawerModalOpen(false);
+            }}
+          >
+            Save Register Settings
+          </Button>,
+        ]}
+        width={450}
+      >
+        <div style={{ padding: '10px 0' }}>
+          <div style={{ marginBottom: 16 }}>
+            <Text strong style={{ display: 'block', marginBottom: 6 }}>
+              Opening Cash in Drawer (सुबह का प्रारंभिक नकद):
+            </Text>
+            <InputNumber
+              prefix="₹"
+              style={{ width: '100%' }}
+              value={openingCash}
+              onChange={(val) => setOpeningCash(val || 0)}
+            />
+          </div>
+
+          <div style={{ background: '#f8fafc', padding: 14, borderRadius: 10, border: '1px solid #e2e8f0', lineHeight: 1.8 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <Text type="secondary">Morning Opening Cash:</Text>
+              <Text strong>₹{openingCash.toLocaleString('en-IN')}</Text>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#16a34a' }}>
+              <Text>Today's Cash Sales:</Text>
+              <Text strong>+₹{cashSalesToday.toLocaleString('en-IN')}</Text>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#2563eb' }}>
+              <Text>Today's UPI Sales:</Text>
+              <Text strong>+₹{upiSalesToday.toLocaleString('en-IN')}</Text>
+            </div>
+            <Divider style={{ margin: '8px 0' }} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 16 }}>
+              <Text strong>Total Cash in Galla:</Text>
+              <span style={{ fontWeight: 900, color: '#0f172a' }}>
+                ₹{(openingCash + cashSalesToday).toLocaleString('en-IN')}
+              </span>
+            </div>
           </div>
         </div>
       </Modal>

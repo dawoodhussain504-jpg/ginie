@@ -143,6 +143,18 @@ export class BillingService {
       data: { status: 'converted' },
     });
 
+    // Deduct stock for quotation converted items
+    for (const it of items) {
+      const pId = (it as any).productId || (it as any).id;
+      const qty = Number(it.quantity || 1);
+      if (pId) {
+        await prisma.product.updateMany({
+          where: { id: pId, tenantId },
+          data: { stockInHand: { decrement: qty } } as any,
+        }).catch(() => null);
+      }
+    }
+
     return invoice;
   }
 
@@ -236,7 +248,7 @@ export class BillingService {
       });
     }
 
-    return prisma.invoice.create({
+    const invoice = await prisma.invoice.create({
       data: {
         tenantId,
         invoiceNumber,
@@ -257,6 +269,27 @@ export class BillingService {
         },
       },
     });
+
+    // Real-Time ERP Inventory Sync: Deduct stockInHand for each sold item
+    if (Array.isArray(dto.items)) {
+      for (const it of dto.items) {
+        const pId = (it as any).productId || (it as any).id;
+        const qty = Number(it.quantity || 1);
+        if (pId) {
+          await prisma.product.updateMany({
+            where: { id: pId, tenantId },
+            data: { stockInHand: { decrement: qty } } as any,
+          }).catch(() => null);
+        } else if (it.name) {
+          await prisma.product.updateMany({
+            where: { name: it.name, tenantId },
+            data: { stockInHand: { decrement: qty } } as any,
+          }).catch(() => null);
+        }
+      }
+    }
+
+    return invoice;
   }
 
   async updateInvoiceStatus(tenantId: string, id: string, status: string) {
@@ -264,6 +297,26 @@ export class BillingService {
       where: { id, tenantId },
     });
     if (!existing) throw new NotFoundException('Invoice not found.');
+
+    // If cancelling or voiding invoice, restore inventory stock
+    if ((status === 'cancelled' || status === 'void') && existing.status !== 'cancelled' && existing.status !== 'void') {
+      const items = Array.isArray(existing.items) ? (existing.items as any[]) : [];
+      for (const it of items) {
+        const pId = it.productId || it.id;
+        const qty = Number(it.quantity || 1);
+        if (pId) {
+          await prisma.product.updateMany({
+            where: { id: pId, tenantId },
+            data: { stockInHand: { increment: qty } } as any,
+          }).catch(() => null);
+        } else if (it.name) {
+          await prisma.product.updateMany({
+            where: { name: it.name, tenantId },
+            data: { stockInHand: { increment: qty } } as any,
+          }).catch(() => null);
+        }
+      }
+    }
 
     return prisma.invoice.update({
       where: { id },
@@ -708,8 +761,9 @@ export class BillingService {
   }
 
   async createPurchaseOrder(tenantId: string, dto: any) {
-    const poNumber = `PO-${Date.now().toString().slice(-6)}`;
-    return (prisma as any).purchaseOrder.create({
+    const poNumber = dto.poNumber || `PO-${Date.now().toString().slice(-6)}`;
+    const status = dto.status || 'ordered';
+    const po = await (prisma as any).purchaseOrder.create({
       data: {
         tenantId,
         poNumber,
@@ -720,10 +774,28 @@ export class BillingService {
         subtotal: dto.subtotal || 0,
         taxTotal: dto.taxTotal || 0,
         total: dto.total || 0,
-        status: 'ordered',
+        status,
         notes: dto.notes,
+        receivedAt: status === 'received' ? new Date() : undefined,
       },
     });
+
+    if (status === 'received' && Array.isArray(dto.items)) {
+      for (const item of dto.items) {
+        const pId = item.productId || item.id;
+        const qty = Number(item.quantity || 1);
+        if (pId) {
+          await prisma.product.updateMany({
+            where: { id: pId, tenantId },
+            data: {
+              stockInHand: { increment: qty },
+            } as any,
+          }).catch(() => null);
+        }
+      }
+    }
+
+    return po;
   }
 
   async updatePurchaseOrderStatus(tenantId: string, poId: string, status: string) {
