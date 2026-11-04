@@ -54,7 +54,7 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, logout, t, locale, setLocale, isDark, setIsDark, brandColor } = useApp();
+  const { user, login, logout, t, locale, setLocale, isDark, setIsDark, brandColor } = useApp();
   const [collapsed, setCollapsed] = useState(false);
   const [moreDrawerOpen, setMoreDrawerOpen] = useState(false);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
@@ -88,19 +88,54 @@ export default function DashboardLayout({
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      setIsImpersonating(!!sessionStorage.getItem('admin_master_token'));
+      const hasSession = !!sessionStorage.getItem('admin_master_token');
+      const hasLocalBackup = !!localStorage.getItem('ginie_master_backup');
+      const isImpersonatedFlag = !!(user as any)?.impersonated;
+      setIsImpersonating(hasSession || hasLocalBackup || isImpersonatedFlag);
     }
-  }, [pathname]);
+  }, [pathname, user]);
 
   const handleExitImpersonation = () => {
-    const masterToken = sessionStorage.getItem('admin_master_token');
-    if (masterToken) {
-      localStorage.setItem('ginie_token', masterToken);
-      sessionStorage.removeItem('admin_master_token');
-      message.success('Master Admin session restored!');
+    try {
+      let masterToken = sessionStorage.getItem('admin_master_token');
+      let masterUserStr = sessionStorage.getItem('admin_master_user');
+      let masterRefreshToken = sessionStorage.getItem('admin_master_refresh_token');
+
+      // Check localStorage backup if sessionStorage is missing (e.g. across new tabs or reloads)
+      if (!masterToken || !masterUserStr) {
+        const backupStr = localStorage.getItem('ginie_master_backup');
+        if (backupStr) {
+          try {
+            const backup = JSON.parse(backupStr);
+            masterToken = backup.token || masterToken;
+            masterUserStr = JSON.stringify(backup.user);
+            masterRefreshToken = backup.refreshToken || masterRefreshToken;
+          } catch {}
+        }
+      }
+
+      if (masterToken && masterUserStr) {
+        const masterUser = JSON.parse(masterUserStr);
+
+        // 1. Sync React context and localStorage directly via login()
+        login(masterToken, masterUser, masterRefreshToken || undefined);
+
+        // 2. Clean all impersonation backup artifacts
+        sessionStorage.removeItem('admin_master_token');
+        sessionStorage.removeItem('admin_master_user');
+        sessionStorage.removeItem('admin_master_refresh_token');
+        localStorage.removeItem('ginie_master_backup');
+
+        message.success('Master Admin session restored! Redirecting to Master Console...');
+        window.location.href = '/admin';
+        return;
+      }
+
+      // If backup is missing, navigate directly to /admin
+      message.info('Redirecting to Master Console...');
       window.location.href = '/admin';
-    } else {
-      router.push('/admin');
+    } catch (err) {
+      window.location.href = '/admin';
     }
   };
 
