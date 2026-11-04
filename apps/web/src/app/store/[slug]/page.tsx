@@ -99,8 +99,9 @@ export default function PublicStorePage({ params }: { params: { slug: string } }
 
   // Store Configuration
   const [companyName, setCompanyName] = useState('GINIE Digital Store');
-  const [whatsappNumber, setWhatsappNumber] = useState('918797186001');
+  const [whatsappNumber, setWhatsappNumber] = useState('');
   const [businessType, setBusinessType] = useState<string>('retail');
+  const [isStoreOwner, setIsStoreOwner] = useState(false);
 
   const [productForm] = Form.useForm();
   const [settingsForm] = Form.useForm();
@@ -108,6 +109,25 @@ export default function PublicStorePage({ params }: { params: { slug: string } }
   useEffect(() => {
     loadStoreData();
   }, [params.slug]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && store) {
+      try {
+        const userStr = localStorage.getItem('ginie_user');
+        if (userStr) {
+          const u = JSON.parse(userStr);
+          if (
+            u.isSuperAdmin ||
+            u.tenantId === store.id ||
+            u.tenantId === store.tenantId ||
+            (u.companyId && (u.companyId === store.id || u.companyId === store.tenantId))
+          ) {
+            setIsStoreOwner(true);
+          }
+        }
+      } catch {}
+    }
+  }, [store]);
 
   useEffect(() => {
     const rawDigits = (customerPhone || '').replace(/\D/g, '');
@@ -145,7 +165,7 @@ export default function PublicStorePage({ params }: { params: { slug: string } }
       if (res) {
         setStore(res);
         setCompanyName(res.name || 'Official Store');
-        const wa = res.settings?.whatsappPhone || res.settings?.whatsappNumber || '918797186001';
+        const wa = res.settings?.whatsappPhone || res.settings?.whatsappNumber || res.phone || res.users?.[0]?.phone || '';
         setWhatsappNumber(wa);
         setBusinessType(res.businessType || 'retail');
         setProducts(res.products || []);
@@ -340,13 +360,19 @@ export default function PublicStorePage({ params }: { params: { slug: string } }
       return;
     }
 
-    if (!customerPhone.trim()) {
-      message.error('Please enter your phone number to receive your order confirmation & loyalty points.');
+    const cleanCustomerDigits = (customerPhone || '').replace(/\D/g, '');
+    if (cleanCustomerDigits.length < 10) {
+      message.error('Please enter a valid 10-digit mobile number to receive order confirmation.');
+      return;
+    }
+
+    const cleanNumber = (whatsappNumber || '').replace(/[^0-9]/g, '');
+    if (!cleanNumber || cleanNumber.length < 10) {
+      message.error('This store has not configured their receiving WhatsApp number yet. Please contact the business.');
       return;
     }
 
     setSubmittingOrder(true);
-    const cleanNumber = whatsappNumber.replace(/[^0-9]/g, '');
     const targetNumber = cleanNumber.length === 10 ? `91${cleanNumber}` : cleanNumber;
 
     // 1. Build line items
@@ -539,19 +565,21 @@ export default function PublicStorePage({ params }: { params: { slug: string } }
           </div>
 
           <Space wrap>
-            <Button
-              icon={<SettingOutlined />}
-              onClick={() => setAdminModalOpen(true)}
-              style={{
-                borderRadius: 8,
-                background: 'rgba(255,255,255,0.1)',
-                color: '#ffffff',
-                borderColor: 'rgba(255,255,255,0.2)',
-                fontWeight: 600,
-              }}
-            >
-              Manage Catalog
-            </Button>
+            {isStoreOwner && (
+              <Button
+                icon={<SettingOutlined />}
+                onClick={() => setAdminModalOpen(true)}
+                style={{
+                  borderRadius: 8,
+                  background: 'rgba(255,255,255,0.1)',
+                  color: '#ffffff',
+                  borderColor: 'rgba(255,255,255,0.2)',
+                  fontWeight: 600,
+                }}
+              >
+                Manage Catalog
+              </Button>
+            )}
             <Button
               type="primary"
               size="large"

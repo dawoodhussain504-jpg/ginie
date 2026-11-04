@@ -1795,20 +1795,16 @@ export default function MarketingLandingPage() {
 
             <Col xs={24} md={4}>
               <div style={{ fontSize: 13, fontWeight: 800, color: '#ffffff', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 14 }}>
-                Trust & Support
+                Legal & Support
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#10b981' }}>
+                <Link href="/privacy" style={{ color: '#94a3b8', textDecoration: 'none' }}>Privacy Policy</Link>
+                <Link href="/terms" style={{ color: '#94a3b8', textDecoration: 'none' }}>Terms of Service</Link>
+                <Link href="/refund-policy" style={{ color: '#94a3b8', textDecoration: 'none' }}>Refund & Cancellation</Link>
+                <Link href="/contact" style={{ color: '#94a3b8', textDecoration: 'none' }}>Contact & Helpdesk</Link>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#10b981', marginTop: 6 }}>
                   <SafetyCertificateOutlined />
-                  <span>100% Free Core Platform</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#60a5fa' }}>
-                  <CompassOutlined />
-                  <span>₹599 / Mo UPI Add-on</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#cbd5e1' }}>
-                  <LockOutlined />
-                  <span>Secure SSL Encryption</span>
+                  <span>100% Free Core Suite</span>
                 </div>
               </div>
             </Col>
@@ -1827,11 +1823,14 @@ export default function MarketingLandingPage() {
               color: '#64748b',
             }}
           >
-            <div>&copy; {new Date().getFullYear()} GINIE Space. All rights reserved. Built for India.</div>
-            <div style={{ display: 'flex', gap: 20 }}>
+            <div>&copy; {new Date().getFullYear()} GINIE Space. All rights reserved. Built with pride for Indian Businesses.</div>
+            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+              <Link href="/privacy" style={{ color: '#64748b', textDecoration: 'none' }}>Privacy</Link>
+              <Link href="/terms" style={{ color: '#64748b', textDecoration: 'none' }}>Terms</Link>
+              <Link href="/refund-policy" style={{ color: '#64748b', textDecoration: 'none' }}>Refunds</Link>
+              <Link href="/contact" style={{ color: '#64748b', textDecoration: 'none' }}>Contact</Link>
               <span>Zero E-Mandate</span>
               <span>Zero Auto-Debit</span>
-              <span>Flat UPI QR Activation</span>
             </div>
           </div>
         </div>

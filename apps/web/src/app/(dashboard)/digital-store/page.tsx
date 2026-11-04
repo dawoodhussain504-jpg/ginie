@@ -55,7 +55,7 @@ export default function DigitalStoreDashboardPage() {
   const [storeSettings, setStoreSettings] = useState<any>({
     storeName: 'My Digital Store',
     slug: 'catalog',
-    whatsappNumber: '918797186001',
+    whatsappNumber: '',
     upiId: '',
   });
 
@@ -90,7 +90,7 @@ export default function DigitalStoreDashboardPage() {
       if (compRes) {
         const slug = compRes.slug || 'catalog';
         const name = compRes.name || 'My Digital Store';
-        const phone = compRes.settings?.whatsappPhone || compRes.users?.[0]?.phone || '918797186001';
+        const phone = compRes.settings?.whatsappPhone || compRes.phone || compRes.users?.[0]?.phone || '';
         const upi = compRes.settings?.upiId || '';
         const bType = compRes.businessType || 'retail';
 
@@ -904,7 +904,7 @@ export default function DigitalStoreDashboardPage() {
                 {storeSettings.storeName || 'DIGITAL STORE'}
               </div>
               <div style={{ fontSize: 12, color: '#64748b' }}>
-                Tel: +{storeSettings.whatsappNumber || '918797186001'}
+                {storeSettings.whatsappNumber ? `Tel: +${storeSettings.whatsappNumber}` : ''}
               </div>
               {storeSettings.upiId && (
                 <div style={{ fontSize: 11, color: '#64748b' }}>
