@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import React, { useState, useEffect } from 'react';
 import {
   Layout,
@@ -97,8 +99,22 @@ export default function DashboardLayout({
 
   const handleExitImpersonation = async () => {
     try {
-      // 1. Call secure backend endpoint to restore Super Admin tokens & profile
-      const res = await api.post('/api/auth/exit-impersonation').catch(() => null);
+      let masterToken = sessionStorage.getItem('admin_master_token');
+      let masterUserStr = sessionStorage.getItem('admin_master_user');
+      let masterRefreshToken = sessionStorage.getItem('admin_master_refresh_token');
+
+      const backupStr = localStorage.getItem('ginie_master_backup');
+      if (backupStr) {
+        try {
+          const backup = JSON.parse(backupStr);
+          masterToken = masterToken || backup.token;
+          masterUserStr = masterUserStr || (backup.user ? JSON.stringify(backup.user) : null);
+          masterRefreshToken = masterRefreshToken || backup.refreshToken;
+        } catch {}
+      }
+
+      // 1. Call secure backend endpoint to restore Super Admin tokens & profile (passing masterToken)
+      const res = await api.post('/api/auth/exit-impersonation', { masterToken }).catch(() => null);
 
       if (res?.tokens?.accessToken && res?.user) {
         sessionStorage.removeItem('admin_master_token');
@@ -113,22 +129,6 @@ export default function DashboardLayout({
       }
 
       // 2. Local fallback if offline or backend call returned null
-      let masterToken = sessionStorage.getItem('admin_master_token');
-      let masterUserStr = sessionStorage.getItem('admin_master_user');
-      let masterRefreshToken = sessionStorage.getItem('admin_master_refresh_token');
-
-      if (!masterToken || !masterUserStr) {
-        const backupStr = localStorage.getItem('ginie_master_backup');
-        if (backupStr) {
-          try {
-            const backup = JSON.parse(backupStr);
-            masterToken = backup.token || masterToken;
-            masterUserStr = JSON.stringify(backup.user);
-            masterRefreshToken = backup.refreshToken || masterRefreshToken;
-          } catch {}
-        }
-      }
-
       if (masterToken && masterUserStr) {
         const masterUser = JSON.parse(masterUserStr);
         sessionStorage.removeItem('admin_master_token');

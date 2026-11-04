@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import React, { useState, useEffect } from 'react';
 import {
   Card,
@@ -129,8 +131,15 @@ export default function AdminMasterConsolePage() {
     if (typeof window === 'undefined') return;
 
     if (user && !user.isSuperAdmin) {
+      const backupStr = localStorage.getItem('ginie_master_backup');
+      const sessionMasterToken = sessionStorage.getItem('admin_master_token');
+      let fallbackToken = sessionMasterToken;
+      if (!fallbackToken && backupStr) {
+        try { fallbackToken = JSON.parse(backupStr)?.token; } catch {}
+      }
+
       // 1. Try server-side exit-impersonation first
-      api.post('/api/auth/exit-impersonation')
+      api.post('/api/auth/exit-impersonation', { masterToken: fallbackToken })
         .then((res) => {
           if (res?.tokens?.accessToken && res?.user) {
             login(res.tokens.accessToken, res.user, res.tokens.refreshToken);
@@ -145,8 +154,7 @@ export default function AdminMasterConsolePage() {
         .catch(() => {});
 
       // 2. Try local master backup
-      const backupStr = localStorage.getItem('ginie_master_backup');
-      const masterToken = sessionStorage.getItem('admin_master_token');
+      const masterToken = sessionMasterToken;
 
       if (backupStr || masterToken) {
         try {
@@ -507,7 +515,14 @@ export default function AdminMasterConsolePage() {
                 icon={<ArrowLeftOutlined />}
                 onClick={async () => {
                   try {
-                    const res = await api.post('/api/auth/exit-impersonation').catch(() => null);
+                    const backupStr = localStorage.getItem('ginie_master_backup');
+                    const sessionMasterToken = sessionStorage.getItem('admin_master_token');
+                    let fallbackToken = sessionMasterToken;
+                    if (!fallbackToken && backupStr) {
+                      try { fallbackToken = JSON.parse(backupStr)?.token; } catch {}
+                    }
+
+                    const res = await api.post('/api/auth/exit-impersonation', { masterToken: fallbackToken }).catch(() => null);
                     if (res?.tokens?.accessToken && res?.user) {
                       login(res.tokens.accessToken, res.user, res.tokens.refreshToken);
                       localStorage.removeItem('ginie_master_backup');

@@ -82,8 +82,11 @@ export class AuthController {
   }
 
   @Post('exit-impersonation')
-  async exitImpersonation(@CurrentUser() user: any) {
-    return this.authService.exitImpersonation(user);
+  async exitImpersonation(
+    @CurrentUser() user: any,
+    @Body() body?: { masterToken?: string },
+  ) {
+    return this.authService.exitImpersonation(user, body?.masterToken);
   }
 
 }
