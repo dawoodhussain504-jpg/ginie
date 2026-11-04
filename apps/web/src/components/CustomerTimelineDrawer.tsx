@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Drawer,
   Select,
@@ -23,6 +24,7 @@ import {
   SendOutlined,
   MailOutlined,
   WhatsAppOutlined,
+  MessageOutlined,
   FileTextOutlined,
   CheckSquareOutlined,
   DollarOutlined,
@@ -50,6 +52,7 @@ export default function CustomerTimelineDrawer({
   onClose,
 }: CustomerTimelineDrawerProps) {
   const { t, brandColor } = useApp();
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any>(null);
   const [noteModalOpen, setNoteModalOpen] = useState(false);
@@ -120,8 +123,7 @@ export default function CustomerTimelineDrawer({
       loadTimeline();
     } catch (err: any) {
       const errMsg = err.message || 'WhatsApp sending failed';
-      message.warning(`${errMsg}. Opening fallback WhatsApp Web...`);
-      window.open(`https://wa.me/${cleanWhatsAppPhone}?text=${encodeURIComponent(waMessageText)}`, '_blank');
+      message.error(`${errMsg}. Please ensure WhatsApp is connected in Settings.`);
     } finally {
       setWaSending(false);
     }
@@ -420,18 +422,32 @@ export default function CustomerTimelineDrawer({
             />
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 20 }}>
-            <Button
-              type="link"
-              size="small"
-              icon={<WhatsAppOutlined />}
-              onClick={() => {
-                window.open(`https://wa.me/${cleanWhatsAppPhone}?text=${encodeURIComponent(waMessageText)}`, '_blank');
-              }}
-              style={{ padding: 0, fontSize: 12 }}
-            >
-              Open in WhatsApp Web ↗
-            </Button>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, flexWrap: 'wrap', gap: 12 }}>
+            <Space size={12}>
+              <Button
+                type="link"
+                size="small"
+                icon={<MessageOutlined />}
+                onClick={() => {
+                  setWaModalOpen(false);
+                  onClose();
+                  router.push(`/whatsapp?phone=${cleanWhatsAppPhone}`);
+                }}
+                style={{ padding: 0, fontSize: 13, color: '#1677ff' }}
+              >
+                Open in WhatsApp Inbox &rarr;
+              </Button>
+              <Button
+                type="link"
+                size="small"
+                onClick={() => {
+                  window.open(`https://wa.me/${cleanWhatsAppPhone}?text=${encodeURIComponent(waMessageText)}`, '_blank');
+                }}
+                style={{ padding: 0, fontSize: 12, color: '#8c8c8c' }}
+              >
+                Web ↗
+              </Button>
+            </Space>
 
             <Space>
               <Button onClick={() => setWaModalOpen(false)}>

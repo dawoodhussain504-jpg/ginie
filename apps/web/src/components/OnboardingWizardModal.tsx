@@ -28,6 +28,7 @@ import {
   CheckCircleFilled,
   RightOutlined,
   LeftOutlined,
+  WhatsAppOutlined,
 } from '@ant-design/icons';
 import { useApp } from '@/context/AppContext';
 import { api } from '@/lib/api';

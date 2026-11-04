@@ -31,6 +31,8 @@ import {
   ClockCircleOutlined,
   GiftOutlined,
   DollarCircleOutlined,
+  SendOutlined,
+  MessageOutlined,
 } from '@ant-design/icons';
 import { useApp } from '@/context/AppContext';
 import { api } from '@/lib/api';
@@ -73,6 +75,44 @@ function CustomersContent() {
   const [addCustomerOpen, setAddCustomerOpen] = useState(false);
   const [addForm] = Form.useForm();
   const [submittingAdd, setSubmittingAdd] = useState(false);
+
+  // In-App Quick WhatsApp Chat Modal state
+  const [quickWaModalOpen, setQuickWaModalOpen] = useState(false);
+  const [quickWaContact, setQuickWaContact] = useState<any | null>(null);
+  const [quickWaText, setQuickWaText] = useState('');
+  const [sendingQuickWa, setSendingQuickWa] = useState(false);
+
+  const handleOpenQuickWhatsApp = (contact: any) => {
+    setQuickWaContact(contact);
+    const greetingName = contact.name ? ` ${contact.name}` : '';
+    setQuickWaText(`Namaste${greetingName} ji, `);
+    setQuickWaModalOpen(true);
+  };
+
+  const handleSendQuickWhatsApp = async () => {
+    if (!quickWaContact || !quickWaText.trim()) {
+      message.error('Please enter a message to send.');
+      return;
+    }
+    const cleanDigits = (quickWaContact.phone || '').replace(/\D/g, '');
+    const cleanPhone = cleanDigits.length === 10 ? `91${cleanDigits}` : cleanDigits;
+
+    setSendingQuickWa(true);
+    try {
+      await api.post('/api/whatsapp/messages', {
+        phone: cleanPhone,
+        message: quickWaText.trim(),
+        contactId: quickWaContact.id,
+      });
+      message.success(`WhatsApp message delivered to ${quickWaContact.name || 'customer'}!`);
+      setQuickWaModalOpen(false);
+      loadData();
+    } catch (err: any) {
+      message.error(err.message || 'WhatsApp sending failed. Ensure WhatsApp is paired in Settings.');
+    } finally {
+      setSendingQuickWa(false);
+    }
+  };
 
   useEffect(() => {
     loadData();
@@ -170,10 +210,15 @@ function CustomersContent() {
         `Redeem this on your next billing or order!\n\n` +
         `Thank you for being our valued customer.`;
       
-      const sendWa = window.confirm(`Points credited! Send celebratory WhatsApp notification to ${selectedLoyaltyContact.name}?`);
-      if (sendWa) {
-        window.open(`https://wa.me/${waPhone}?text=${encodeURIComponent(text)}`, '_blank');
-      }
+      api.post('/api/whatsapp/messages', {
+        phone: waPhone,
+        message: text,
+        contactId: selectedLoyaltyContact.id,
+      }).then(() => {
+        message.success('Celebratory WhatsApp notification delivered to customer!');
+      }).catch(() => {
+        message.info('Points credited! WhatsApp delivery pending session connection.');
+      });
     }
   };
 
@@ -292,10 +337,8 @@ function CustomersContent() {
       title: 'Phone & Quick Connect',
       dataIndex: 'phone',
       key: 'phone',
-      render: (phone: string) => {
+      render: (phone: string, record: any) => {
         if (!phone) return <Text type="secondary">—</Text>;
-        const digits = phone.replace(/[^0-9]/g, '');
-        const cleanWa = digits.length === 10 ? `91${digits}` : digits;
         return (
           <Space size={8}>
             <Text>{phone}</Text>
@@ -304,16 +347,14 @@ function CustomersContent() {
               size="small"
               icon={<PhoneOutlined style={{ color: '#1677ff' }} />}
               href={`tel:${phone}`}
+              title="Call"
             />
             <Button
               type="text"
               size="small"
               icon={<WhatsAppOutlined style={{ color: '#52c41a' }} />}
-              onClick={() => {
-                setSelectedDrawerContactId(record.id);
-                setDrawerOpen(true);
-              }}
-              title="Open WhatsApp Chat in CRM"
+              onClick={() => handleOpenQuickWhatsApp(record)}
+              title="Send WhatsApp in CRM"
             />
           </Space>
         );
@@ -575,6 +616,104 @@ function CustomersContent() {
             </Form>
           </div>
         )}
+      </Modal>
+
+      {/* In-App Quick WhatsApp Chat Modal */}
+      <Modal
+        title={
+          <Space>
+            <WhatsAppOutlined style={{ color: '#25D366', fontSize: 20 }} />
+            <span>Send WhatsApp &bull; {quickWaContact?.name || 'Customer'}</span>
+          </Space>
+        }
+        open={quickWaModalOpen}
+        onCancel={() => setQuickWaModalOpen(false)}
+        footer={null}
+        width={520}
+        destroyOnClose
+      >
+        <div style={{ marginTop: 12 }}>
+          <div style={{ marginBottom: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Text type="secondary" style={{ fontSize: 13 }}>
+              To: <Text strong>+91 {(quickWaContact?.phone || '').replace(/\D/g, '').slice(-10)}</Text>
+            </Text>
+            <Tag color="success">Direct In-App Delivery</Tag>
+          </div>
+
+          <div style={{ marginBottom: 14 }}>
+            <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 6 }}>
+              Quick Templates:
+            </Text>
+            <Select
+              style={{ width: '100%' }}
+              placeholder="Choose a template..."
+              onChange={(val) => {
+                const name = quickWaContact?.name || 'ji';
+                if (val === 'payment') {
+                  setQuickWaText(`Namaste ${name} ji, this is a gentle follow-up regarding your pending payment. Please let us know if you need any assistance with payment details. Thank you!`);
+                } else if (val === 'greeting') {
+                  setQuickWaText(`Namaste ${name} ji, hope you are having a productive week! Please let us know if you need any assistance with our products or services.`);
+                } else if (val === 'quote') {
+                  setQuickWaText(`Namaste ${name} ji, did you get a chance to review our quotation? Happy to adjust according to your requirements.`);
+                } else if (val === 'catalog') {
+                  setQuickWaText(`Namaste ${name} ji, check out our latest digital storefront products here: https://ginie.space/store/catalog . Feel free to place orders directly!`);
+                }
+              }}
+              options={[
+                { label: 'General Relationship Check-in', value: 'greeting' },
+                { label: 'Payment Follow-up / Reminder', value: 'payment' },
+                { label: 'Quotation Follow-up', value: 'quote' },
+                { label: 'Share Storefront Catalog Link', value: 'catalog' },
+              ]}
+            />
+          </div>
+
+          <div style={{ marginBottom: 16 }}>
+            <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 6 }}>
+              Message Text:
+            </Text>
+            <Input.TextArea
+              rows={5}
+              value={quickWaText}
+              onChange={(e) => setQuickWaText(e.target.value)}
+              placeholder="Type your WhatsApp message..."
+              showCount
+              maxLength={1000}
+            />
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, flexWrap: 'wrap', gap: 12 }}>
+            <Button
+              type="link"
+              size="small"
+              icon={<MessageOutlined />}
+              onClick={() => {
+                const cleanDigits = (quickWaContact?.phone || '').replace(/\D/g, '');
+                const clean = cleanDigits.length === 10 ? `91${cleanDigits}` : cleanDigits;
+                setQuickWaModalOpen(false);
+                router.push(`/whatsapp?phone=${clean}`);
+              }}
+              style={{ padding: 0, fontSize: 13, color: '#1677ff' }}
+            >
+              Open in WhatsApp Inbox &rarr;
+            </Button>
+
+            <Space>
+              <Button onClick={() => setQuickWaModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                type="primary"
+                loading={sendingQuickWa}
+                icon={<SendOutlined />}
+                onClick={handleSendQuickWhatsApp}
+                style={{ background: '#25D366', borderColor: '#25D366' }}
+              >
+                Send via WhatsApp
+              </Button>
+            </Space>
+          </div>
+        </div>
       </Modal>
 
       {/* Customer 360 Timeline Drawer */}

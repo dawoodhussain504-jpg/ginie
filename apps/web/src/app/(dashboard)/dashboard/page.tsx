@@ -35,6 +35,7 @@ import {
 import { useApp } from '@/context/AppContext';
 import { api } from '@/lib/api';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { formatIndianCurrency, formatDateIndian } from '@ginie/i18n';
 import {
   BarChart,
@@ -50,6 +51,7 @@ const { Title, Text, Paragraph } = Typography;
 
 export default function HomePage() {
   const { t, user, brandColor } = useApp();
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     newCustomersCount: 0,
@@ -143,8 +145,7 @@ export default function HomePage() {
   const handleOpenWhatsAppChat = (phone: string, customerName: string) => {
     const clean = phone.replace(/[^0-9]/g, '');
     const target = clean.length === 10 ? '91' + clean : clean;
-    const msg = `Namaste ${customerName || 'Ji'}, following up regarding our discussion. How can we assist you today?`;
-    window.open(`https://wa.me/${target}?text=${encodeURIComponent(msg)}`, '_blank');
+    router.push(`/whatsapp?phone=${target}`);
   };
 
   const columns = [

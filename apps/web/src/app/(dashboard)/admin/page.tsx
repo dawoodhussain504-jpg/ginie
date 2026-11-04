@@ -10,6 +10,7 @@ import {
   Space,
   Input,
   Select,
+  Dropdown,
   Modal,
   Popconfirm,
   Badge,
@@ -1266,7 +1267,7 @@ export default function AdminMasterConsolePage() {
                                       { key: '365', label: 'Approve 365 Days (1 Year)' },
                                       { key: '9999', label: 'Approve Lifetime Access' },
                                     ],
-                                    onClick: ({ key }) => handleApproveDiscovery(r.id, Number(key)),
+                                    onClick: ({ key }: any) => handleApproveDiscovery(r.id, Number(key)),
                                   }}
                                 >
                                   <Button

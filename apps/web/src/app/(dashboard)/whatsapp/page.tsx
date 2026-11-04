@@ -46,11 +46,14 @@ import {
 import { useApp } from '@/context/AppContext';
 import { api } from '@/lib/api';
 import { formatDateIndian } from '@ginie/i18n';
+import { useSearchParams } from 'next/navigation';
 
 const { Title, Text, Paragraph } = Typography;
 
-export default function WhatsAppPage() {
+function WhatsAppContent() {
   const { t, brandColor, user } = useApp();
+  const searchParams = useSearchParams();
+  const phoneParam = searchParams ? searchParams.get('phone') : null;
   const [activeTab, setActiveTab] = useState('inbox');
   const [session, setSession] = useState<any | null>(null);
   const [conversations, setConversations] = useState<any[]>([]);
@@ -135,6 +138,15 @@ export default function WhatsAppPage() {
     loadAntiBanStatus();
     loadRules();
   }, []);
+
+  useEffect(() => {
+    if (phoneParam) {
+      const clean = phoneParam.replace(/\D/g, '');
+      const fullPhone = clean.length === 10 ? `91${clean}` : clean;
+      setSelectedPhone(fullPhone);
+      setActiveTab('inbox');
+    }
+  }, [phoneParam]);
 
   useEffect(() => {
     if (selectedPhone) {
@@ -996,5 +1008,14 @@ export default function WhatsAppPage() {
         </Form>
       </Modal>
     </div>
+  );
+}
+
+
+export default function WhatsAppPage() {
+  return (
+    <React.Suspense fallback={<div style={{ padding: 32, textAlign: 'center' }}>Loading WhatsApp Inbox...</div>}>
+      <WhatsAppContent />
+    </React.Suspense>
   );
 }
