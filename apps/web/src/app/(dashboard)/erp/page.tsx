@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Card,
   Tabs,
@@ -26,6 +26,8 @@ import {
   List,
   Avatar,
   Segmented,
+  Switch,
+  Spin,
 } from 'antd';
 import {
   ShopOutlined,
@@ -54,6 +56,8 @@ import {
   AudioOutlined,
   GiftOutlined,
   LockOutlined,
+  CameraOutlined,
+  SearchOutlined,
 } from '@ant-design/icons';
 import { useApp } from '@/context/AppContext';
 import { api } from '@/lib/api';
@@ -141,6 +145,17 @@ export default function ErpPage() {
 
   // Barcode & Fast Scanner State
   const [barcodeInput, setBarcodeInput] = useState('');
+  const [cameraModalOpen, setCameraModalOpen] = useState<boolean>(false);
+  const [cameraLoading, setCameraLoading] = useState<boolean>(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [continuousScan, setContinuousScan] = useState<boolean>(false);
+  const [lastScannedCode, setLastScannedCode] = useState<string>('');
+  const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
+
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const scanTimerRef = useRef<any>(null);
+  const lastScanTimestampRef = useRef<number>(0);
 
   // Real-time Stock Adjustment State
   const [stockModalOpen, setStockModalOpen] = useState(false);
@@ -364,17 +379,23 @@ export default function ErpPage() {
     } catch {}
   };
 
-  // Instant Barcode Scan & Lookup
+  // Instant Barcode Scan & Lookup (from Input or Scan Button)
   const handleBarcodeScan = () => {
-    const q = barcodeInput.trim().toLowerCase();
-    if (!q) return;
+    const q = barcodeInput.trim();
+    if (!q) {
+      message.info('Opening live camera barcode scanner...');
+      startCameraScanner();
+      return;
+    }
 
     const matched = products.find(
       (p) =>
-        (p.code && p.code.toLowerCase() === q) ||
-        (p.sku && p.sku.toLowerCase() === q) ||
-        (p.name && p.name.toLowerCase() === q) ||
-        (p.name && p.name.toLowerCase().includes(q))
+        (p.code && p.code.toLowerCase() === q.toLowerCase()) ||
+        (p.sku && p.sku.toLowerCase() === q.toLowerCase()) ||
+        (p.id && p.id.toLowerCase() === q.toLowerCase()) ||
+        (p.barcode && p.barcode.toLowerCase() === q.toLowerCase()) ||
+        (p.name && p.name.toLowerCase() === q.toLowerCase()) ||
+        (p.name && p.name.toLowerCase().includes(q.toLowerCase()))
     );
 
     if (matched) {
@@ -448,6 +469,200 @@ export default function ErpPage() {
         .filter(Boolean) as any[]
     );
   };
+
+  // Unified barcode / SKU processor (used by camera, input, and hardware scanner gun)
+  const handleProcessScannedCode = (rawCode: string) => {
+    const code = rawCode.trim();
+    if (!code) return;
+
+    // Debounce to prevent multiple hits within 1.2s for camera/gun
+    const now = Date.now();
+    if (code === lastScannedCode && now - lastScanTimestampRef.current < 1200) {
+      return;
+    }
+    lastScanTimestampRef.current = now;
+    setLastScannedCode(code);
+
+    const q = code.toLowerCase();
+    const matched = products.find(
+      (p) =>
+        (p.code && p.code.toLowerCase() === q) ||
+        (p.sku && p.sku.toLowerCase() === q) ||
+        (p.id && p.id.toLowerCase() === q) ||
+        (p.barcode && p.barcode.toLowerCase() === q) ||
+        (p.name && p.name.toLowerCase() === q) ||
+        (p.name && p.name.toLowerCase().includes(q))
+    );
+
+    playBeep();
+
+    if (matched) {
+      handlePosAddToCart(matched);
+      message.success(`Scanned: ${matched.name} (${code}) added to cart!`);
+    } else {
+      // Dynamic fallback item for unlisted barcodes
+      const fallbackItem = {
+        id: `scan-${Date.now()}`,
+        name: `Scanned Item (${code})`,
+        code: code,
+        price: 150,
+        taxRate: 18,
+      };
+      handlePosAddToCart(fallbackItem);
+      message.success(`Scanned Barcode: ${code} added to cart!`);
+    }
+
+    if (!continuousScan) {
+      stopCameraScanner();
+    }
+  };
+
+  // Start Live Camera Barcode Scanner
+  const startCameraScanner = async (mode: 'environment' | 'user' = facingMode) => {
+    setCameraModalOpen(true);
+    setCameraLoading(true);
+    setCameraError(null);
+
+    // Stop existing streams/timers
+    if (scanTimerRef.current) {
+      clearInterval(scanTimerRef.current);
+      scanTimerRef.current = null;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+
+    try {
+      if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+        throw new Error('Camera access is not supported by your browser.');
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: mode, width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false,
+      });
+
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.setAttribute('playsinline', 'true');
+        await videoRef.current.play().catch(() => {});
+      }
+      setCameraLoading(false);
+
+      // Start detection loop
+      startBarcodeDetectionLoop();
+    } catch (err: any) {
+      setCameraLoading(false);
+      console.warn('Camera open error:', err);
+      setCameraError(
+        err.name === 'NotAllowedError'
+          ? 'Camera permission denied. Please allow camera access in browser permissions.'
+          : err.message || 'Unable to access device camera.'
+      );
+    }
+  };
+
+  const stopCameraScanner = () => {
+    if (scanTimerRef.current) {
+      clearInterval(scanTimerRef.current);
+      scanTimerRef.current = null;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    setCameraModalOpen(false);
+    setCameraLoading(false);
+    setCameraError(null);
+  };
+
+  const startBarcodeDetectionLoop = () => {
+    if (typeof window === 'undefined') return;
+    const hasDetector = 'BarcodeDetector' in window;
+    let detector: any = null;
+
+    if (hasDetector) {
+      try {
+        detector = new (window as any).BarcodeDetector({
+          formats: ['code_128', 'code_39', 'code_93', 'ean_13', 'ean_8', 'upc_a', 'upc_e', 'qr_code'],
+        });
+      } catch (e) {
+        try {
+          detector = new (window as any).BarcodeDetector();
+        } catch {}
+      }
+    }
+
+    scanTimerRef.current = setInterval(async () => {
+      if (!videoRef.current || videoRef.current.readyState < 2) return;
+      if (detector) {
+        try {
+          const detected = await detector.detect(videoRef.current);
+          if (detected && detected.length > 0) {
+            const raw = detected[0].rawValue;
+            if (raw) {
+              handleProcessScannedCode(raw);
+            }
+          }
+        } catch {}
+      }
+    }, 280);
+  };
+
+  // Global Hardware USB / Bluetooth Barcode Scanner Gun Listener
+  useEffect(() => {
+    let buffer = '';
+    let lastKeyTime = Date.now();
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      const isInput =
+        target &&
+        (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable);
+
+      const currentTime = Date.now();
+      const diff = currentTime - lastKeyTime;
+      lastKeyTime = currentTime;
+
+      if (e.key === 'Enter') {
+        if (buffer.length >= 2) {
+          const scannedCode = buffer.trim();
+          buffer = '';
+          handleProcessScannedCode(scannedCode);
+        }
+      } else if (e.key && e.key.length === 1) {
+        if (!isInput || diff < 45) {
+          buffer += e.key;
+        } else {
+          buffer = '';
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [products, continuousScan, lastScannedCode]);
+
+  // Clean up camera stream on unmount
+  useEffect(() => {
+    return () => {
+      if (scanTimerRef.current) {
+        clearInterval(scanTimerRef.current);
+        scanTimerRef.current = null;
+      }
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((t) => t.stop());
+        streamRef.current = null;
+      }
+    };
+  }, []);
 
   // POS Calculations
   const posSubtotal = posCart.reduce((sum, item) => sum + item.price * item.qty, 0);
@@ -820,23 +1035,37 @@ export default function ErpPage() {
                 }
                 style={{ borderRadius: 12, height: '100%' }}
               >
-                {/* Instant Barcode Scanner Input */}
-                <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                {/* Instant Barcode & Fast Scanner Controls */}
+                <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
                   <Input
+                    allowClear
                     prefix={<BarcodeOutlined style={{ color: '#1677ff' }} />}
-                    placeholder="Scan Barcode or type SKU & press Enter (बारकोड स्कैन करें)..."
+                    placeholder="Scan Barcode, type SKU or product name & press Enter..."
                     value={barcodeInput}
                     onChange={(e) => setBarcodeInput(e.target.value)}
                     onPressEnter={handleBarcodeScan}
-                    style={{ borderRadius: 8 }}
+                    style={{ flex: 1, minWidth: 200, borderRadius: 8 }}
                   />
                   <Button
                     type="primary"
-                    icon={<BarcodeOutlined />}
+                    icon={<SearchOutlined />}
                     onClick={handleBarcodeScan}
                     style={{ borderRadius: 8, fontWeight: 600 }}
                   >
-                    Scan
+                    Find / Add
+                  </Button>
+                  <Button
+                    icon={<CameraOutlined />}
+                    onClick={() => startCameraScanner()}
+                    style={{
+                      borderRadius: 8,
+                      fontWeight: 600,
+                      borderColor: '#1677ff',
+                      color: '#1677ff',
+                      background: '#f0f7ff',
+                    }}
+                  >
+                    Camera Scan
                   </Button>
                 </div>
 
@@ -1814,6 +2043,215 @@ export default function ErpPage() {
               <span style={{ fontWeight: 900, color: '#0f172a' }}>
                 ₹{(openingCash + cashSalesToday).toLocaleString('en-IN')}
               </span>
+            </div>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Live Camera Barcode Scanner Modal */}
+      <Modal
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: 24 }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700 }}>
+              <CameraOutlined style={{ color: '#1677ff' }} />
+              <span>Live Barcode & QR Scanner (कैमरा स्कैनर)</span>
+            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 12, color: '#64748b' }}>Multi-scan:</span>
+              <Switch
+                size="small"
+                checked={continuousScan}
+                onChange={(checked) => setContinuousScan(checked)}
+              />
+            </div>
+          </div>
+        }
+        open={cameraModalOpen}
+        onCancel={stopCameraScanner}
+        footer={[
+          <Button key="close" onClick={stopCameraScanner}>
+            Close
+          </Button>,
+          <Button
+            key="flip"
+            icon={<SyncOutlined />}
+            onClick={() => {
+              const nextMode = facingMode === 'environment' ? 'user' : 'environment';
+              setFacingMode(nextMode);
+              startCameraScanner(nextMode);
+            }}
+          >
+            Flip Camera
+          </Button>,
+        ]}
+        width={520}
+        destroyOnClose
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {/* Viewfinder Box */}
+          <div
+            style={{
+              position: 'relative',
+              width: '100%',
+              height: 300,
+              background: '#090d16',
+              borderRadius: 12,
+              overflow: 'hidden',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            {cameraLoading && (
+              <div style={{ position: 'absolute', zIndex: 10, textAlign: 'center', color: '#fff' }}>
+                <Spin size="large" />
+                <div style={{ marginTop: 12, fontSize: 13, color: '#94a3b8' }}>Starting camera stream...</div>
+              </div>
+            )}
+
+            {cameraError ? (
+              <div style={{ padding: 20, textAlign: 'center', color: '#fff', zIndex: 10 }}>
+                <Alert
+                  type="warning"
+                  showIcon
+                  message="Camera Access Note"
+                  description={cameraError}
+                  style={{ textAlign: 'left', marginBottom: 12 }}
+                />
+                <Text style={{ color: '#94a3b8', fontSize: 12 }}>
+                  You can type SKU or click any item below to simulate a barcode scan.
+                </Text>
+              </div>
+            ) : (
+              <>
+                <video
+                  ref={videoRef}
+                  playsInline
+                  muted
+                  autoPlay
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                  }}
+                />
+
+                {/* Animated Targeting Overlay */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '15%',
+                    left: '12%',
+                    right: '12%',
+                    bottom: '15%',
+                    border: '2px solid rgba(56, 189, 248, 0.8)',
+                    borderRadius: 12,
+                    boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.45)',
+                    pointerEvents: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  {/* Red Laser Scanning Line */}
+                  <div
+                    style={{
+                      width: '100%',
+                      height: 2,
+                      background: 'linear-gradient(90deg, transparent, #ef4444, #ef4444, transparent)',
+                      boxShadow: '0 0 8px #ef4444',
+                      animation: 'scanLaser 2s infinite ease-in-out',
+                    }}
+                  />
+                </div>
+
+                {/* Live Scanner Status Badge */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 12,
+                    left: 12,
+                    background: 'rgba(15, 23, 42, 0.8)',
+                    backdropFilter: 'blur(4px)',
+                    color: '#fff',
+                    padding: '4px 10px',
+                    borderRadius: 20,
+                    fontSize: 12,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: '50%',
+                      background: '#10b981',
+                      display: 'inline-block',
+                      boxShadow: '0 0 6px #10b981',
+                    }}
+                  />
+                  <span>Align barcode inside target frame</span>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Quick Manual / Test Barcode Bar */}
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: '#64748b', marginBottom: 6 }}>
+              Quick Barcode Test or Direct SKU Entry:
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <Input
+                placeholder="Type or paste barcode (e.g. APP-01, 890123...)"
+                id="camera-manual-barcode-input"
+                onPressEnter={(e) => {
+                  const val = (e.target as HTMLInputElement).value;
+                  if (val) {
+                    handleProcessScannedCode(val);
+                    (e.target as HTMLInputElement).value = '';
+                  }
+                }}
+              />
+              <Button
+                type="primary"
+                onClick={() => {
+                  const input = document.getElementById('camera-manual-barcode-input') as HTMLInputElement;
+                  if (input && input.value) {
+                    handleProcessScannedCode(input.value);
+                    input.value = '';
+                  }
+                }}
+              >
+                Scan Code
+              </Button>
+            </div>
+          </div>
+
+          {/* Instant One-Click Sample Barcodes */}
+          <div>
+            <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 6 }}>
+              Store Items (Click to simulate scan):
+            </div>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {(products.length > 0 ? products.slice(0, 6) : [
+                { id: 'p1', name: 'Premium Cotton Shirt', code: 'APP-01' },
+                { id: 'p2', name: 'Formal Trousers Slim', code: 'APP-02' },
+                { id: 'p3', name: 'Leather Belt (Black)', code: 'ACC-01' },
+              ]).map((p) => (
+                <Tag
+                  key={p.id}
+                  style={{ cursor: 'pointer', padding: '4px 8px', borderRadius: 6 }}
+                  color="blue"
+                  onClick={() => handleProcessScannedCode(p.code || p.name)}
+                >
+                  <BarcodeOutlined style={{ marginRight: 4 }} />
+                  {p.code || p.sku || 'SKU'}: {p.name}
+                </Tag>
+              ))}
             </div>
           </div>
         </div>
