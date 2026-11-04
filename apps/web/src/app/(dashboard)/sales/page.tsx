@@ -544,6 +544,7 @@ function SalesAndTasksContent() {
                   rowKey="id"
                   loading={tasksLoading}
                   pagination={{ pageSize: 10 }}
+                  scroll={{ x: 750 }}
                   style={{ marginTop: 8 }}
                 />
               ),
@@ -594,6 +595,7 @@ function SalesAndTasksContent() {
                     dataSource={visits}
                     rowKey="id"
                     pagination={{ pageSize: 8 }}
+                    scroll={{ x: 650 }}
                     columns={[
                       {
                         title: 'Executive',

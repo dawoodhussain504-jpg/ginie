@@ -12,9 +12,11 @@
   --slate-900: #0f172a;
 }
 
-body {
+html, body {
   margin: 0;
   padding: 0;
+  width: 100%;
+  overflow-x: hidden;
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -79,12 +81,32 @@ body {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
+/* Universal Table Horizontal Scrolling on Mobile */
+.ant-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Mobile responsive utility helpers */
+.show-on-mobile {
+  display: none !important;
+}
+
 /* Mobile bottom navigation styling */
 .ginie-mobile-bottom-nav {
   display: none;
 }
 
 @media (max-width: 768px) {
+  .hide-on-mobile {
+    display: none !important;
+  }
+
+  .show-on-mobile {
+    display: flex !important;
+  }
+
   .marketing-nav-desktop {
     display: none !important;
   }
@@ -94,7 +116,66 @@ body {
   }
 
   .ginie-header-username {
-    display: none;
+    display: none !important;
+  }
+
+  /* Compact responsive modal styling */
+  .ant-modal {
+    max-width: 95vw !important;
+    margin: 12px auto !important;
+    top: 20px !important;
+  }
+
+  .ant-modal .ant-modal-content {
+    padding: 16px !important;
+    border-radius: 12px !important;
+  }
+
+  .ant-drawer-content-wrapper {
+    max-width: 100vw !important;
+  }
+
+  .ginie-mobile-content-container {
+    margin: 8px 8px !important;
+    padding-bottom: 96px !important;
+  }
+
+  .ginie-mobile-header {
+    padding: 0 12px !important;
+    height: 56px !important;
+  }
+
+  /* Auto scroll for tables on mobile */
+  .ant-table-content {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Mobile card padding optimization */
+  .ant-card {
+    border-radius: 12px !important;
+  }
+
+  .ant-card .ant-card-body {
+    padding: 14px 12px !important;
+  }
+
+  .ant-card .ant-card-head {
+    padding: 0 12px !important;
+    min-height: 48px !important;
+  }
+
+  .ginie-page-container {
+    padding: 6px 2px !important;
+  }
+
+  .ginie-erp-header-banner {
+    padding: 16px 14px !important;
+  }
+
+  /* Full-width touch form controls on mobile */
+  .ant-input, .ant-input-number, .ant-select {
+    max-width: 100% !important;
   }
 
   .ginie-mobile-bottom-nav {
@@ -103,13 +184,14 @@ body {
     bottom: 0;
     left: 0;
     right: 0;
-    height: 60px;
+    height: calc(60px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
     background: #ffffff;
     border-top: 1px solid #e2e8f0;
     z-index: 1000;
     justify-content: space-around;
     align-items: center;
-    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.08);
   }
 
   .bottom-nav-item {
@@ -127,7 +209,7 @@ body {
   }
 
   .bottom-nav-item .anticon {
-    font-size: 18px;
+    font-size: 19px;
   }
 
   .bottom-nav-item.active {

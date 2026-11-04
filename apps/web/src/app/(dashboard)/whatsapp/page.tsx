@@ -709,6 +709,7 @@ export default function WhatsAppPage() {
                 <Table
                   dataSource={rules}
                   rowKey="id"
+                  scroll={{ x: 650 }}
                   columns={[
                     {
                       title: 'Rule Name',
@@ -885,6 +886,7 @@ export default function WhatsAppPage() {
                     dataSource={inactiveCustomers}
                     rowKey="id"
                     pagination={false}
+                    scroll={{ x: 650 }}
                     columns={[
                       {
                         title: 'Client Name',

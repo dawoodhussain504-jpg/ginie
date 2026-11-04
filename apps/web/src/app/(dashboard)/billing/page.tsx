@@ -707,6 +707,7 @@ export default function BillingPage() {
             rowKey="id"
             loading={loading}
             pagination={{ pageSize: 10 }}
+            scroll={{ x: 800 }}
             locale={{ emptyText: 'No invoices generated yet. Click "+ New GST Invoice" to create one.' }}
           />
         </Card>
@@ -741,6 +742,7 @@ export default function BillingPage() {
             rowKey="id"
             loading={loading}
             pagination={{ pageSize: 10 }}
+            scroll={{ x: 800 }}
             locale={{ emptyText: 'No price quotes created yet.' }}
           />
         </Card>
@@ -763,7 +765,7 @@ export default function BillingPage() {
                   icon={<ShopOutlined />}
                   onClick={() => window.open('/store/catalog', '_blank')}
                 >
-                  View Digital Storefront 🛍️
+                  View Digital Storefront
                 </Button>
                 <Button
                   type="primary"
@@ -783,6 +785,7 @@ export default function BillingPage() {
             rowKey="id"
             loading={loading}
             pagination={{ pageSize: 10 }}
+            scroll={{ x: 750 }}
             locale={{ emptyText: 'No products or services added yet.' }}
           />
         </Card>

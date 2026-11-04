@@ -495,6 +495,7 @@ export default function ErpPage() {
     <div style={{ padding: '4px 0 40px' }}>
       {/* Top Banner: Integrated ERP & Business OS */}
       <div
+        className="ginie-erp-header-banner"
         style={{
           background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
           borderRadius: 16,
@@ -734,6 +735,7 @@ export default function ErpPage() {
                 <Table
                   size="small"
                   pagination={{ pageSize: 4 }}
+                  scroll={{ x: 550 }}
                   dataSource={[
                     { key: '1', sku: 'APP-01', name: 'Premium Cotton Shirt', stock: 45, min: 10, unit: 'Pcs', status: 'In Stock' },
                     { key: '2', sku: 'APP-02', name: 'Formal Trousers Slim', stock: 8, min: 10, unit: 'Pcs', status: 'Low Stock' },
@@ -934,6 +936,7 @@ export default function ErpPage() {
               >
                 <Table
                   pagination={false}
+                  scroll={{ x: 650 }}
                   dataSource={[
                     { key: '1', item: 'Industrial PVC Conduit Pipes 25mm', retail: 85, tier1: '72 (50+ pcs)', tier2: '64 (200+ pcs)', moq: '50 Pcs' },
                     { key: '2', item: 'Brass Ball Valve 1 Inch', retail: 340, tier1: '290 (20+ pcs)', tier2: '260 (100+ pcs)', moq: '20 Pcs' },
@@ -953,6 +956,7 @@ export default function ErpPage() {
               <Card title={<span style={{ fontWeight: 700 }}>Dispatch & Delivery Challan Tracker</span>} style={{ borderRadius: 12 }}>
                 <Table
                   pagination={{ pageSize: 3 }}
+                  scroll={{ x: 650 }}
                   dataSource={[
                     { key: '1', challan: 'DC-2026-118', party: 'M/s Gupta Electricals, Patna', boxes: '14 Boxes', transporter: 'VRL Logistics', lr: 'LR-88912', status: 'Dispatched' },
                     { key: '2', challan: 'DC-2026-119', party: 'Star Sanitary Stores, Ranchi', boxes: '28 Boxes', transporter: 'Delhivery Cargo', lr: 'LR-99214', status: 'Out for Delivery' },
@@ -1073,6 +1077,7 @@ export default function ErpPage() {
                         <Table
                           size="small"
                           pagination={false}
+                          scroll={{ x: 450 }}
                           dataSource={bom.materials}
                           columns={[
                             { title: 'Raw Material / Component', dataIndex: 'name', key: 'name', render: (t) => <Text strong>{t}</Text> },
@@ -1157,6 +1162,7 @@ export default function ErpPage() {
               >
                 <Table
                   pagination={false}
+                  scroll={{ x: 600 }}
                   dataSource={appointments}
                   columns={[
                     { title: 'Token #', dataIndex: 'token', key: 'token', render: (t) => <Tag color="blue" style={{ fontWeight: 800 }}>#{t}</Tag> },
@@ -1267,6 +1273,7 @@ export default function ErpPage() {
                 <Table
                   size="small"
                   pagination={false}
+                  scroll={{ x: 500 }}
                   dataSource={[
                     { key: '1', client: 'Green Agro Traders', service: 'Monthly GST Retainer', fee: '₹3,000 / mo', nextBill: '01 Dec 2026' },
                     { key: '2', client: 'Apex Logistics', service: 'Server & Cloud AMC', fee: '₹7,500 / mo', nextBill: '15 Nov 2026' },
@@ -1339,6 +1346,7 @@ export default function ErpPage() {
           >
             <Table
               dataSource={jobCards}
+              scroll={{ x: 750 }}
               columns={[
                 { title: 'Job #', dataIndex: 'id', key: 'id', render: (t) => <Text code>{t}</Text> },
                 { title: 'Vehicle & Reg #', dataIndex: 'vehicle', key: 'vehicle', render: (t) => <Text strong>{t}</Text> },
@@ -1380,6 +1388,7 @@ export default function ErpPage() {
             dataSource={offlineBills}
             rowKey="id"
             pagination={{ pageSize: 5 }}
+            scroll={{ x: 450 }}
             columns={[
               { title: 'Bill Ref', dataIndex: 'id', key: 'id', render: (t) => <Text code>{t}</Text> },
               { title: 'Customer', dataIndex: 'customerName', key: 'customerName' },
@@ -1414,6 +1423,50 @@ export default function ErpPage() {
           </div>
         </div>
       </Modal>
+
+      {/* Mobile Floating POS Cart Summary */}
+      {posCart.length > 0 && (
+        <div
+          className="show-on-mobile"
+          style={{
+            position: 'fixed',
+            bottom: 'calc(64px + env(safe-area-inset-bottom, 0px))',
+            left: 10,
+            right: 10,
+            background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+            color: '#fff',
+            borderRadius: 12,
+            padding: '10px 14px',
+            zIndex: 999,
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+            border: '1px solid rgba(255,255,255,0.15)',
+          }}
+        >
+          <div>
+            <div style={{ fontSize: 11, color: '#94a3b8' }}>
+              {posCart.reduce((acc, i) => acc + i.qty, 0)} Items Selected
+            </div>
+            <div style={{ fontSize: 17, fontWeight: 900, color: '#38bdf8' }}>
+              ₹{posGrandTotal.toLocaleString('en-IN')}
+            </div>
+          </div>
+          <Button
+            type="primary"
+            size="middle"
+            onClick={handlePosCheckout}
+            style={{
+              background: '#16a34a',
+              borderColor: '#16a34a',
+              fontWeight: 700,
+              borderRadius: 8,
+            }}
+          >
+            Complete Bill (बिल बनाएं)
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

@@ -418,7 +418,7 @@ export default function DigitalStoreDashboardPage() {
   ];
 
   return (
-    <div style={{ padding: '24px', maxWidth: 1200, margin: '0 auto' }}>
+    <div className="ginie-page-container" style={{ padding: '24px', maxWidth: 1200, margin: '0 auto' }}>
       {/* Top Banner / Store URL Card */}
       <Card
         style={{
@@ -589,6 +589,7 @@ export default function DigitalStoreDashboardPage() {
                   rowKey="id"
                   loading={loading}
                   pagination={{ pageSize: 10 }}
+                  scroll={{ x: 750 }}
                   style={{ marginTop: 8 }}
                 />
               ),
@@ -607,6 +608,7 @@ export default function DigitalStoreDashboardPage() {
                   rowKey="id"
                   loading={loading}
                   pagination={{ pageSize: 10 }}
+                  scroll={{ x: 800 }}
                   style={{ marginTop: 8 }}
                 />
               ),
