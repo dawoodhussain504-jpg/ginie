@@ -410,7 +410,7 @@ export default function OnboardingWizardModal({
                       ERP & Storefront Superpowers Included:
                     </Text>
                     <Space wrap size={[6, 6]}>
-                      {currentTemplate.superpowers.map((sp, idx) => (
+                      {currentTemplate.superpowers.map((sp: string, idx: number) => (
                         <Tag key={idx} color="gold" style={{ fontSize: 11 }}>
                           <CheckOutlined style={{ marginRight: 4 }} />
                           {sp}

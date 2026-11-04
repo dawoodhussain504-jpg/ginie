@@ -696,7 +696,7 @@ export default function AdminMasterConsolePage() {
               borderRadius: 8,
             }}
           >
-            Switch to CRM Workspace ->
+            Switch to CRM Workspace &rarr;
           </Button>
           <Button
             icon={<SyncOutlined />}
@@ -790,7 +790,7 @@ export default function AdminMasterConsolePage() {
                         PostgreSQL Session Persistence: <b>Active</b>
                       </Paragraph>
                       <Button type="primary" size="small" style={{ background: '#16a34a', borderColor: '#16a34a' }}>
-                        Manage Bridge & QR ->
+                        Manage Bridge & QR &rarr;
                       </Button>
                     </Card>
                   </Col>
@@ -813,7 +813,7 @@ export default function AdminMasterConsolePage() {
                         Manage subscriptions, suspend/activate, or login as client.
                       </Paragraph>
                       <Button type="primary" size="small" style={{ background: '#2563eb', borderColor: '#2563eb' }}>
-                        View Businesses ->
+                        View Businesses &rarr;
                       </Button>
                     </Card>
                   </Col>
@@ -836,7 +836,7 @@ export default function AdminMasterConsolePage() {
                         Places API & AI Engine status monitoring.
                       </Paragraph>
                       <Button size="small">
-                        View Server Diagnostics ->
+                        View Server Diagnostics &rarr;
                       </Button>
                     </Card>
                   </Col>
@@ -942,7 +942,7 @@ export default function AdminMasterConsolePage() {
                           />
                           <Paragraph type="secondary" style={{ fontSize: 12, marginTop: 12 }}>
                             1. Open WhatsApp on your phone.<br />
-                            2. Tap <b>Settings / 3-dots -> Linked Devices -> Link a Device</b>.<br />
+                            2. Tap <b>Settings / 3-dots &rarr; Linked Devices &rarr; Link a Device</b>.<br />
                             3. Point your camera at this QR code.
                           </Paragraph>
                           <Button size="small" icon={<SyncOutlined />} onClick={loadBridgeStatus}>
@@ -1008,7 +1008,7 @@ export default function AdminMasterConsolePage() {
                             {generatedPairingCode}
                           </Title>
                           <Text type="secondary" style={{ fontSize: 11, marginTop: 8, display: 'block' }}>
-                            WhatsApp -> Linked Devices -> Link with phone number instead.
+                            WhatsApp &rarr; Linked Devices &rarr; Link with phone number instead.
                           </Text>
                         </div>
                       )}

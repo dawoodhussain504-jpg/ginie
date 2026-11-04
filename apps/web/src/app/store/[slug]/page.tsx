@@ -19,6 +19,7 @@ import {
   Form,
   InputNumber,
   Select,
+  Segmented,
   Tabs,
   Table,
   Spin,
@@ -663,7 +664,7 @@ export default function PublicStorePage({ params }: { params: { slug: string } }
               <Segmented
                 options={['Dine-In', 'Takeaway', 'Home Delivery']}
                 value={diningMode}
-                onChange={(val) => setDiningMode(String(val))}
+                onChange={(val: any) => setDiningMode(String(val))}
                 size="small"
               />
             </div>
@@ -1015,7 +1016,7 @@ export default function PublicStorePage({ params }: { params: { slug: string } }
                         block
                         options={['Dine-In', 'Takeaway', 'Home Delivery']}
                         value={diningMode}
-                        onChange={(val) => setDiningMode(String(val))}
+                        onChange={(val: any) => setDiningMode(String(val))}
                         style={{ marginBottom: 6 }}
                       />
                     </div>

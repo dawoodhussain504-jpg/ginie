@@ -94,7 +94,7 @@ export default function ContactPage() {
               </Paragraph>
             </div>
 
-            <Space orientation="vertical" size="large" style={{ width: '100%' }}>
+            <Space direction="vertical" size="large" style={{ width: '100%' }}>
               {/* WhatsApp Card */}
               <Card
                 style={{
