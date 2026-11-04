@@ -1061,4 +1061,79 @@ export class AuthService {
       }).catch(() => {});
     }
   }
+
+  async exitImpersonation(userPayload: any, masterToken?: string): Promise<{ success: boolean; tokens: AuthTokens; user: AuthenticatedUser }> {
+    const configuredAdminEmail = (process.env.ADMIN_EMAIL || AuthService.SUPER_ADMIN_EMAIL).toLowerCase().trim();
+    const configuredAdminName = AuthService.SUPER_ADMIN_NAME;
+
+    let isAuthorized = false;
+
+    // 1. Direct impersonation payload check
+    if (userPayload?.impersonatedBy || userPayload?.isSuperAdmin) {
+      isAuthorized = true;
+    } else if (userPayload?.email && userPayload.email.toLowerCase().trim() === configuredAdminEmail) {
+      isAuthorized = true;
+    }
+
+    // 2. Fallback: verify master token provided in request body
+    if (!isAuthorized && masterToken) {
+      try {
+        const secret = process.env.JWT_SECRET || 'dev_secret_jwt_ginie_app';
+        const verified: any = this.jwtService.verify(masterToken, { secret });
+        if (verified && (verified.isSuperAdmin || verified.email?.toLowerCase().trim() === configuredAdminEmail)) {
+          isAuthorized = true;
+        }
+      } catch {}
+    }
+
+    if (!isAuthorized) {
+      throw new BadRequestException('Not currently impersonating a business workspace, or invalid master token.');
+    }
+
+    let user = await prisma.user.findFirst({
+      where: { email: configuredAdminEmail, deletedAt: null },
+      include: { tenant: true, role: true },
+    });
+
+    const userId = user?.id || 'user-admin-001';
+    const tenantId = user?.tenantId || 'tenant-ginie-001';
+
+    const tokens = this.generateTokens({
+      id: userId,
+      tenantId,
+      email: configuredAdminEmail,
+      isSuperAdmin: true,
+    });
+
+    const ownerPermissions = {
+      leads: { view: true, create: true, edit: true, delete: true, export: true },
+      deals: { view: true, create: true, edit: true, delete: true, export: true },
+      contacts: { view: true, create: true, edit: true, delete: true, export: true },
+      tasks: { view: true, create: true, edit: true, delete: true, export: true },
+      discovery: { view: true, search: true, import: true },
+      whatsapp: { view: true, send: true, manage: true },
+      billing: { view: true, create: true, edit: true },
+      settings: { view: true, edit: true },
+    };
+
+    const profile: AuthenticatedUser = {
+      id: userId,
+      tenantId,
+      name: configuredAdminName,
+      email: configuredAdminEmail,
+      role: 'Master Admin',
+      permissions: ownerPermissions,
+      companyName: 'GINIE Platform HQ',
+      companyBrandColor: '#1677ff',
+      language: user?.language || 'en',
+      isSuperAdmin: true,
+    };
+
+    return {
+      success: true,
+      tokens,
+      user: profile,
+    };
+  }
+
 }

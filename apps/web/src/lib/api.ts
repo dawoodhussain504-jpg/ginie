@@ -42,7 +42,8 @@ export async function apiRequest<T = any>(
     !path.includes('/auth/login') &&
     !path.includes('/auth/otp') &&
     !path.includes('/auth/refresh') &&
-    !path.includes('/auth/register')
+    !path.includes('/auth/register') &&
+    !path.includes('/auth/exit-impersonation')
   ) {
     const refreshToken = localStorage.getItem('ginie_refresh_token');
     if (refreshToken) {
@@ -92,7 +93,11 @@ export async function apiRequest<T = any>(
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    if (response.status === 401 && typeof window !== 'undefined') {
+    if (
+      response.status === 401 &&
+      typeof window !== 'undefined' &&
+      !path.includes('/auth/exit-impersonation')
+    ) {
       localStorage.removeItem('ginie_token');
       localStorage.removeItem('ginie_refresh_token');
       localStorage.removeItem('ginie_user');

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Card,
   Tabs,
@@ -26,6 +26,8 @@ import {
   List,
   Avatar,
   Segmented,
+  Switch,
+  Spin,
 } from 'antd';
 import {
   ShopOutlined,
@@ -54,6 +56,12 @@ import {
   AudioOutlined,
   GiftOutlined,
   LockOutlined,
+  CameraOutlined,
+  SearchOutlined,
+  CrownOutlined,
+  ScissorOutlined,
+  ReadOutlined,
+  ExperimentOutlined,
 } from '@ant-design/icons';
 import { useApp } from '@/context/AppContext';
 import { api } from '@/lib/api';
@@ -120,6 +128,38 @@ const INDUSTRY_CATEGORIES = [
     color: '#faad14',
     desc: 'Vehicle service job cards, Spare parts billing, Mechanic log',
   },
+  {
+    key: 'pharmacy',
+    label: 'Pharmacy & Medical',
+    labelHi: 'दवा दुकान व केमिस्ट',
+    icon: <ExperimentOutlined style={{ fontSize: 16 }} />,
+    color: '#059669',
+    desc: 'Batch & Expiry date tracking, Doctor prescription register, Strip/tablet cutting',
+  },
+  {
+    key: 'jewellery',
+    label: 'Jewellery & Gold',
+    labelHi: 'सर्राफा व आभूषण',
+    icon: <CrownOutlined style={{ fontSize: 16 }} />,
+    color: '#d97706',
+    desc: 'Live gold rate bar, Hallmark 916 purity, Making charges & Old gold exchange',
+  },
+  {
+    key: 'salon',
+    label: 'Salon & Spa',
+    labelHi: 'सैलून व ब्यूटी पार्लर',
+    icon: <ScissorOutlined style={{ fontSize: 16 }} />,
+    color: '#db2777',
+    desc: 'Stylist chair booking, Service duration, Staff commission & Bridal packages',
+  },
+  {
+    key: 'education',
+    label: 'Coaching & Education',
+    labelHi: 'कोचिंग व ट्यूशन',
+    icon: <ReadOutlined style={{ fontSize: 16 }} />,
+    color: '#4f46e5',
+    desc: 'Student batch admission, Monthly fee schedule, WhatsApp reminders & Attendance',
+  },
 ];
 
 export default function ErpPage() {
@@ -138,6 +178,31 @@ export default function ErpPage() {
   const [posDiscount, setPosDiscount] = useState<number>(0);
   const [redeemLoyalty, setRedeemLoyalty] = useState<boolean>(false);
   const [isListeningPos, setIsListeningPos] = useState<boolean>(false);
+
+  // Barcode & Fast Scanner State
+  const [barcodeInput, setBarcodeInput] = useState('');
+  const [cameraModalOpen, setCameraModalOpen] = useState<boolean>(false);
+  const [cameraLoading, setCameraLoading] = useState<boolean>(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [continuousScan, setContinuousScan] = useState<boolean>(false);
+  const [lastScannedCode, setLastScannedCode] = useState<string>('');
+  const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
+
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const scanTimerRef = useRef<any>(null);
+  const lastScanTimestampRef = useRef<number>(0);
+
+  // Real-time Stock Adjustment State
+  const [stockModalOpen, setStockModalOpen] = useState(false);
+  const [selectedStockProduct, setSelectedStockProduct] = useState<any>(null);
+  const [stockAdjustmentQty, setStockAdjustmentQty] = useState<number>(10);
+  const [stockAdjustmentType, setStockAdjustmentType] = useState<'inward' | 'outward'>('inward');
+  const [stockAdjustmentReason, setStockAdjustmentReason] = useState<string>('Vendor Purchase Inward');
+
+  // Daily Cash Register (Daybook) State
+  const [openingCash, setOpeningCash] = useState<number>(2000);
+  const [cashDrawerModalOpen, setCashDrawerModalOpen] = useState<boolean>(false);
 
   // Offline Bill Queue state
   const [offlineBills, setOfflineBills] = useState<any[]>([]);
@@ -282,6 +347,217 @@ export default function ErpPage() {
     },
   ]);
 
+  // Pharmacy & Medical State
+  const [pharmacyBatches, setPharmacyBatches] = useState<any[]>([
+    {
+      id: 'BAT-9021',
+      medicine: 'Paracetamol 650mg (Dolo)',
+      batchNo: 'DL-2411',
+      mfgDate: '10/2025',
+      expDate: '09/2027',
+      stockQty: 420,
+      stripRate: 32,
+      rack: 'A-12',
+      status: 'Healthy Stock',
+    },
+    {
+      id: 'BAT-8832',
+      medicine: 'Amoxicillin 500mg (Augmentin)',
+      batchNo: 'AG-8902',
+      mfgDate: '01/2025',
+      expDate: '12/2026',
+      stockQty: 180,
+      stripRate: 195,
+      rack: 'B-04',
+      status: 'Healthy Stock',
+    },
+    {
+      id: 'BAT-7714',
+      medicine: 'Cough Syrup 100ml (Ascoril-D)',
+      batchNo: 'AS-3101',
+      mfgDate: '05/2024',
+      expDate: '11/2026',
+      stockQty: 18,
+      stripRate: 110,
+      rack: 'C-02',
+      status: 'Near Expiry (Warning)',
+    },
+    {
+      id: 'BAT-6509',
+      medicine: 'Azithromycin 500mg (Azee)',
+      batchNo: 'AZ-1092',
+      mfgDate: '03/2024',
+      expDate: '10/2026',
+      stockQty: 4,
+      stripRate: 125,
+      rack: 'A-08',
+      status: 'Low Stock',
+    },
+  ]);
+
+  const [rxPrescriptions, setRxPrescriptions] = useState<any[]>([
+    {
+      id: 'RX-4091',
+      patient: 'Kavita Verma',
+      doctor: 'Dr. S. Nair (MBBS, MD)',
+      date: 'Today, 11:20 AM',
+      drugs: 'Dolo 650 x 10, Azithromycin 500 x 3, Pan-D x 5',
+      rxUploaded: true,
+      status: 'Verified & Dispensed',
+    },
+    {
+      id: 'RX-4092',
+      patient: 'Rahul Saxena',
+      doctor: 'Dr. P. Sen (Orthopedic)',
+      date: 'Today, 11:45 AM',
+      drugs: 'Pain Relief Spray, Calcium 500mg',
+      rxUploaded: true,
+      status: 'Pending Verification',
+    },
+  ]);
+
+  // Jewellery & Bullion State
+  const [bullionRates, setBullionRates] = useState({
+    gold24k: 78500,
+    gold22k: 72000,
+    gold18k: 59000,
+    silver1kg: 92400,
+    lastUpdated: '11:00 AM MCX Live',
+  });
+
+  const [jewelleryItems, setJewelleryItems] = useState<any[]>([
+    {
+      id: 'JWL-01',
+      item: '22K Gold Traditional Bridal Choker',
+      grossWeight: '28.45g',
+      netWeight: '28.00g',
+      purity: '22K (916 BIS Hallmarked)',
+      makingChargePerGm: 450,
+      totalEstimated: 214200,
+      status: 'In Showcase',
+    },
+    {
+      id: 'JWL-02',
+      item: 'Diamond Solitaire Ring 18K Yellow Gold',
+      grossWeight: '4.20g',
+      netWeight: '4.00g',
+      purity: '18K (750 BIS Hallmarked)',
+      makingChargePerGm: 1200,
+      totalEstimated: 78000,
+      status: 'In Showcase',
+    },
+    {
+      id: 'JWL-03',
+      item: '92.5 Sterling Silver Puja Thali Set',
+      grossWeight: '320.00g',
+      netWeight: '320.00g',
+      purity: '925 Silver Hallmarked',
+      makingChargePerGm: 18,
+      totalEstimated: 35328,
+      status: 'Reserved',
+    },
+  ]);
+
+  // Salon & Spa State
+  const [salonAppointments, setSalonAppointments] = useState<any[]>([
+    {
+      id: 'SAL-301',
+      client: 'Pooja Bhatt',
+      phone: '9811223344',
+      stylist: 'Senior Stylist Sneha',
+      service: 'Keratin Hair Spa & Precision Cut',
+      time: '12:00 PM',
+      chair: 'Station 2',
+      amount: 3500,
+      status: 'In Service',
+    },
+    {
+      id: 'SAL-302',
+      client: 'Rohit Khanna',
+      phone: '9877001122',
+      stylist: 'Barber Imran',
+      service: 'Beard Sculpt & Charcoal Facial',
+      time: '12:30 PM',
+      chair: 'Station 4 (Men)',
+      amount: 850,
+      status: 'Next in Queue',
+    },
+    {
+      id: 'SAL-303',
+      client: 'Meera Sen',
+      phone: '9922334455',
+      stylist: 'Nail Artist Priya',
+      service: 'Gel Nail Extensions & Art',
+      time: '01:15 PM',
+      chair: 'Nail Bar 1',
+      amount: 1800,
+      status: 'Confirmed',
+    },
+  ]);
+
+  const [stylistCommissions, setStylistCommissions] = useState<any[]>([
+    { id: 'ST-01', name: 'Sneha Rao', totalClientsToday: 4, todayRevenue: 7800, commissionEarned: 1560, rating: '4.9/5' },
+    { id: 'ST-02', name: 'Imran Khan', totalClientsToday: 6, todayRevenue: 4200, commissionEarned: 840, rating: '4.8/5' },
+    { id: 'ST-03', name: 'Priya Verma', totalClientsToday: 3, todayRevenue: 5100, commissionEarned: 1020, rating: '5.0/5' },
+  ]);
+
+  // Coaching & Education State
+  const [studentBatches, setStudentBatches] = useState<any[]>([
+    {
+      id: 'BATCH-JEE-01',
+      batchName: 'Class 12 - Physics & JEE Advanced Batch',
+      instructor: 'Er. R. K. Gupta',
+      time: 'Mon, Wed, Fri (4:00 PM - 6:00 PM)',
+      enrolled: 32,
+      capacity: 35,
+      monthlyFee: 4500,
+      status: 'Active',
+    },
+    {
+      id: 'BATCH-NEET-02',
+      batchName: 'Class 11 - Medical Biology & NEET Crash',
+      instructor: 'Dr. Sunita Bansal',
+      time: 'Tue, Thu, Sat (5:00 PM - 7:00 PM)',
+      enrolled: 28,
+      capacity: 30,
+      monthlyFee: 4200,
+      status: 'Active',
+    },
+    {
+      id: 'BATCH-COMM-03',
+      batchName: 'Class 12 - Commerce Accounts & GST Prep',
+      instructor: 'CA Mohit Aggarwal',
+      time: 'Daily (7:30 AM - 9:00 AM)',
+      enrolled: 20,
+      capacity: 25,
+      monthlyFee: 3500,
+      status: 'Active',
+    },
+  ]);
+
+  const [feeDues, setFeeDues] = useState<any[]>([
+    {
+      id: 'FEE-201',
+      student: 'Aman Sharma',
+      rollNo: 'JEE-104',
+      batch: 'Class 12 - Physics & JEE',
+      amountDue: 4500,
+      dueDate: '10 Nov 2026',
+      parentPhone: '9871100223',
+      status: 'Payment Reminder Sent',
+    },
+    {
+      id: 'FEE-202',
+      student: 'Divya Nair',
+      rollNo: 'NEET-042',
+      batch: 'Class 11 - Medical Biology',
+      amountDue: 4200,
+      dueDate: '05 Nov 2026',
+      parentPhone: '9819922334',
+      status: 'Paid (Receipt #809)',
+    },
+  ]);
+
   // Load initial data
   useEffect(() => {
     loadErpData();
@@ -330,8 +606,83 @@ export default function ErpPage() {
     }
   };
 
+  // Pleasant checkout scanner beep via Web Audio API
+  const playBeep = () => {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (AudioCtx) {
+        const ctx = new AudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        gain.gain.setValueAtTime(0.08, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.12);
+      }
+    } catch {}
+  };
+
+  // Instant Barcode Scan & Lookup (from Input or Scan Button)
+  const handleBarcodeScan = () => {
+    const q = barcodeInput.trim();
+    if (!q) {
+      message.info('Opening live camera barcode scanner...');
+      startCameraScanner();
+      return;
+    }
+
+    const matched = products.find(
+      (p) =>
+        (p.code && p.code.toLowerCase() === q.toLowerCase()) ||
+        (p.sku && p.sku.toLowerCase() === q.toLowerCase()) ||
+        (p.id && p.id.toLowerCase() === q.toLowerCase()) ||
+        (p.barcode && p.barcode.toLowerCase() === q.toLowerCase()) ||
+        (p.name && p.name.toLowerCase() === q.toLowerCase()) ||
+        (p.name && p.name.toLowerCase().includes(q.toLowerCase()))
+    );
+
+    if (matched) {
+      handlePosAddToCart(matched);
+      playBeep();
+      message.success(`Scanned: ${matched.name} added to cart`);
+      setBarcodeInput('');
+    } else {
+      message.warning(`Barcode or SKU "${barcodeInput}" not found in catalog.`);
+    }
+  };
+
+  const handleOpenStockModal = (product: any) => {
+    setSelectedStockProduct(product);
+    setStockAdjustmentQty(10);
+    setStockAdjustmentType('inward');
+    setStockAdjustmentReason('Vendor Purchase Inward');
+    setStockModalOpen(true);
+  };
+
+  const handleStockAdjustSubmit = async () => {
+    if (!selectedStockProduct) return;
+    const delta = stockAdjustmentType === 'inward' ? Math.abs(stockAdjustmentQty) : -Math.abs(stockAdjustmentQty);
+    try {
+      await api.post('/api/billing/erp/inventory/adjust', {
+        productId: selectedStockProduct.id,
+        delta,
+        reason: stockAdjustmentReason,
+      });
+      message.success(`Stock updated for ${selectedStockProduct.name}!`);
+      setStockModalOpen(false);
+      loadErpData();
+    } catch {
+      message.error('Failed to update stock in database.');
+    }
+  };
+
   // POS Add item to cart
   const handlePosAddToCart = (product: any) => {
+    playBeep();
     setPosCart((prev) => {
       const existing = prev.find((item) => item.id === product.id);
       if (existing) {
@@ -365,6 +716,200 @@ export default function ErpPage() {
         .filter(Boolean) as any[]
     );
   };
+
+  // Unified barcode / SKU processor (used by camera, input, and hardware scanner gun)
+  const handleProcessScannedCode = (rawCode: string) => {
+    const code = rawCode.trim();
+    if (!code) return;
+
+    // Debounce to prevent multiple hits within 1.2s for camera/gun
+    const now = Date.now();
+    if (code === lastScannedCode && now - lastScanTimestampRef.current < 1200) {
+      return;
+    }
+    lastScanTimestampRef.current = now;
+    setLastScannedCode(code);
+
+    const q = code.toLowerCase();
+    const matched = products.find(
+      (p) =>
+        (p.code && p.code.toLowerCase() === q) ||
+        (p.sku && p.sku.toLowerCase() === q) ||
+        (p.id && p.id.toLowerCase() === q) ||
+        (p.barcode && p.barcode.toLowerCase() === q) ||
+        (p.name && p.name.toLowerCase() === q) ||
+        (p.name && p.name.toLowerCase().includes(q))
+    );
+
+    playBeep();
+
+    if (matched) {
+      handlePosAddToCart(matched);
+      message.success(`Scanned: ${matched.name} (${code}) added to cart!`);
+    } else {
+      // Dynamic fallback item for unlisted barcodes
+      const fallbackItem = {
+        id: `scan-${Date.now()}`,
+        name: `Scanned Item (${code})`,
+        code: code,
+        price: 150,
+        taxRate: 18,
+      };
+      handlePosAddToCart(fallbackItem);
+      message.success(`Scanned Barcode: ${code} added to cart!`);
+    }
+
+    if (!continuousScan) {
+      stopCameraScanner();
+    }
+  };
+
+  // Start Live Camera Barcode Scanner
+  const startCameraScanner = async (mode: 'environment' | 'user' = facingMode) => {
+    setCameraModalOpen(true);
+    setCameraLoading(true);
+    setCameraError(null);
+
+    // Stop existing streams/timers
+    if (scanTimerRef.current) {
+      clearInterval(scanTimerRef.current);
+      scanTimerRef.current = null;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+
+    try {
+      if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+        throw new Error('Camera access is not supported by your browser.');
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: mode, width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false,
+      });
+
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.setAttribute('playsinline', 'true');
+        await videoRef.current.play().catch(() => {});
+      }
+      setCameraLoading(false);
+
+      // Start detection loop
+      startBarcodeDetectionLoop();
+    } catch (err: any) {
+      setCameraLoading(false);
+      console.warn('Camera open error:', err);
+      setCameraError(
+        err.name === 'NotAllowedError'
+          ? 'Camera permission denied. Please allow camera access in browser permissions.'
+          : err.message || 'Unable to access device camera.'
+      );
+    }
+  };
+
+  const stopCameraScanner = () => {
+    if (scanTimerRef.current) {
+      clearInterval(scanTimerRef.current);
+      scanTimerRef.current = null;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    setCameraModalOpen(false);
+    setCameraLoading(false);
+    setCameraError(null);
+  };
+
+  const startBarcodeDetectionLoop = () => {
+    if (typeof window === 'undefined') return;
+    const hasDetector = 'BarcodeDetector' in window;
+    let detector: any = null;
+
+    if (hasDetector) {
+      try {
+        detector = new (window as any).BarcodeDetector({
+          formats: ['code_128', 'code_39', 'code_93', 'ean_13', 'ean_8', 'upc_a', 'upc_e', 'qr_code'],
+        });
+      } catch (e) {
+        try {
+          detector = new (window as any).BarcodeDetector();
+        } catch {}
+      }
+    }
+
+    scanTimerRef.current = setInterval(async () => {
+      if (!videoRef.current || videoRef.current.readyState < 2) return;
+      if (detector) {
+        try {
+          const detected = await detector.detect(videoRef.current);
+          if (detected && detected.length > 0) {
+            const raw = detected[0].rawValue;
+            if (raw) {
+              handleProcessScannedCode(raw);
+            }
+          }
+        } catch {}
+      }
+    }, 280);
+  };
+
+  // Global Hardware USB / Bluetooth Barcode Scanner Gun Listener
+  useEffect(() => {
+    let buffer = '';
+    let lastKeyTime = Date.now();
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      const isInput =
+        target &&
+        (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable);
+
+      const currentTime = Date.now();
+      const diff = currentTime - lastKeyTime;
+      lastKeyTime = currentTime;
+
+      if (e.key === 'Enter') {
+        if (buffer.length >= 2) {
+          const scannedCode = buffer.trim();
+          buffer = '';
+          handleProcessScannedCode(scannedCode);
+        }
+      } else if (e.key && e.key.length === 1) {
+        if (!isInput || diff < 45) {
+          buffer += e.key;
+        } else {
+          buffer = '';
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [products, continuousScan, lastScannedCode]);
+
+  // Clean up camera stream on unmount
+  useEffect(() => {
+    return () => {
+      if (scanTimerRef.current) {
+        clearInterval(scanTimerRef.current);
+        scanTimerRef.current = null;
+      }
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((t) => t.stop());
+        streamRef.current = null;
+      }
+    };
+  }, []);
 
   // POS Calculations
   const posSubtotal = posCart.reduce((sum, item) => sum + item.price * item.qty, 0);
@@ -489,12 +1034,28 @@ export default function ErpPage() {
     }
   };
 
+  // Daily Galla / Cash Register Calculations
+  const todayInvoices = invoices.filter((inv) => {
+    if (!inv.createdAt) return false;
+    const d = new Date(inv.createdAt);
+    const today = new Date();
+    return d.toDateString() === today.toDateString();
+  });
+  const cashSalesToday = todayInvoices
+    .filter((i) => (i.paymentMethod || '').toLowerCase() === 'cash')
+    .reduce((sum, i) => sum + Number(i.total || 0), 0);
+  const upiSalesToday = todayInvoices
+    .filter((i) => (i.paymentMethod || '').toLowerCase() === 'upi')
+    .reduce((sum, i) => sum + Number(i.total || 0), 0);
+  const totalCashInDrawer = openingCash + cashSalesToday;
+
   const activeCategoryMeta = INDUSTRY_CATEGORIES.find((c) => c.key === selectedIndustry) || INDUSTRY_CATEGORIES[0];
 
   return (
     <div style={{ padding: '4px 0 40px' }}>
       {/* Top Banner: Integrated ERP & Business OS */}
       <div
+        className="ginie-erp-header-banner"
         style={{
           background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
           borderRadius: 16,
@@ -640,6 +1201,73 @@ export default function ErpPage() {
       {/* 1. RETAIL & TRADING MODULE */}
       {selectedIndustry === 'retail' && (
         <div>
+          {/* Daily Galla / Cash Register (Daybook) Banner */}
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: 12,
+              padding: '14px 20px',
+              marginBottom: 20,
+              border: '1px solid #e2e8f0',
+              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: 12,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+              <div
+                style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 10,
+                  background: '#ecfdf5',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <DollarCircleOutlined style={{ fontSize: 20, color: '#059669' }} />
+              </div>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 14, color: '#0f172a' }}>
+                  Daily Cash Drawer & Daybook (दैनिक रोकड़ बही)
+                </div>
+                <div style={{ fontSize: 12, color: '#64748b' }}>
+                  Real-time counter cash, UPI collections & drawer reconciliation
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+              <div style={{ textAlign: 'right' }}>
+                <span style={{ fontSize: 11, color: '#64748b', display: 'block' }}>Opening Cash:</span>
+                <span style={{ fontWeight: 700, fontSize: 14 }}>₹{openingCash.toLocaleString('en-IN')}</span>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <span style={{ fontSize: 11, color: '#64748b', display: 'block' }}>Today's Cash Sale:</span>
+                <span style={{ fontWeight: 700, fontSize: 14, color: '#16a34a' }}>+₹{cashSalesToday.toLocaleString('en-IN')}</span>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <span style={{ fontSize: 11, color: '#64748b', display: 'block' }}>Today's UPI Sale:</span>
+                <span style={{ fontWeight: 700, fontSize: 14, color: '#2563eb' }}>+₹{upiSalesToday.toLocaleString('en-IN')}</span>
+              </div>
+              <div style={{ textAlign: 'right', padding: '4px 12px', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                <span style={{ fontSize: 11, color: '#64748b', display: 'block' }}>Drawer Total Cash:</span>
+                <span style={{ fontWeight: 900, fontSize: 16, color: '#0f172a' }}>₹{totalCashInDrawer.toLocaleString('en-IN')}</span>
+              </div>
+              <Button
+                size="middle"
+                onClick={() => setCashDrawerModalOpen(true)}
+                style={{ borderRadius: 8, fontWeight: 600 }}
+              >
+                Reconcile Drawer
+              </Button>
+            </div>
+          </div>
+
           <Row gutter={[20, 20]}>
             {/* Left: Quick POS Billing Counter */}
             <Col xs={24} lg={15}>
@@ -654,6 +1282,40 @@ export default function ErpPage() {
                 }
                 style={{ borderRadius: 12, height: '100%' }}
               >
+                {/* Instant Barcode & Fast Scanner Controls */}
+                <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+                  <Input
+                    allowClear
+                    prefix={<BarcodeOutlined style={{ color: '#1677ff' }} />}
+                    placeholder="Scan Barcode, type SKU or product name & press Enter..."
+                    value={barcodeInput}
+                    onChange={(e) => setBarcodeInput(e.target.value)}
+                    onPressEnter={handleBarcodeScan}
+                    style={{ flex: 1, minWidth: 200, borderRadius: 8 }}
+                  />
+                  <Button
+                    type="primary"
+                    icon={<SearchOutlined />}
+                    onClick={handleBarcodeScan}
+                    style={{ borderRadius: 8, fontWeight: 600 }}
+                  >
+                    Find / Add
+                  </Button>
+                  <Button
+                    icon={<CameraOutlined />}
+                    onClick={() => startCameraScanner()}
+                    style={{
+                      borderRadius: 8,
+                      fontWeight: 600,
+                      borderColor: '#1677ff',
+                      color: '#1677ff',
+                      background: '#f0f7ff',
+                    }}
+                  >
+                    Camera Scan
+                  </Button>
+                </div>
+
                 {/* Customer Selector from CRM */}
                 <div style={{ marginBottom: 16 }}>
                   <Text strong style={{ display: 'block', marginBottom: 6 }}>
@@ -727,41 +1389,93 @@ export default function ErpPage() {
                   ))}
                 </div>
 
-                {/* Inventory Table */}
-                <Divider style={{ margin: '16px 0 12px' }}>
-                  <span style={{ fontSize: 13, color: '#64748b' }}>Store Inventory & Stock Levels</span>
-                </Divider>
+                {/* Real-time Inventory Table */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '20px 0 12px' }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#475569' }}>
+                    Store Inventory & Stock Levels ({products.length} Items Linked)
+                  </span>
+                  <Button
+                    size="small"
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    onClick={() => {
+                      if (products.length > 0) handleOpenStockModal(products[0]);
+                    }}
+                    style={{ borderRadius: 6, fontWeight: 600 }}
+                  >
+                    + Stock Inward (माल आवक)
+                  </Button>
+                </div>
                 <Table
                   size="small"
-                  pagination={{ pageSize: 4 }}
-                  dataSource={[
-                    { key: '1', sku: 'APP-01', name: 'Premium Cotton Shirt', stock: 45, min: 10, unit: 'Pcs', status: 'In Stock' },
-                    { key: '2', sku: 'APP-02', name: 'Formal Trousers Slim', stock: 8, min: 10, unit: 'Pcs', status: 'Low Stock' },
-                    { key: '3', sku: 'ACC-01', name: 'Leather Belt (Black)', stock: 32, min: 5, unit: 'Pcs', status: 'In Stock' },
-                    { key: '4', sku: 'ACC-02', name: 'Cotton Socks Pack', stock: 3, min: 15, unit: 'Packs', status: 'Critical' },
-                  ]}
+                  pagination={{ pageSize: 5 }}
+                  scroll={{ x: 650 }}
+                  dataSource={products}
+                  rowKey="id"
                   columns={[
-                    { title: 'SKU / Code', dataIndex: 'sku', key: 'sku' },
-                    { title: 'Item Name', dataIndex: 'name', key: 'name' },
                     {
-                      title: 'Current Stock',
-                      dataIndex: 'stock',
-                      key: 'stock',
+                      title: 'SKU / Barcode',
+                      dataIndex: 'code',
+                      key: 'code',
+                      render: (val, r) => <Text code>{val || r.sku || 'SKU-001'}</Text>,
+                    },
+                    {
+                      title: 'Item Name',
+                      dataIndex: 'name',
+                      key: 'name',
                       render: (val, r) => (
-                        <Space>
-                          <span style={{ fontWeight: 700 }}>{val} {r.unit}</span>
-                          {val <= r.min && <Badge status="error" />}
-                        </Space>
+                        <div>
+                          <Text strong>{val}</Text>
+                          {r.category && <span style={{ fontSize: 11, color: '#94a3b8', display: 'block' }}>{r.category}</span>}
+                        </div>
                       ),
                     },
                     {
+                      title: 'Selling Price',
+                      dataIndex: 'price',
+                      key: 'price',
+                      render: (val) => <span style={{ fontWeight: 600 }}>₹{Number(val).toLocaleString('en-IN')}</span>,
+                    },
+                    {
+                      title: 'Stock in Hand',
+                      dataIndex: 'stockInHand',
+                      key: 'stockInHand',
+                      render: (val, r) => {
+                        const stock = val !== undefined ? Number(val) : 0;
+                        const min = r.minStockAlert || 5;
+                        return (
+                          <Space>
+                            <span style={{ fontWeight: 800, color: stock <= 0 ? '#ef4444' : stock <= min ? '#f97316' : '#16a34a' }}>
+                              {stock} {r.unit || 'pcs'}
+                            </span>
+                            {stock <= min && <Badge status={stock <= 0 ? 'error' : 'warning'} />}
+                          </Space>
+                        );
+                      },
+                    },
+                    {
                       title: 'Status',
-                      dataIndex: 'status',
                       key: 'status',
-                      render: (val) => (
-                        <Tag color={val === 'In Stock' ? 'green' : val === 'Low Stock' ? 'orange' : 'red'}>
-                          {val}
-                        </Tag>
+                      render: (_, r) => {
+                        const stock = r.stockInHand !== undefined ? Number(r.stockInHand) : 0;
+                        const min = r.minStockAlert || 5;
+                        const status = stock <= 0 ? 'Out of Stock' : stock <= min ? 'Low Stock' : 'In Stock';
+                        const color = stock <= 0 ? 'red' : stock <= min ? 'orange' : 'green';
+                        return <Tag color={color} style={{ fontWeight: 600 }}>{status}</Tag>;
+                      },
+                    },
+                    {
+                      title: 'Action',
+                      key: 'action',
+                      render: (_, r) => (
+                        <Button
+                          size="small"
+                          icon={<PlusOutlined />}
+                          onClick={() => handleOpenStockModal(r)}
+                          style={{ fontWeight: 600 }}
+                        >
+                          Adjust
+                        </Button>
                       ),
                     },
                   ]}
@@ -934,6 +1648,7 @@ export default function ErpPage() {
               >
                 <Table
                   pagination={false}
+                  scroll={{ x: 650 }}
                   dataSource={[
                     { key: '1', item: 'Industrial PVC Conduit Pipes 25mm', retail: 85, tier1: '72 (50+ pcs)', tier2: '64 (200+ pcs)', moq: '50 Pcs' },
                     { key: '2', item: 'Brass Ball Valve 1 Inch', retail: 340, tier1: '290 (20+ pcs)', tier2: '260 (100+ pcs)', moq: '20 Pcs' },
@@ -953,6 +1668,7 @@ export default function ErpPage() {
               <Card title={<span style={{ fontWeight: 700 }}>Dispatch & Delivery Challan Tracker</span>} style={{ borderRadius: 12 }}>
                 <Table
                   pagination={{ pageSize: 3 }}
+                  scroll={{ x: 650 }}
                   dataSource={[
                     { key: '1', challan: 'DC-2026-118', party: 'M/s Gupta Electricals, Patna', boxes: '14 Boxes', transporter: 'VRL Logistics', lr: 'LR-88912', status: 'Dispatched' },
                     { key: '2', challan: 'DC-2026-119', party: 'Star Sanitary Stores, Ranchi', boxes: '28 Boxes', transporter: 'Delhivery Cargo', lr: 'LR-99214', status: 'Out for Delivery' },
@@ -1073,6 +1789,7 @@ export default function ErpPage() {
                         <Table
                           size="small"
                           pagination={false}
+                          scroll={{ x: 450 }}
                           dataSource={bom.materials}
                           columns={[
                             { title: 'Raw Material / Component', dataIndex: 'name', key: 'name', render: (t) => <Text strong>{t}</Text> },
@@ -1157,6 +1874,7 @@ export default function ErpPage() {
               >
                 <Table
                   pagination={false}
+                  scroll={{ x: 600 }}
                   dataSource={appointments}
                   columns={[
                     { title: 'Token #', dataIndex: 'token', key: 'token', render: (t) => <Tag color="blue" style={{ fontWeight: 800 }}>#{t}</Tag> },
@@ -1267,6 +1985,7 @@ export default function ErpPage() {
                 <Table
                   size="small"
                   pagination={false}
+                  scroll={{ x: 500 }}
                   dataSource={[
                     { key: '1', client: 'Green Agro Traders', service: 'Monthly GST Retainer', fee: '₹3,000 / mo', nextBill: '01 Dec 2026' },
                     { key: '2', client: 'Apex Logistics', service: 'Server & Cloud AMC', fee: '₹7,500 / mo', nextBill: '15 Nov 2026' },
@@ -1339,6 +2058,7 @@ export default function ErpPage() {
           >
             <Table
               dataSource={jobCards}
+              scroll={{ x: 750 }}
               columns={[
                 { title: 'Job #', dataIndex: 'id', key: 'id', render: (t) => <Text code>{t}</Text> },
                 { title: 'Vehicle & Reg #', dataIndex: 'vehicle', key: 'vehicle', render: (t) => <Text strong>{t}</Text> },
@@ -1355,6 +2075,384 @@ export default function ErpPage() {
               ]}
             />
           </Card>
+        </div>
+      )}
+
+      {/* 8. PHARMACY & MEDICAL MODULE */}
+      {selectedIndustry === 'pharmacy' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <Row gutter={[16, 16]}>
+            <Col xs={12} sm={6}>
+              <Card size="small" style={{ borderRadius: 10, background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+                <Statistic title={<span style={{ color: '#166534', fontWeight: 600 }}>Active Batches</span>} value={pharmacyBatches.length} prefix={<ExperimentOutlined style={{ color: '#16a34a' }} />} />
+              </Card>
+            </Col>
+            <Col xs={12} sm={6}>
+              <Card size="small" style={{ borderRadius: 10, background: '#fffbeb', border: '1px solid #fde68a' }}>
+                <Statistic title={<span style={{ color: '#92400e', fontWeight: 600 }}>Near Expiry Warning</span>} value={1} prefix={<WarningOutlined style={{ color: '#d97706' }} />} valueStyle={{ color: '#d97706' }} />
+              </Card>
+            </Col>
+            <Col xs={12} sm={6}>
+              <Card size="small" style={{ borderRadius: 10, background: '#eff6ff', border: '1px solid #bfdbfe' }}>
+                <Statistic title={<span style={{ color: '#1e40af', fontWeight: 600 }}>Rx Queue Today</span>} value={rxPrescriptions.length} prefix={<MedicineBoxOutlined style={{ color: '#2563eb' }} />} />
+              </Card>
+            </Col>
+            <Col xs={12} sm={6}>
+              <Card size="small" style={{ borderRadius: 10, background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                <Statistic title={<span style={{ color: '#334155', fontWeight: 600 }}>Schedule H Compliance</span>} value={100} suffix="%" prefix={<CheckCircleOutlined style={{ color: '#059669' }} />} />
+              </Card>
+            </Col>
+          </Row>
+
+          <Row gutter={[16, 16]}>
+            <Col xs={24} lg={15}>
+              <Card
+                title={
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontWeight: 700 }}>Medicine Batch & Expiry Date Register</span>
+                    <Button type="primary" size="small" icon={<PlusOutlined />} onClick={() => message.info('Batch Inward entry modal opened')}>
+                      Add Batch Inward
+                    </Button>
+                  </div>
+                }
+                style={{ borderRadius: 12 }}
+              >
+                <Table
+                  dataSource={pharmacyBatches}
+                  rowKey="id"
+                  size="small"
+                  scroll={{ x: 650 }}
+                  columns={[
+                    { title: 'Medicine Name', dataIndex: 'medicine', key: 'medicine', render: (t) => <Text strong>{t}</Text> },
+                    { title: 'Batch #', dataIndex: 'batchNo', key: 'batchNo', render: (t) => <Text code>{t}</Text> },
+                    { title: 'Rack', dataIndex: 'rack', key: 'rack' },
+                    {
+                      title: 'Expiry',
+                      dataIndex: 'expDate',
+                      key: 'expDate',
+                      render: (d, r) => (
+                        <Tag color={r.status.includes('Warning') ? 'error' : 'default'}>{d}</Tag>
+                      ),
+                    },
+                    { title: 'Stock', dataIndex: 'stockQty', key: 'stockQty', render: (q) => q + ' strips' },
+                    { title: 'Strip MRP', dataIndex: 'stripRate', key: 'stripRate', render: (r) => '₹' + r },
+                    {
+                      title: 'Status',
+                      dataIndex: 'status',
+                      key: 'status',
+                      render: (s) => (
+                        <Tag color={s === 'Healthy Stock' ? 'green' : s.includes('Warning') ? 'orange' : 'red'}>{s}</Tag>
+                      ),
+                    },
+                  ]}
+                />
+              </Card>
+            </Col>
+
+            <Col xs={24} lg={9}>
+              <Card
+                title={
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontWeight: 700 }}>Doctor Prescription (Rx) Log</span>
+                    <Tag color="cyan">Schedule H1 Verified</Tag>
+                  </div>
+                }
+                style={{ borderRadius: 12 }}
+              >
+                <List
+                  dataSource={rxPrescriptions}
+                  renderItem={(item) => (
+                    <Card size="small" style={{ marginBottom: 12, borderRadius: 8, background: '#f8fafc' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <Text strong style={{ fontSize: 14 }}>{item.patient}</Text>
+                          <div style={{ fontSize: 12, color: '#64748b' }}>{item.doctor}</div>
+                        </div>
+                        <Tag color={item.status === 'Verified & Dispensed' ? 'green' : 'orange'}>{item.status}</Tag>
+                      </div>
+                      <div style={{ margin: '8px 0', fontSize: 13, background: '#ffffff', padding: '6px 10px', borderRadius: 6, border: '1px solid #e2e8f0' }}>
+                        <Text type="secondary">Rx Medicines: </Text>
+                        <Text strong>{item.drugs}</Text>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: 11, color: '#94a3b8' }}>{item.id} | {item.date}</span>
+                        <Space>
+                          <Button size="small" icon={<PrinterOutlined />} onClick={() => message.success('Prescription label generated for ' + item.patient)}>Label</Button>
+                          <Button size="small" type="primary" ghost icon={<WhatsAppOutlined />} onClick={() => message.success('WhatsApp reminder sent to ' + item.patient)}>Notify</Button>
+                        </Space>
+                      </div>
+                    </Card>
+                  )}
+                />
+              </Card>
+            </Col>
+          </Row>
+        </div>
+      )}
+
+      {/* 9. JEWELLERY & GOLD BULLION MODULE */}
+      {selectedIndustry === 'jewellery' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <Card
+            style={{
+              borderRadius: 12,
+              background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
+              border: '1px solid #fde68a',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <CrownOutlined style={{ fontSize: 22, color: '#d97706' }} />
+                <div>
+                  <Text strong style={{ fontSize: 16, color: '#92400e' }}>Live Daily Bullion & Metal Rate Board</Text>
+                  <div style={{ fontSize: 12, color: '#b45309' }}>Market benchmark: {bullionRates.lastUpdated}</div>
+                </div>
+              </div>
+              <Button size="small" type="primary" style={{ background: '#d97706', borderColor: '#d97706' }} onClick={() => message.info('Bullion rates updated')}>
+                Update Board Rates
+              </Button>
+            </div>
+            <Row gutter={[16, 12]}>
+              <Col xs={12} sm={6}>
+                <div style={{ background: '#ffffff', padding: '10px 14px', borderRadius: 8, border: '1px solid #fcd34d' }}>
+                  <Text type="secondary" style={{ fontSize: 12 }}>24K Pure Gold (10g)</Text>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: '#b45309' }}>₹{bullionRates.gold24k.toLocaleString('en-IN')}</div>
+                </div>
+              </Col>
+              <Col xs={12} sm={6}>
+                <div style={{ background: '#ffffff', padding: '10px 14px', borderRadius: 8, border: '1px solid #fcd34d' }}>
+                  <Text type="secondary" style={{ fontSize: 12 }}>22K Hallmark 916 (10g)</Text>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: '#b45309' }}>₹{bullionRates.gold22k.toLocaleString('en-IN')}</div>
+                </div>
+              </Col>
+              <Col xs={12} sm={6}>
+                <div style={{ background: '#ffffff', padding: '10px 14px', borderRadius: 8, border: '1px solid #fcd34d' }}>
+                  <Text type="secondary" style={{ fontSize: 12 }}>18K Diamond Gold (10g)</Text>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: '#b45309' }}>₹{bullionRates.gold18k.toLocaleString('en-IN')}</div>
+                </div>
+              </Col>
+              <Col xs={12} sm={6}>
+                <div style={{ background: '#ffffff', padding: '10px 14px', borderRadius: 8, border: '1px solid #cbd5e1' }}>
+                  <Text type="secondary" style={{ fontSize: 12 }}>925 Fine Silver (1 kg)</Text>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: '#475569' }}>₹{bullionRates.silver1kg.toLocaleString('en-IN')}</div>
+                </div>
+              </Col>
+            </Row>
+          </Card>
+
+          <Card
+            title={
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontWeight: 700 }}>Hallmarked Jewellery Stock & Making Charges</span>
+                <Button type="primary" size="small" icon={<PlusOutlined />} onClick={() => message.info('Add new Jewellery ornament')}>
+                  Add Jewellery Item
+                </Button>
+              </div>
+            }
+            style={{ borderRadius: 12 }}
+          >
+            <Table
+              dataSource={jewelleryItems}
+              rowKey="id"
+              scroll={{ x: 750 }}
+              columns={[
+                { title: 'Tag #', dataIndex: 'id', key: 'id', render: (t) => <Text code>{t}</Text> },
+                { title: 'Ornament Description', dataIndex: 'item', key: 'item', render: (t) => <Text strong>{t}</Text> },
+                { title: 'Gross / Net Wt', key: 'weight', render: (_, r) => <span>{r.grossWeight} / {r.netWeight}</span> },
+                { title: 'Purity & Hallmarking', dataIndex: 'purity', key: 'purity', render: (p) => <Tag color="gold">{p}</Tag> },
+                { title: 'Making Charge / g', dataIndex: 'makingChargePerGm', key: 'makingChargePerGm', render: (m) => '₹' + m + '/g' },
+                { title: 'Est. Valuation', dataIndex: 'totalEstimated', key: 'totalEstimated', render: (v) => <Tag color="green">₹{v.toLocaleString('en-IN')}</Tag> },
+                { title: 'Location', dataIndex: 'status', key: 'status', render: (s) => <Tag color={s === 'In Showcase' ? 'blue' : 'purple'}>{s}</Tag> },
+              ]}
+            />
+          </Card>
+        </div>
+      )}
+
+      {/* 10. SALON & SPA MODULE */}
+      {selectedIndustry === 'salon' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <Row gutter={[16, 16]}>
+            <Col xs={12} sm={6}>
+              <Card size="small" style={{ borderRadius: 10, background: '#fdf2f8', border: '1px solid #fbcfe8' }}>
+                <Statistic title={<span style={{ color: '#9d174d', fontWeight: 600 }}>Active Chairs In Use</span>} value={3} suffix="/ 6" prefix={<ScissorOutlined style={{ color: '#db2777' }} />} />
+              </Card>
+            </Col>
+            <Col xs={12} sm={6}>
+              <Card size="small" style={{ borderRadius: 10, background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+                <Statistic title={<span style={{ color: '#166534', fontWeight: 600 }}>Appointments Today</span>} value={salonAppointments.length} prefix={<CheckCircleOutlined style={{ color: '#16a34a' }} />} />
+              </Card>
+            </Col>
+            <Col xs={12} sm={6}>
+              <Card size="small" style={{ borderRadius: 10, background: '#eff6ff', border: '1px solid #bfdbfe' }}>
+                <Statistic title={<span style={{ color: '#1e40af', fontWeight: 600 }}>Stylist Total Revenue</span>} value={17100} prefix="₹" />
+              </Card>
+            </Col>
+            <Col xs={12} sm={6}>
+              <Card size="small" style={{ borderRadius: 10, background: '#faf5ff', border: '1px solid #e9d5ff' }}>
+                <Statistic title={<span style={{ color: '#6b21a8', fontWeight: 600 }}>Avg Service Duration</span>} value={45} suffix="mins" />
+              </Card>
+            </Col>
+          </Row>
+
+          <Row gutter={[16, 16]}>
+            <Col xs={24} lg={15}>
+              <Card
+                title={
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontWeight: 700 }}>Stylist Chair Schedule & Live Queue</span>
+                    <Button type="primary" size="small" icon={<PlusOutlined />} onClick={() => message.info('Book new salon appointment')}>
+                      Book Appointment
+                    </Button>
+                  </div>
+                }
+                style={{ borderRadius: 12 }}
+              >
+                <Table
+                  dataSource={salonAppointments}
+                  rowKey="id"
+                  size="small"
+                  scroll={{ x: 650 }}
+                  columns={[
+                    { title: 'Token & Time', key: 'time', render: (_, r) => <span><Text code>{r.id}</Text> <br /><Text strong>{r.time}</Text></span> },
+                    { title: 'Client', dataIndex: 'client', key: 'client', render: (c, r) => <span><Text strong>{c}</Text><br /><Text type="secondary" style={{ fontSize: 12 }}>{r.phone}</Text></span> },
+                    { title: 'Stylist & Station', key: 'stylist', render: (_, r) => <span><Tag color="magenta">{r.stylist}</Tag><br /><Text type="secondary" style={{ fontSize: 11 }}>{r.chair}</Text></span> },
+                    { title: 'Service Package', dataIndex: 'service', key: 'service' },
+                    { title: 'Billing', dataIndex: 'amount', key: 'amount', render: (a) => <Tag color="green">₹{a}</Tag> },
+                    {
+                      title: 'Status',
+                      dataIndex: 'status',
+                      key: 'status',
+                      render: (s) => (
+                        <Tag color={s === 'In Service' ? 'processing' : s === 'Next in Queue' ? 'orange' : 'green'}>{s}</Tag>
+                      ),
+                    },
+                  ]}
+                />
+              </Card>
+            </Col>
+
+            <Col xs={24} lg={9}>
+              <Card title={<span style={{ fontWeight: 700 }}>Stylist Daily Commission Tracker</span>} style={{ borderRadius: 12 }}>
+                <List
+                  dataSource={stylistCommissions}
+                  renderItem={(st) => (
+                    <Card size="small" style={{ marginBottom: 10, borderRadius: 8, background: '#f8fafc' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <Text strong style={{ fontSize: 14 }}>{st.name}</Text>
+                          <div style={{ fontSize: 12, color: '#64748b' }}>Rating: {st.rating} | {st.totalClientsToday} Clients Served</div>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <Tag color="cyan">Revenue: ₹{st.todayRevenue}</Tag>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: '#059669', marginTop: 4 }}>
+                            Commission: ₹{st.commissionEarned}
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  )}
+                />
+              </Card>
+            </Col>
+          </Row>
+        </div>
+      )}
+
+      {/* 11. COACHING & EDUCATION MODULE */}
+      {selectedIndustry === 'education' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <Row gutter={[16, 16]}>
+            <Col xs={12} sm={6}>
+              <Card size="small" style={{ borderRadius: 10, background: '#eef2ff', border: '1px solid #c7d2fe' }}>
+                <Statistic title={<span style={{ color: '#3730a3', fontWeight: 600 }}>Active Batches</span>} value={studentBatches.length} prefix={<ReadOutlined style={{ color: '#4f46e5' }} />} />
+              </Card>
+            </Col>
+            <Col xs={12} sm={6}>
+              <Card size="small" style={{ borderRadius: 10, background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+                <Statistic title={<span style={{ color: '#166534', fontWeight: 600 }}>Total Enrolled</span>} value={80} suffix="Students" prefix={<TeamOutlined style={{ color: '#16a34a' }} />} />
+              </Card>
+            </Col>
+            <Col xs={12} sm={6}>
+              <Card size="small" style={{ borderRadius: 10, background: '#eff6ff', border: '1px solid #bfdbfe' }}>
+                <Statistic title={<span style={{ color: '#1e40af', fontWeight: 600 }}>Fee Realization</span>} value={92} suffix="%" />
+              </Card>
+            </Col>
+            <Col xs={12} sm={6}>
+              <Card size="small" style={{ borderRadius: 10, background: '#fffbeb', border: '1px solid #fde68a' }}>
+                <Statistic title={<span style={{ color: '#92400e', fontWeight: 600 }}>Pending Dues Today</span>} value={8700} prefix="₹" valueStyle={{ color: '#d97706' }} />
+              </Card>
+            </Col>
+          </Row>
+
+          <Row gutter={[16, 16]}>
+            <Col xs={24} lg={14}>
+              <Card
+                title={
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontWeight: 700 }}>Active Student Batches & Timetable</span>
+                    <Button type="primary" size="small" icon={<PlusOutlined />} onClick={() => message.info('Create new student batch')}>
+                      Create Batch
+                    </Button>
+                  </div>
+                }
+                style={{ borderRadius: 12 }}
+              >
+                <Table
+                  dataSource={studentBatches}
+                  rowKey="id"
+                  size="small"
+                  scroll={{ x: 650 }}
+                  columns={[
+                    { title: 'Batch Details', key: 'batch', render: (_, r) => <span><Text strong>{r.batchName}</Text><br /><Text type="secondary" style={{ fontSize: 12 }}>Faculty: {r.instructor}</Text></span> },
+                    { title: 'Schedule & Time', dataIndex: 'time', key: 'time' },
+                    { title: 'Enrollment', key: 'enrolled', render: (_, r) => <Tag color="blue">{r.enrolled} / {r.capacity}</Tag> },
+                    { title: 'Monthly Fee', dataIndex: 'monthlyFee', key: 'monthlyFee', render: (f) => '₹' + f + '/mo' },
+                    {
+                      title: 'Status',
+                      dataIndex: 'status',
+                      key: 'status',
+                      render: (s) => <Tag color="green">{s}</Tag>,
+                    },
+                  ]}
+                />
+              </Card>
+            </Col>
+
+            <Col xs={24} lg={10}>
+              <Card title={<span style={{ fontWeight: 700 }}>Monthly Fee Dues & WhatsApp Reminder</span>} style={{ borderRadius: 12 }}>
+                <List
+                  dataSource={feeDues}
+                  renderItem={(fd) => (
+                    <Card size="small" style={{ marginBottom: 12, borderRadius: 8, background: '#f8fafc' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <Text strong style={{ fontSize: 14 }}>{fd.student}</Text>
+                          <div style={{ fontSize: 12, color: '#64748b' }}>Roll: {fd.rollNo} | {fd.batch}</div>
+                        </div>
+                        <Tag color={fd.status.includes('Paid') ? 'green' : 'orange'}>{fd.status}</Tag>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
+                        <div>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: '#dc2626' }}>₹{fd.amountDue} Due</span>
+                          <div style={{ fontSize: 11, color: '#94a3b8' }}>Due Date: {fd.dueDate}</div>
+                        </div>
+                        <Button
+                          size="small"
+                          type="primary"
+                          ghost
+                          icon={<WhatsAppOutlined />}
+                          onClick={() => message.success('WhatsApp fee receipt & reminder sent to parent ' + fd.parentPhone)}
+                        >
+                          Send Reminder
+                        </Button>
+                      </div>
+                    </Card>
+                  )}
+                />
+              </Card>
+            </Col>
+          </Row>
         </div>
       )}
 
@@ -1380,6 +2478,7 @@ export default function ErpPage() {
             dataSource={offlineBills}
             rowKey="id"
             pagination={{ pageSize: 5 }}
+            scroll={{ x: 450 }}
             columns={[
               { title: 'Bill Ref', dataIndex: 'id', key: 'id', render: (t) => <Text code>{t}</Text> },
               { title: 'Customer', dataIndex: 'customerName', key: 'customerName' },
@@ -1414,6 +2513,418 @@ export default function ErpPage() {
           </div>
         </div>
       </Modal>
+
+      {/* Real-time Stock Adjustment / Inward Modal */}
+      <Modal
+        title={
+          <Space>
+            <AppstoreOutlined style={{ color: '#1677ff' }} />
+            <span>Stock Inward & Inventory Adjustment (स्टॉक आवक व मिलान)</span>
+          </Space>
+        }
+        open={stockModalOpen}
+        onCancel={() => setStockModalOpen(false)}
+        onOk={handleStockAdjustSubmit}
+        okText="Update Stock Level"
+        width={500}
+      >
+        <div style={{ padding: '8px 0' }}>
+          <div style={{ marginBottom: 16 }}>
+            <Text strong style={{ display: 'block', marginBottom: 4 }}>Select Item to Adjust:</Text>
+            <Select
+              style={{ width: '100%' }}
+              value={selectedStockProduct?.id}
+              onChange={(val) => setSelectedStockProduct(products.find((p) => p.id === val))}
+              showSearch
+              filterOption={(input, option) =>
+                String(option?.children || '').toLowerCase().includes(input.toLowerCase())
+              }
+            >
+              {products.map((p) => (
+                <Option key={p.id} value={p.id}>
+                  {p.name} (Current Stock: {p.stockInHand || 0} {p.unit || 'pcs'})
+                </Option>
+              ))}
+            </Select>
+          </div>
+
+          <Row gutter={16} style={{ marginBottom: 16 }}>
+            <Col span={12}>
+              <Text strong style={{ display: 'block', marginBottom: 4 }}>Adjustment Type:</Text>
+              <Segmented
+                block
+                value={stockAdjustmentType}
+                onChange={(v: any) => setStockAdjustmentType(v)}
+                options={[
+                  { label: '+ Add Stock', value: 'inward' },
+                  { label: '- Deduct Stock', value: 'outward' },
+                ]}
+              />
+            </Col>
+            <Col span={12}>
+              <Text strong style={{ display: 'block', marginBottom: 4 }}>Quantity (संख्या):</Text>
+              <InputNumber
+                min={1}
+                max={100000}
+                style={{ width: '100%' }}
+                value={stockAdjustmentQty}
+                onChange={(val) => setStockAdjustmentQty(val || 1)}
+              />
+            </Col>
+          </Row>
+
+          <div style={{ marginBottom: 16 }}>
+            <Text strong style={{ display: 'block', marginBottom: 4 }}>Reason / Notes (कारण):</Text>
+            <Select
+              style={{ width: '100%' }}
+              value={stockAdjustmentReason}
+              onChange={(v) => setStockAdjustmentReason(v)}
+              options={[
+                { value: 'Vendor Purchase Inward', label: 'Vendor Purchase Inward (सप्लायर से माल आया)' },
+                { value: 'Inventory Audit Adjustment', label: 'Inventory Audit / Count Correction (स्टॉक मिलान)' },
+                { value: 'Damaged / Expired Goods', label: 'Damaged / Expired Goods (खराब/एक्सपायर माल)' },
+                { value: 'Customer Return', label: 'Customer Return (ग्राहक ने वापस किया)' },
+              ]}
+            />
+          </div>
+
+          {selectedStockProduct && (
+            <div style={{ background: '#f8fafc', padding: 12, borderRadius: 8, border: '1px solid #e2e8f0' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+                <Text type="secondary">Current Stock:</Text>
+                <Text strong>{selectedStockProduct.stockInHand || 0} {selectedStockProduct.unit || 'pcs'}</Text>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginTop: 4 }}>
+                <Text type="secondary">Projected Level:</Text>
+                <Text strong style={{ color: stockAdjustmentType === 'inward' ? '#16a34a' : '#ef4444' }}>
+                  {Math.max(
+                    0,
+                    (selectedStockProduct.stockInHand || 0) +
+                      (stockAdjustmentType === 'inward' ? stockAdjustmentQty : -stockAdjustmentQty)
+                  )}{' '}
+                  {selectedStockProduct.unit || 'pcs'}
+                </Text>
+              </div>
+            </div>
+          )}
+        </div>
+      </Modal>
+
+      {/* Cash Drawer Reconciliation Modal */}
+      <Modal
+        title={
+          <Space>
+            <DollarCircleOutlined style={{ color: '#059669' }} />
+            <span>Daily Cash Register & Drawer Reconcile (दैनिक गल्ला मिलान)</span>
+          </Space>
+        }
+        open={cashDrawerModalOpen}
+        onCancel={() => setCashDrawerModalOpen(false)}
+        footer={[
+          <Button key="close" onClick={() => setCashDrawerModalOpen(false)}>Cancel</Button>,
+          <Button
+            key="save"
+            type="primary"
+            onClick={() => {
+              localStorage.setItem('ginie_opening_cash', String(openingCash));
+              message.success('Opening cash & drawer balance updated!');
+              setCashDrawerModalOpen(false);
+            }}
+          >
+            Save Register Settings
+          </Button>,
+        ]}
+        width={450}
+      >
+        <div style={{ padding: '10px 0' }}>
+          <div style={{ marginBottom: 16 }}>
+            <Text strong style={{ display: 'block', marginBottom: 6 }}>
+              Opening Cash in Drawer (सुबह का प्रारंभिक नकद):
+            </Text>
+            <InputNumber
+              prefix="₹"
+              style={{ width: '100%' }}
+              value={openingCash}
+              onChange={(val) => setOpeningCash(val || 0)}
+            />
+          </div>
+
+          <div style={{ background: '#f8fafc', padding: 14, borderRadius: 10, border: '1px solid #e2e8f0', lineHeight: 1.8 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <Text type="secondary">Morning Opening Cash:</Text>
+              <Text strong>₹{openingCash.toLocaleString('en-IN')}</Text>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#16a34a' }}>
+              <Text>Today's Cash Sales:</Text>
+              <Text strong>+₹{cashSalesToday.toLocaleString('en-IN')}</Text>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#2563eb' }}>
+              <Text>Today's UPI Sales:</Text>
+              <Text strong>+₹{upiSalesToday.toLocaleString('en-IN')}</Text>
+            </div>
+            <Divider style={{ margin: '8px 0' }} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 16 }}>
+              <Text strong>Total Cash in Galla:</Text>
+              <span style={{ fontWeight: 900, color: '#0f172a' }}>
+                ₹{(openingCash + cashSalesToday).toLocaleString('en-IN')}
+              </span>
+            </div>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Live Camera Barcode Scanner Modal */}
+      <Modal
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: 24 }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700 }}>
+              <CameraOutlined style={{ color: '#1677ff' }} />
+              <span>Live Barcode & QR Scanner (कैमरा स्कैनर)</span>
+            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 12, color: '#64748b' }}>Multi-scan:</span>
+              <Switch
+                size="small"
+                checked={continuousScan}
+                onChange={(checked) => setContinuousScan(checked)}
+              />
+            </div>
+          </div>
+        }
+        open={cameraModalOpen}
+        onCancel={stopCameraScanner}
+        footer={[
+          <Button key="close" onClick={stopCameraScanner}>
+            Close
+          </Button>,
+          <Button
+            key="flip"
+            icon={<SyncOutlined />}
+            onClick={() => {
+              const nextMode = facingMode === 'environment' ? 'user' : 'environment';
+              setFacingMode(nextMode);
+              startCameraScanner(nextMode);
+            }}
+          >
+            Flip Camera
+          </Button>,
+        ]}
+        width={520}
+        destroyOnClose
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {/* Viewfinder Box */}
+          <div
+            style={{
+              position: 'relative',
+              width: '100%',
+              height: 300,
+              background: '#090d16',
+              borderRadius: 12,
+              overflow: 'hidden',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            {cameraLoading && (
+              <div style={{ position: 'absolute', zIndex: 10, textAlign: 'center', color: '#fff' }}>
+                <Spin size="large" />
+                <div style={{ marginTop: 12, fontSize: 13, color: '#94a3b8' }}>Starting camera stream...</div>
+              </div>
+            )}
+
+            {cameraError ? (
+              <div style={{ padding: 20, textAlign: 'center', color: '#fff', zIndex: 10 }}>
+                <Alert
+                  type="warning"
+                  showIcon
+                  message="Camera Access Note"
+                  description={cameraError}
+                  style={{ textAlign: 'left', marginBottom: 12 }}
+                />
+                <Text style={{ color: '#94a3b8', fontSize: 12 }}>
+                  You can type SKU or click any item below to simulate a barcode scan.
+                </Text>
+              </div>
+            ) : (
+              <>
+                <video
+                  ref={videoRef}
+                  playsInline
+                  muted
+                  autoPlay
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                  }}
+                />
+
+                {/* Animated Targeting Overlay */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '15%',
+                    left: '12%',
+                    right: '12%',
+                    bottom: '15%',
+                    border: '2px solid rgba(56, 189, 248, 0.8)',
+                    borderRadius: 12,
+                    boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.45)',
+                    pointerEvents: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  {/* Red Laser Scanning Line */}
+                  <div
+                    style={{
+                      width: '100%',
+                      height: 2,
+                      background: 'linear-gradient(90deg, transparent, #ef4444, #ef4444, transparent)',
+                      boxShadow: '0 0 8px #ef4444',
+                      animation: 'scanLaser 2s infinite ease-in-out',
+                    }}
+                  />
+                </div>
+
+                {/* Live Scanner Status Badge */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 12,
+                    left: 12,
+                    background: 'rgba(15, 23, 42, 0.8)',
+                    backdropFilter: 'blur(4px)',
+                    color: '#fff',
+                    padding: '4px 10px',
+                    borderRadius: 20,
+                    fontSize: 12,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: '50%',
+                      background: '#10b981',
+                      display: 'inline-block',
+                      boxShadow: '0 0 6px #10b981',
+                    }}
+                  />
+                  <span>Align barcode inside target frame</span>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Quick Manual / Test Barcode Bar */}
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: '#64748b', marginBottom: 6 }}>
+              Quick Barcode Test or Direct SKU Entry:
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <Input
+                placeholder="Type or paste barcode (e.g. APP-01, 890123...)"
+                id="camera-manual-barcode-input"
+                onPressEnter={(e) => {
+                  const val = (e.target as HTMLInputElement).value;
+                  if (val) {
+                    handleProcessScannedCode(val);
+                    (e.target as HTMLInputElement).value = '';
+                  }
+                }}
+              />
+              <Button
+                type="primary"
+                onClick={() => {
+                  const input = document.getElementById('camera-manual-barcode-input') as HTMLInputElement;
+                  if (input && input.value) {
+                    handleProcessScannedCode(input.value);
+                    input.value = '';
+                  }
+                }}
+              >
+                Scan Code
+              </Button>
+            </div>
+          </div>
+
+          {/* Instant One-Click Sample Barcodes */}
+          <div>
+            <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 6 }}>
+              Store Items (Click to simulate scan):
+            </div>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {(products.length > 0 ? products.slice(0, 6) : [
+                { id: 'p1', name: 'Premium Cotton Shirt', code: 'APP-01' },
+                { id: 'p2', name: 'Formal Trousers Slim', code: 'APP-02' },
+                { id: 'p3', name: 'Leather Belt (Black)', code: 'ACC-01' },
+              ]).map((p) => (
+                <Tag
+                  key={p.id}
+                  style={{ cursor: 'pointer', padding: '4px 8px', borderRadius: 6 }}
+                  color="blue"
+                  onClick={() => handleProcessScannedCode(p.code || p.name)}
+                >
+                  <BarcodeOutlined style={{ marginRight: 4 }} />
+                  {p.code || p.sku || 'SKU'}: {p.name}
+                </Tag>
+              ))}
+            </div>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Mobile Floating POS Cart Summary */}
+      {posCart.length > 0 && (
+        <div
+          className="show-on-mobile"
+          style={{
+            position: 'fixed',
+            bottom: 'calc(64px + env(safe-area-inset-bottom, 0px))',
+            left: 10,
+            right: 10,
+            background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+            color: '#fff',
+            borderRadius: 12,
+            padding: '10px 14px',
+            zIndex: 999,
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+            border: '1px solid rgba(255,255,255,0.15)',
+          }}
+        >
+          <div>
+            <div style={{ fontSize: 11, color: '#94a3b8' }}>
+              {posCart.reduce((acc, i) => acc + i.qty, 0)} Items Selected
+            </div>
+            <div style={{ fontSize: 17, fontWeight: 900, color: '#38bdf8' }}>
+              ₹{posGrandTotal.toLocaleString('en-IN')}
+            </div>
+          </div>
+          <Button
+            type="primary"
+            size="middle"
+            onClick={handlePosCheckout}
+            style={{
+              background: '#16a34a',
+              borderColor: '#16a34a',
+              fontWeight: 700,
+              borderRadius: 8,
+            }}
+          >
+            Complete Bill (बिल बनाएं)
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

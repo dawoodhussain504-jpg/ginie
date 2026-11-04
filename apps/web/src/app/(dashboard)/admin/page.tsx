@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import React, { useState, useEffect } from 'react';
 import {
   Card,
@@ -57,6 +59,8 @@ import {
   CloseOutlined,
   UploadOutlined,
   DollarCircleOutlined,
+  ArrowLeftOutlined,
+  LoginOutlined,
 } from '@ant-design/icons';
 import { useApp } from '@/context/AppContext';
 import { useRouter } from 'next/navigation';
@@ -315,7 +319,7 @@ export default function AdminMasterConsolePage() {
         phone: clean,
         text: testMessageText.trim() || undefined,
       });
-      message.success(`✓ Live test WhatsApp message dispatched successfully to +91 ${clean.slice(-10)}!`);
+      message.success(`Live test WhatsApp message dispatched successfully to +91 ${clean.slice(-10)}!`);
       setTestMessageText('');
     } catch (err: any) {
       message.error(err.message || 'Failed to dispatch test message. Is WhatsApp linked?');
@@ -357,18 +361,36 @@ export default function AdminMasterConsolePage() {
     try {
       const res = await api.post(`/api/admin/tenants/${record.id}/impersonate`);
       if (res.accessToken && res.user) {
-        // Save current super admin session so we can easily return
+        // Save current super admin session into BOTH localStorage and sessionStorage
         const currentToken = localStorage.getItem('ginie_token');
-        const currentUser = localStorage.getItem('ginie_user');
-        if (currentToken && currentUser) {
+        const currentUserStr = localStorage.getItem('ginie_user');
+        const currentRefreshToken = localStorage.getItem('ginie_refresh_token');
+
+        if (currentToken && currentUserStr) {
+          try {
+            const parsedUser = JSON.parse(currentUserStr);
+            const masterBackup = {
+              token: currentToken,
+              user: parsedUser,
+              refreshToken: currentRefreshToken || null,
+              targetTenantId: record.id,
+              targetTenantName: record.name,
+              timestamp: Date.now(),
+            };
+            localStorage.setItem('ginie_master_backup', JSON.stringify(masterBackup));
+          } catch {}
+
           sessionStorage.setItem('admin_master_token', currentToken);
-          sessionStorage.setItem('admin_master_user', currentUser);
+          sessionStorage.setItem('admin_master_user', currentUserStr);
+          if (currentRefreshToken) {
+            sessionStorage.setItem('admin_master_refresh_token', currentRefreshToken);
+          }
         }
 
         // Login as client
         login(res.accessToken, res.user);
-        message.success(`Switched context to "${record.name}". You are now viewing their CRM.`);
-        router.push('/dashboard');
+        message.success(`Switched context to "${record.name}". Opening client workspace...`);
+        window.location.href = '/dashboard';
       }
     } catch (err: any) {
       message.error(err.message || 'Failed to switch to client workspace.');
@@ -405,16 +427,94 @@ export default function AdminMasterConsolePage() {
 
   // Access Guard
   if (user && !user.isSuperAdmin) {
+    const isImpersonated = !!(
+      (user as any)?.impersonated ||
+      (typeof window !== 'undefined' && (
+        !!localStorage.getItem('ginie_master_backup') ||
+        !!sessionStorage.getItem('admin_master_token')
+      ))
+    );
+
     return (
-      <div style={{ padding: '60px 20px', maxWidth: 600, margin: '0 auto' }}>
+      <div style={{ padding: '60px 20px', maxWidth: 640, margin: '0 auto' }}>
         <Result
           status="403"
           title="Super Admin Access Only"
-          subTitle="Aapke account ke paas Platform Master Console ka access nahi hai. Ye page sirf platform owner ke liye reserved hai."
+          subTitle={
+            isImpersonated
+              ? "You are currently viewing a client workspace in impersonation mode. Click below to return to the Master Console."
+              : "Aapke account ke paas Platform Master Console ka access nahi hai. Ye page sirf platform owner ke liye reserved hai."
+          }
           extra={
-            <Button type="primary" icon={<HomeOutlined />} onClick={() => router.push('/dashboard')}>
-              Go to My CRM Workspace
-            </Button>
+            <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+              <Button
+                type="primary"
+                danger
+                size="large"
+                icon={<ArrowLeftOutlined />}
+                onClick={async () => {
+                  try {
+                    const backupStr = localStorage.getItem('ginie_master_backup');
+                    const sessionMasterToken = sessionStorage.getItem('admin_master_token');
+                    let fallbackToken = sessionMasterToken;
+                    if (!fallbackToken && backupStr) {
+                      try { fallbackToken = JSON.parse(backupStr)?.token; } catch {}
+                    }
+
+                    const res = await api.post('/api/auth/exit-impersonation', { masterToken: fallbackToken }).catch(() => null);
+                    if (res?.tokens?.accessToken && res?.user) {
+                      login(res.tokens.accessToken, res.user, res.tokens.refreshToken);
+                      localStorage.removeItem('ginie_master_backup');
+                      sessionStorage.removeItem('admin_master_token');
+                      sessionStorage.removeItem('admin_master_user');
+                      sessionStorage.removeItem('admin_master_refresh_token');
+                      message.success('Master Admin session restored!');
+                      window.location.reload();
+                      return;
+                    }
+                  } catch {}
+
+                  const backupStr = localStorage.getItem('ginie_master_backup');
+                  if (backupStr) {
+                    try {
+                      const backup = JSON.parse(backupStr);
+                      login(backup.token, backup.user, backup.refreshToken);
+                      localStorage.removeItem('ginie_master_backup');
+                      window.location.reload();
+                      return;
+                    } catch {}
+                  }
+
+                  localStorage.removeItem('ginie_token');
+                  localStorage.removeItem('ginie_user');
+                  window.location.href = '/login?admin=1';
+                }}
+                style={{ width: '100%', fontWeight: 700 }}
+              >
+                Exit Impersonation & Restore Admin Console
+              </Button>
+
+              <Button
+                icon={<LoginOutlined />}
+                onClick={() => {
+                  localStorage.removeItem('ginie_token');
+                  localStorage.removeItem('ginie_user');
+                  window.location.href = '/login';
+                }}
+                style={{ width: '100%' }}
+              >
+                Sign in as Super Admin
+              </Button>
+
+              <Button
+                type="text"
+                icon={<HomeOutlined />}
+                onClick={() => router.push('/dashboard')}
+                style={{ width: '100%' }}
+              >
+                Return to Workspace Dashboard
+              </Button>
+            </Space>
           }
         />
       </div>
@@ -596,7 +696,7 @@ export default function AdminMasterConsolePage() {
               borderRadius: 8,
             }}
           >
-            Switch to CRM Workspace ➔
+            Switch to CRM Workspace ->
           </Button>
           <Button
             icon={<SyncOutlined />}
@@ -690,7 +790,7 @@ export default function AdminMasterConsolePage() {
                         PostgreSQL Session Persistence: <b>Active</b>
                       </Paragraph>
                       <Button type="primary" size="small" style={{ background: '#16a34a', borderColor: '#16a34a' }}>
-                        Manage Bridge & QR ➔
+                        Manage Bridge & QR ->
                       </Button>
                     </Card>
                   </Col>
@@ -713,7 +813,7 @@ export default function AdminMasterConsolePage() {
                         Manage subscriptions, suspend/activate, or login as client.
                       </Paragraph>
                       <Button type="primary" size="small" style={{ background: '#2563eb', borderColor: '#2563eb' }}>
-                        View Businesses ➔
+                        View Businesses ->
                       </Button>
                     </Card>
                   </Col>
@@ -736,7 +836,7 @@ export default function AdminMasterConsolePage() {
                         Places API & AI Engine status monitoring.
                       </Paragraph>
                       <Button size="small">
-                        View Server Diagnostics ➔
+                        View Server Diagnostics ->
                       </Button>
                     </Card>
                   </Col>
@@ -776,7 +876,7 @@ export default function AdminMasterConsolePage() {
                             {bridgeStatus?.status === 'connected' ? 'CONNECTED & ACTIVE' : 'PAIRING REQUIRED'}
                           </Tag>
                           <Tag color="cyan">
-                            ✓ PostgreSQL Session Persistence Active
+                            PostgreSQL Session Persistence Active
                           </Tag>
                         </div>
                         <Text type="secondary" style={{ fontSize: 12 }}>
@@ -842,7 +942,7 @@ export default function AdminMasterConsolePage() {
                           />
                           <Paragraph type="secondary" style={{ fontSize: 12, marginTop: 12 }}>
                             1. Open WhatsApp on your phone.<br />
-                            2. Tap <b>Settings / 3-dots ➔ Linked Devices ➔ Link a Device</b>.<br />
+                            2. Tap <b>Settings / 3-dots -> Linked Devices -> Link a Device</b>.<br />
                             3. Point your camera at this QR code.
                           </Paragraph>
                           <Button size="small" icon={<SyncOutlined />} onClick={loadBridgeStatus}>
@@ -908,7 +1008,7 @@ export default function AdminMasterConsolePage() {
                             {generatedPairingCode}
                           </Title>
                           <Text type="secondary" style={{ fontSize: 11, marginTop: 8, display: 'block' }}>
-                            WhatsApp ➔ Linked Devices ➔ Link with phone number instead.
+                            WhatsApp -> Linked Devices -> Link with phone number instead.
                           </Text>
                         </div>
                       )}
@@ -1221,7 +1321,7 @@ export default function AdminMasterConsolePage() {
                               if (s === 'active') {
                                 return (
                                   <Space direction="vertical" size={2}>
-                                    <Tag color="success">🟢 Active</Tag>
+                                    <Tag color="success">Active</Tag>
                                     <Text type="secondary" style={{ fontSize: 11 }}>
                                       {r.plan?.remainingDays}d left ({r.plan?.expiresAt ? new Date(r.plan.expiresAt).toLocaleDateString('en-IN') : ''})
                                     </Text>
@@ -1241,7 +1341,7 @@ export default function AdminMasterConsolePage() {
                               if (s === 'rejected') {
                                 return (
                                   <Space direction="vertical" size={2}>
-                                    <Tag color="error">❌ Rejected</Tag>
+                                    <Tag color="error">Rejected</Tag>
                                     {r.plan?.rejectionReason && (
                                       <Text type="secondary" style={{ fontSize: 11 }}>
                                         {r.plan.rejectionReason}

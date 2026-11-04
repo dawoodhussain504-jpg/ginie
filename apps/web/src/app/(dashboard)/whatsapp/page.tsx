@@ -721,6 +721,7 @@ function WhatsAppContent() {
                 <Table
                   dataSource={rules}
                   rowKey="id"
+                  scroll={{ x: 650 }}
                   columns={[
                     {
                       title: 'Rule Name',
@@ -897,6 +898,7 @@ function WhatsAppContent() {
                     dataSource={inactiveCustomers}
                     rowKey="id"
                     pagination={false}
+                    scroll={{ x: 650 }}
                     columns={[
                       {
                         title: 'Client Name',

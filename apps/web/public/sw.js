@@ -1,7 +1,6 @@
-// GINIE Service Worker
-const CACHE_NAME = 'ginie-cache-v1';
+// GINIE Service Worker v2 - Instant Realtime Invalidation
+const CACHE_NAME = 'ginie-cache-v2';
 const STATIC_ASSETS = [
-  '/',
   '/manifest.json',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
@@ -29,17 +28,20 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Only cache GET requests, bypass API calls to keep live data fresh
-  if (event.request.method !== 'GET' || event.request.url.includes('/api/')) {
+  // Always fetch HTML navigation and API calls directly from network
+  if (
+    event.request.mode === 'navigate' ||
+    event.request.method !== 'GET' ||
+    event.request.url.includes('/api/') ||
+    event.request.url.includes('/admin') ||
+    event.request.url.includes('/dashboard')
+  ) {
     return;
   }
 
   event.respondWith(
     fetch(event.request).catch(() => {
-      return caches.match(event.request).then((cachedResponse) => {
-        if (cachedResponse) return cachedResponse;
-        return caches.match('/');
-      });
+      return caches.match(event.request);
     })
   );
 });

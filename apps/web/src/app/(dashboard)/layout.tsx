@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import React, { useState, useEffect } from 'react';
 import {
   Layout,
@@ -54,7 +56,7 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, logout, t, locale, setLocale, isDark, setIsDark, brandColor } = useApp();
+  const { user, login, logout, t, locale, setLocale, isDark, setIsDark, brandColor } = useApp();
   const [collapsed, setCollapsed] = useState(false);
   const [moreDrawerOpen, setMoreDrawerOpen] = useState(false);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
@@ -88,19 +90,71 @@ export default function DashboardLayout({
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      setIsImpersonating(!!sessionStorage.getItem('admin_master_token'));
+      const hasSession = !!sessionStorage.getItem('admin_master_token');
+      const hasLocalBackup = !!localStorage.getItem('ginie_master_backup');
+      const isImpersonatedFlag = !!(user as any)?.impersonated;
+      setIsImpersonating(hasSession || hasLocalBackup || isImpersonatedFlag);
     }
-  }, [pathname]);
+  }, [pathname, user]);
 
-  const handleExitImpersonation = () => {
-    const masterToken = sessionStorage.getItem('admin_master_token');
-    if (masterToken) {
-      localStorage.setItem('ginie_token', masterToken);
-      sessionStorage.removeItem('admin_master_token');
-      message.success('Master Admin session restored!');
+  const isImpersonatingActive =
+    isImpersonating ||
+    (typeof window !== 'undefined' && (
+      !!sessionStorage.getItem('admin_master_token') ||
+      !!localStorage.getItem('ginie_master_backup') ||
+      !!(user as any)?.impersonated
+    ));
+
+  const handleExitImpersonation = async () => {
+    try {
+      let masterToken = sessionStorage.getItem('admin_master_token');
+      let masterUserStr = sessionStorage.getItem('admin_master_user');
+      let masterRefreshToken = sessionStorage.getItem('admin_master_refresh_token');
+
+      const backupStr = localStorage.getItem('ginie_master_backup');
+      if (backupStr) {
+        try {
+          const backup = JSON.parse(backupStr);
+          masterToken = masterToken || backup.token;
+          masterUserStr = masterUserStr || (backup.user ? JSON.stringify(backup.user) : null);
+          masterRefreshToken = masterRefreshToken || backup.refreshToken;
+        } catch {}
+      }
+
+      // 1. Call secure backend endpoint to restore Super Admin tokens & profile (passing masterToken)
+      const res = await api.post('/api/auth/exit-impersonation', { masterToken }).catch(() => null);
+
+      if (res?.tokens?.accessToken && res?.user) {
+        sessionStorage.removeItem('admin_master_token');
+        sessionStorage.removeItem('admin_master_user');
+        sessionStorage.removeItem('admin_master_refresh_token');
+        localStorage.removeItem('ginie_master_backup');
+
+        login(res.tokens.accessToken, res.user, res.tokens.refreshToken);
+        message.success('Master Admin session restored successfully!');
+        window.location.href = '/admin';
+        return;
+      }
+
+      // 2. Local fallback if offline or backend call returned null
+      if (masterToken && masterUserStr) {
+        const masterUser = JSON.parse(masterUserStr);
+        sessionStorage.removeItem('admin_master_token');
+        sessionStorage.removeItem('admin_master_user');
+        sessionStorage.removeItem('admin_master_refresh_token');
+        localStorage.removeItem('ginie_master_backup');
+
+        login(masterToken, masterUser, masterRefreshToken || undefined);
+        message.success('Master Admin session restored!');
+        window.location.href = '/admin';
+        return;
+      }
+
+      // 3. Fallback: navigate to admin
+      message.info('Redirecting to Master Console...');
       window.location.href = '/admin';
-    } else {
-      router.push('/admin');
+    } catch (err) {
+      window.location.href = '/admin';
     }
   };
 
@@ -266,7 +320,7 @@ export default function DashboardLayout({
         },
       ],
     },
-    ...(user?.isSuperAdmin
+    ...(user?.isSuperAdmin || isImpersonatingActive
       ? [
           {
             type: 'group',
@@ -279,7 +333,11 @@ export default function DashboardLayout({
               {
                 key: '/admin',
                 icon: <SafetyCertificateOutlined style={{ color: '#faad14' }} />,
-                label: (
+                label: isImpersonatingActive ? (
+                  <span onClick={handleExitImpersonation} style={{ cursor: 'pointer', color: '#d48806', fontWeight: 600 }}>
+                    Exit to Master Console
+                  </span>
+                ) : (
                   <Link href="/admin">
                     <span style={{ color: '#d48806', fontWeight: 600 }}>Master Console</span>
                   </Link>
@@ -320,6 +378,21 @@ export default function DashboardLayout({
           </div>
         ),
       },
+      ...(isImpersonatingActive
+        ? [
+            {
+              key: 'exit-impersonation-dropdown',
+              icon: <ArrowLeftOutlined style={{ color: '#ef4444' }} />,
+              danger: true,
+              label: (
+                <div onClick={handleExitImpersonation} style={{ fontWeight: 700, color: '#ef4444' }}>
+                  Exit Impersonation & Return to Master Console
+                </div>
+              ),
+            },
+            { type: 'divider' as const },
+          ]
+        : []),
       { type: 'divider' as const },
       {
         key: 'digital-store',
@@ -478,6 +551,7 @@ export default function DashboardLayout({
       <Layout style={{ background: isDark ? '#0b0f17' : '#f8fafc' }}>
         {/* Top Header */}
         <Header
+          className="ginie-mobile-header"
           style={{
             background: isDark ? '#0f172a' : '#ffffff',
             padding: '0 24px',
@@ -492,9 +566,31 @@ export default function DashboardLayout({
             boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03)',
           }}
         >
-          {/* Left: Breadcrumb & Workspace badge */}
+          {/* Left: Breadcrumb & Workspace badge (Desktop) + Mobile Brand Pill */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {/* Show GINIE brand logo & title on mobile */}
+            <div className="show-on-mobile" style={{ alignItems: 'center', gap: 8 }}>
+              <div
+                style={{
+                  width: 30,
+                  height: 30,
+                  borderRadius: 8,
+                  background: brandColor || '#2563eb',
+                  color: '#fff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 800,
+                  fontSize: 15,
+                }}
+              >
+                G
+              </div>
+              <span style={{ fontWeight: 800, fontSize: 16, letterSpacing: -0.5 }}>GINIE</span>
+            </div>
+
+            {/* Desktop breadcrumb */}
+            <div className="hide-on-mobile" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ fontSize: 13, fontWeight: 500, color: isDark ? '#94a3b8' : '#64748b' }}>
                 GINIE
               </span>
@@ -505,6 +601,7 @@ export default function DashboardLayout({
             </div>
 
             <Tag
+              className="hide-on-mobile"
               style={{
                 borderRadius: 999,
                 margin: 0,
@@ -522,8 +619,8 @@ export default function DashboardLayout({
 
           {/* Right: Controls & User Profile */}
           <Space size="middle" align="center">
-            {/* Sync status */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginRight: 4 }}>
+            {/* Sync status - Desktop */}
+            <div className="hide-on-mobile" style={{ display: 'flex', alignItems: 'center', gap: 6, marginRight: 4 }}>
               <span
                 style={{
                   display: 'inline-block',
@@ -539,24 +636,42 @@ export default function DashboardLayout({
               </span>
             </div>
 
-            {/* AI Assistant Button */}
-            <Button
-              icon={<ThunderboltFilled style={{ color: '#2563eb' }} />}
-              onClick={() => setAiDrawerOpen(true)}
-              style={{
-                borderRadius: 8,
-                background: isDark ? 'rgba(37, 99, 235, 0.12)' : '#eff6ff',
-                borderColor: isDark ? 'rgba(37, 99, 235, 0.3)' : '#bfdbfe',
-                color: isDark ? '#60a5fa' : '#2563eb',
-                fontWeight: 700,
-                height: 36,
-              }}
-            >
-              Ask GINIE AI
-            </Button>
+            {/* AI Assistant Button - Desktop */}
+            <div className="hide-on-mobile">
+              <Button
+                icon={<ThunderboltFilled style={{ color: '#2563eb' }} />}
+                onClick={() => setAiDrawerOpen(true)}
+                style={{
+                  borderRadius: 8,
+                  background: isDark ? 'rgba(37, 99, 235, 0.12)' : '#eff6ff',
+                  borderColor: isDark ? 'rgba(37, 99, 235, 0.3)' : '#bfdbfe',
+                  color: isDark ? '#60a5fa' : '#2563eb',
+                  fontWeight: 700,
+                  height: 36,
+                }}
+              >
+                Ask GINIE AI
+              </Button>
+            </div>
+
+            {/* AI Assistant Button - Mobile Compact */}
+            <div className="show-on-mobile">
+              <Button
+                type="primary"
+                shape="circle"
+                size="middle"
+                icon={<ThunderboltFilled />}
+                onClick={() => setAiDrawerOpen(true)}
+                style={{
+                  background: 'linear-gradient(135deg, #1677ff 0%, #722ed1 100%)',
+                  borderColor: 'transparent',
+                  boxShadow: '0 2px 6px rgba(114, 46, 209, 0.3)',
+                }}
+              />
+            </div>
 
             {/* Impersonation Exit if active */}
-            {isImpersonating && (
+            {isImpersonatingActive && (
               <Button
                 type="primary"
                 danger
@@ -627,7 +742,7 @@ export default function DashboardLayout({
         </Header>
 
         {/* Impersonation Warning Banner */}
-        {isImpersonating && (
+        {isImpersonatingActive && (
           <div
             style={{
               background: 'linear-gradient(90deg, #722ed1 0%, #1677ff 100%)',
@@ -666,11 +781,11 @@ export default function DashboardLayout({
         )}
 
         {/* Content Area */}
-        <Content style={{ margin: '24px 24px', minHeight: 'calc(100vh - 120px)', paddingBottom: 64 }}>
+        <Content className="ginie-mobile-content-container" style={{ margin: '24px 24px', minHeight: 'calc(100vh - 120px)', paddingBottom: 64 }}>
           {children}
         </Content>
 
-        {/* Mobile Bottom Navigation Bar (Under 768px) */}
+        {/* Mobile Bottom Navigation Bar (Under 768px - 5 High-Impact Tabs) */}
         <div className="ginie-mobile-bottom-nav">
           <Link href="/dashboard" className={`bottom-nav-item ${pathname === '/dashboard' ? 'active' : ''}`}>
             <HomeOutlined />
@@ -684,87 +799,253 @@ export default function DashboardLayout({
             <span>Customers</span>
           </Link>
           <Link
-            href="/find-customers"
-            className={`bottom-nav-item ${pathname.startsWith('/find-customers') ? 'active' : ''}`}
+            href="/erp"
+            className={`bottom-nav-item ${pathname.startsWith('/erp') ? 'active' : ''}`}
           >
-            <CompassOutlined />
-            <span>Find</span>
+            <AppstoreOutlined />
+            <span>ERP POS</span>
           </Link>
           <Link
-            href="/sales"
-            className={`bottom-nav-item ${pathname.startsWith('/sales') ? 'active' : ''}`}
+            href="/digital-store"
+            className={`bottom-nav-item ${pathname.startsWith('/digital-store') ? 'active' : ''}`}
           >
-            <FundProjectionScreenOutlined />
-            <span>Sales</span>
-          </Link>
-          <Link
-            href="/whatsapp"
-            className={`bottom-nav-item ${pathname.startsWith('/whatsapp') ? 'active' : ''}`}
-          >
-            <WhatsAppOutlined />
-            <span>Messages</span>
+            <ShopOutlined />
+            <span>Store</span>
           </Link>
           <div
-            className="bottom-nav-item"
+            className={`bottom-nav-item ${moreDrawerOpen ? 'active' : ''}`}
             onClick={() => setMoreDrawerOpen(true)}
             style={{ cursor: 'pointer' }}
           >
             <MenuOutlined />
-            <span>More</span>
+            <span>Menu</span>
           </div>
         </div>
 
         {/* Mobile More Drawer */}
         <Drawer
-          title="More GINIE Modules"
+          title={
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: 8 }}>
+              <span style={{ fontWeight: 700, fontSize: 16 }}>All Business Modules</span>
+              <Tag color="blue" style={{ borderRadius: 10, margin: 0 }}>GINIE Cockpit</Tag>
+            </div>
+          }
           placement="bottom"
           height="auto"
           onClose={() => setMoreDrawerOpen(false)}
           open={moreDrawerOpen}
+          bodyStyle={{ padding: '16px 16px 28px' }}
         >
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, padding: '8px 0 20px' }}>
-            <Link
-              href="/erp"
-              onClick={() => setMoreDrawerOpen(false)}
-              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, color: '#262626' }}
+          {/* Quick AI & PWA Action Bar */}
+          <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+            <Button
+              type="primary"
+              block
+              icon={<ThunderboltFilled />}
+              onClick={() => {
+                setMoreDrawerOpen(false);
+                setAiDrawerOpen(true);
+              }}
+              style={{
+                height: 42,
+                borderRadius: 10,
+                background: 'linear-gradient(135deg, #1677ff 0%, #722ed1 100%)',
+                borderColor: 'transparent',
+                fontWeight: 700,
+              }}
             >
-              <div style={{ width: 48, height: 48, borderRadius: 12, background: '#f5f3ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <AppstoreOutlined style={{ fontSize: 22, color: '#722ed1' }} />
+              Ask GINIE AI Assistant
+            </Button>
+            {isInstallable && (
+              <Button
+                block
+                icon={<MobileOutlined />}
+                onClick={() => {
+                  setMoreDrawerOpen(false);
+                  handleInstallApp();
+                }}
+                style={{
+                  height: 42,
+                  borderRadius: 10,
+                  borderColor: '#4f46e5',
+                  color: '#4f46e5',
+                  fontWeight: 600,
+                }}
+              >
+                Install App
+              </Button>
+            )}
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+            <Link
+              href="/find-customers"
+              onClick={() => setMoreDrawerOpen(false)}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 6,
+                padding: '12px 6px',
+                borderRadius: 12,
+                background: '#f8fafc',
+                border: '1px solid #f1f5f9',
+                color: '#1e293b',
+                textAlign: 'center',
+              }}
+            >
+              <div style={{ width: 44, height: 44, borderRadius: 10, background: '#f0f9ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <CompassOutlined style={{ fontSize: 22, color: '#0284c7' }} />
               </div>
-              <span style={{ fontSize: 12 }}>ERP Modules</span>
+              <span style={{ fontSize: 12, fontWeight: 600 }}>Find Leads</span>
             </Link>
+
+            <Link
+              href="/sales"
+              onClick={() => setMoreDrawerOpen(false)}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 6,
+                padding: '12px 6px',
+                borderRadius: 12,
+                background: '#f8fafc',
+                border: '1px solid #f1f5f9',
+                color: '#1e293b',
+                textAlign: 'center',
+              }}
+            >
+              <div style={{ width: 44, height: 44, borderRadius: 10, background: '#f5f3ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <FundProjectionScreenOutlined style={{ fontSize: 22, color: '#7c3aed' }} />
+              </div>
+              <span style={{ fontSize: 12, fontWeight: 600 }}>Sales CRM</span>
+            </Link>
+
+            <Link
+              href="/whatsapp"
+              onClick={() => setMoreDrawerOpen(false)}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 6,
+                padding: '12px 6px',
+                borderRadius: 12,
+                background: '#f8fafc',
+                border: '1px solid #f1f5f9',
+                color: '#1e293b',
+                textAlign: 'center',
+              }}
+            >
+              <div style={{ width: 44, height: 44, borderRadius: 10, background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <WhatsAppOutlined style={{ fontSize: 22, color: '#16a34a' }} />
+              </div>
+              <span style={{ fontSize: 12, fontWeight: 600 }}>Messages</span>
+            </Link>
+
             <Link
               href="/billing"
               onClick={() => setMoreDrawerOpen(false)}
-              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, color: '#262626' }}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 6,
+                padding: '12px 6px',
+                borderRadius: 12,
+                background: '#f8fafc',
+                border: '1px solid #f1f5f9',
+                color: '#1e293b',
+                textAlign: 'center',
+              }}
             >
-              <div style={{ width: 48, height: 48, borderRadius: 12, background: '#f0f5ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <FileTextOutlined style={{ fontSize: 22, color: '#1677ff' }} />
+              <div style={{ width: 44, height: 44, borderRadius: 10, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <FileTextOutlined style={{ fontSize: 22, color: '#2563eb' }} />
               </div>
-              <span style={{ fontSize: 12 }}>Billing & Quotes</span>
+              <span style={{ fontSize: 12, fontWeight: 600 }}>Invoices & GST</span>
             </Link>
 
             <Link
               href="/reports"
               onClick={() => setMoreDrawerOpen(false)}
-              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, color: '#262626' }}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 6,
+                padding: '12px 6px',
+                borderRadius: 12,
+                background: '#f8fafc',
+                border: '1px solid #f1f5f9',
+                color: '#1e293b',
+                textAlign: 'center',
+              }}
             >
-              <div style={{ width: 48, height: 48, borderRadius: 12, background: '#f6ffed', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <BarChartOutlined style={{ fontSize: 22, color: '#52c41a' }} />
+              <div style={{ width: 44, height: 44, borderRadius: 10, background: '#fff7ed', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <BarChartOutlined style={{ fontSize: 22, color: '#ea580c' }} />
               </div>
-              <span style={{ fontSize: 12 }}>Reports</span>
+              <span style={{ fontSize: 12, fontWeight: 600 }}>Analytics</span>
             </Link>
 
             <Link
               href="/settings"
               onClick={() => setMoreDrawerOpen(false)}
-              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, color: '#262626' }}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 6,
+                padding: '12px 6px',
+                borderRadius: 12,
+                background: '#f8fafc',
+                border: '1px solid #f1f5f9',
+                color: '#1e293b',
+                textAlign: 'center',
+              }}
             >
-              <div style={{ width: 48, height: 48, borderRadius: 12, background: '#fff7e6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <SettingOutlined style={{ fontSize: 22, color: '#fa8c16' }} />
+              <div style={{ width: 44, height: 44, borderRadius: 10, background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <SettingOutlined style={{ fontSize: 22, color: '#475569' }} />
               </div>
-              <span style={{ fontSize: 12 }}>Settings</span>
+              <span style={{ fontSize: 12, fontWeight: 600 }}>Settings</span>
             </Link>
+
+            {(user?.isSuperAdmin || isImpersonatingActive) && (
+              <div
+                onClick={() => {
+                  setMoreDrawerOpen(false);
+                  if (isImpersonatingActive) {
+                    handleExitImpersonation();
+                  } else {
+                    router.push('/admin');
+                  }
+                }}
+                style={{
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '12px 6px',
+                  borderRadius: 12,
+                  background: isImpersonatingActive ? '#fef2f2' : '#fffbeb',
+                  border: isImpersonatingActive ? '1px solid #fee2e2' : '1px solid #fef3c7',
+                  color: isImpersonatingActive ? '#dc2626' : '#92400e',
+                  textAlign: 'center',
+                }}
+              >
+                <div style={{ width: 44, height: 44, borderRadius: 10, background: isImpersonatingActive ? '#fee2e2' : '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {isImpersonatingActive ? (
+                    <ArrowLeftOutlined style={{ fontSize: 22, color: '#dc2626' }} />
+                  ) : (
+                    <SafetyCertificateOutlined style={{ fontSize: 22, color: '#d97706' }} />
+                  )}
+                </div>
+                <span style={{ fontSize: 12, fontWeight: 600 }}>
+                  {isImpersonatingActive ? 'Exit Admin' : 'Master Admin'}
+                </span>
+              </div>
+            )}
           </div>
         </Drawer>
       </Layout>

@@ -22,9 +22,7 @@ import {
   WhatsAppOutlined,
   MailOutlined,
   PhoneOutlined,
-  CheckCircleOutlined,
   ArrowLeftOutlined,
-  KeyOutlined,
 } from '@ant-design/icons';
 import { useApp } from '@/context/AppContext';
 import { api } from '@/lib/api';
@@ -41,7 +39,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // WhatsApp OTP Login States
+  // WhatsApp OTP Login States - completely blank by default
   const [phone, setPhone] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [otpCode, setOtpCode] = useState('');
@@ -58,16 +56,6 @@ export default function LoginPage() {
   const [emailForm] = Form.useForm();
   const [phoneForm] = Form.useForm();
 
-  useEffect(() => {
-    const rememberedEmail = localStorage.getItem('ginie_remembered_email');
-    if (rememberedEmail) {
-      emailForm.setFieldsValue({
-        email: rememberedEmail,
-        remember: true,
-      });
-    }
-  }, [emailForm]);
-
   // Countdown timer for OTP resend
   useEffect(() => {
     let timer: any = null;
@@ -82,14 +70,8 @@ export default function LoginPage() {
     setLoading(true);
     setErrorMessage(null);
     try {
-      if (values.remember) {
-        localStorage.setItem('ginie_remembered_email', values.email.trim());
-      } else {
-        localStorage.removeItem('ginie_remembered_email');
-      }
-
       const res = await api.post('/api/auth/login', {
-        email: values.email.trim(),
+        email: (values.email || '').trim(),
         password: values.password,
       });
 
@@ -111,7 +93,7 @@ export default function LoginPage() {
   // 2. Send WhatsApp OTP
   const handleSendOtp = async (values?: any) => {
     const rawPhone = values?.phone || phone;
-    const cleanDigits = rawPhone.replace(/\D/g, '');
+    const cleanDigits = (rawPhone || '').replace(/\D/g, '');
 
     if (cleanDigits.length < 10) {
       message.error(locale === 'hi' ? 'कृपया सही 10-अंकों का मोबाइल नंबर दर्ज करें' : 'Please enter a valid 10-digit mobile number');
@@ -159,44 +141,46 @@ export default function LoginPage() {
         router.push('/dashboard');
       }
     } catch (err: any) {
-      setErrorMessage(err.message || 'Verification failed. Please check the code.');
+      setErrorMessage(err.message || 'Invalid or expired OTP. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  // 4. Request Password Reset
+  // 4. Request Forgot Password Code
   const handleRequestReset = async () => {
     if (!forgotIdentifier.trim()) {
-      message.error('Please enter your registered email or WhatsApp number');
+      message.error('Please enter your email address or mobile number');
       return;
     }
     setForgotLoading(true);
     try {
-      await api.post('/api/auth/forgot-password/request', { identifier: forgotIdentifier });
-      message.success('Verification code sent to your WhatsApp / Email!');
+      await api.post('/api/auth/forgot-password/request', {
+        identifier: forgotIdentifier.trim(),
+      });
+      message.success('Verification code sent! Please check your Email / WhatsApp.');
       setForgotStep(2);
     } catch (err: any) {
-      message.error(err.message || 'Failed to send reset code.');
+      message.error(err.message || 'Failed to send verification code.');
     } finally {
       setForgotLoading(false);
     }
   };
 
-  // 5. Submit Password Reset
+  // 5. Submit Forgot Password Reset
   const handleSubmitReset = async () => {
     if (!forgotOtp.trim() || forgotOtp.trim().length < 6) {
-      message.error('Please enter the 6-digit verification code');
+      message.error('Please enter the 6-digit OTP');
       return;
     }
     if (!forgotNewPass || forgotNewPass.length < 6) {
-      message.error('New password must be at least 6 characters');
+      message.error('Password must be at least 6 characters');
       return;
     }
     setForgotLoading(true);
     try {
       await api.post('/api/auth/forgot-password/reset', {
-        identifier: forgotIdentifier,
+        identifier: forgotIdentifier.trim(),
         otp: forgotOtp.trim(),
         newPassword: forgotNewPass,
       });
@@ -315,13 +299,13 @@ export default function LoginPage() {
                 <div>
                   {!otpSent ? (
                     /* Step 1: Enter Phone Number */
-                    <Form form={phoneForm} layout="vertical" onFinish={handleSendOtp} size="large">
+                    <Form form={phoneForm} layout="vertical" onFinish={handleSendOtp} size="large" autoComplete="off">
                       <Form.Item
                         label={locale === 'hi' ? 'व्हाट्सएप मोबाइल नंबर' : 'WhatsApp Mobile Number'}
                         name="phone"
                         rules={[
-                          { required: true, message: 'Please enter your mobile number' },
-                          { min: 10, message: 'Must be at least 10 digits' },
+                          { required: true, message: locale === 'hi' ? 'कृपया अपना मोबाइल नंबर दर्ज करें' : 'Please enter your mobile number' },
+                          { min: 10, message: locale === 'hi' ? 'कम से कम 10 अंक होने चाहिए' : 'Must be at least 10 digits' },
                         ]}
                         extra={
                           <Text type="secondary" style={{ fontSize: 11 }}>
@@ -334,9 +318,9 @@ export default function LoginPage() {
                         <Input
                           prefix={<PhoneOutlined style={{ color: '#888' }} />}
                           addonBefore="+91"
-                          placeholder="98765 43210"
+                          placeholder={locale === 'hi' ? '10-अंकों का नंबर दर्ज करें' : 'Enter 10-digit number'}
                           maxLength={15}
-                          autoFocus
+                          autoComplete="off"
                         />
                       </Form.Item>
 
@@ -405,7 +389,7 @@ export default function LoginPage() {
 
                       <div style={{ marginBottom: 16 }}>
                         <Text strong style={{ display: 'block', marginBottom: 8, fontSize: 13 }}>
-                          Enter 6-Digit Verification Code:
+                          {locale === 'hi' ? '6-अंकों का वेरिफिकेशन कोड दर्ज करें:' : 'Enter 6-Digit Verification Code:'}
                         </Text>
                         <Input.OTP
                           length={6}
@@ -419,7 +403,7 @@ export default function LoginPage() {
 
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
                         <Text type="secondary" style={{ fontSize: 12 }}>
-                          Didn't receive code?
+                          {locale === 'hi' ? 'कोड नहीं मिला?' : "Didn't receive code?"}
                         </Text>
                         {countdown > 0 ? (
                           <Text type="secondary" style={{ fontSize: 12 }}>
@@ -447,23 +431,6 @@ export default function LoginPage() {
                         {locale === 'hi' ? 'वेरीफाई करें और साइन इन करें' : 'Verify & Sign In'}
                       </Button>
 
-                      {phone.replace(/\D/g, '').slice(-10) === '8797186001' && (
-                        <div
-                          style={{
-                            background: '#eff6ff',
-                            border: '1px dashed #93c5fd',
-                            padding: '8px 12px',
-                            borderRadius: 8,
-                            marginBottom: 12,
-                            textAlign: 'center',
-                          }}
-                        >
-                          <Text style={{ fontSize: 11, color: '#1e40af', display: 'block' }}>
-                            <b>Master Admin Bypass:</b> Enter Master PIN <code style={{ color: '#b91c1c', fontWeight: 700 }}>879718</code> if WhatsApp delivery is delayed.
-                          </Text>
-                        </div>
-                      )}
-
                       <Button
                         type="dashed"
                         block
@@ -490,7 +457,7 @@ export default function LoginPage() {
                 </Space>
               ),
               children: (
-                <Form form={emailForm} layout="vertical" onFinish={onEmailLogin} size="large">
+                <Form form={emailForm} layout="vertical" onFinish={onEmailLogin} size="large" autoComplete="off">
                   <Form.Item
                     label={t.auth.emailLabel}
                     name="email"
@@ -501,8 +468,8 @@ export default function LoginPage() {
                   >
                     <Input
                       prefix={<UserOutlined />}
-                      placeholder="owner@yourcompany.com"
-                      autoComplete="email"
+                      placeholder={locale === 'hi' ? 'ईमेल एड्रेस दर्ज करें' : 'Enter your email address'}
+                      autoComplete="off"
                     />
                   </Form.Item>
 
@@ -513,8 +480,8 @@ export default function LoginPage() {
                   >
                     <Input.Password
                       prefix={<LockOutlined />}
-                      placeholder="••••••••"
-                      autoComplete="current-password"
+                      placeholder={locale === 'hi' ? 'पासवर्ड दर्ज करें' : 'Enter your password'}
+                      autoComplete="new-password"
                     />
                   </Form.Item>
 
@@ -535,7 +502,7 @@ export default function LoginPage() {
                         e.preventDefault();
                         setForgotModalVisible(true);
                       }}
-                      style={{ fontSize: 12, color: brandColor, fontWeight: 600 }}
+                      style={{ fontSize: 12, color: brandColor, fontWeight: 600, cursor: 'pointer' }}
                     >
                       {locale === 'hi' ? 'पासवर्ड भूल गए?' : 'Forgot password?'}
                     </a>
@@ -613,18 +580,14 @@ export default function LoginPage() {
         </a>
       </div>
 
-      {/* SELF-SERVICE FORGOT PASSWORD MODAL */}
+      {/* Forgot Password Modal */}
       <Modal
-        title={
-          <Space>
-            <KeyOutlined style={{ color: brandColor }} />
-            <span>Reset Your Password</span>
-          </Space>
-        }
+        title="Reset Password"
         open={forgotModalVisible}
         onCancel={() => {
           setForgotModalVisible(false);
           setForgotStep(1);
+          setForgotIdentifier('');
           setForgotOtp('');
           setForgotNewPass('');
         }}
@@ -642,10 +605,11 @@ export default function LoginPage() {
               <Form.Item label="Email or WhatsApp Phone" required>
                 <Input
                   prefix={<UserOutlined />}
-                  placeholder="owner@business.com or 9876543210"
+                  placeholder="Enter email or 10-digit phone"
                   value={forgotIdentifier}
                   onChange={(e) => setForgotIdentifier(e.target.value)}
                   size="large"
+                  autoComplete="off"
                 />
               </Form.Item>
 
@@ -683,6 +647,7 @@ export default function LoginPage() {
                   value={forgotNewPass}
                   onChange={(e) => setForgotNewPass(e.target.value)}
                   size="large"
+                  autoComplete="new-password"
                 />
               </Form.Item>
 

@@ -397,13 +397,30 @@ export interface AuditLogDto {
 // ========================================================
 // 15. Business Types & Onboarding (Upgrade Spec Phase 1)
 // ========================================================
-export type BusinessTypeEnum = 'shop' | 'school' | 'clinic' | 'factory' | 'services' | 'restaurant' | 'wholesale' | 'other';
+export type BusinessTypeEnum =
+  | 'retail'
+  | 'wholesale'
+  | 'automobile'
+  | 'pharmacy'
+  | 'jewellery'
+  | 'restaurant'
+  | 'salon'
+  | 'education'
+  | 'clinic'
+  | 'manufacturing'
+  | 'services'
+  | 'shop'
+  | 'school'
+  | 'factory'
+  | 'other';
 
 export const CompleteOnboardingSchema = z.object({
   businessName: z.string().min(2, 'Business name is required'),
-  businessType: z.enum(['shop', 'school', 'clinic', 'factory', 'services', 'restaurant', 'wholesale', 'other']),
+  businessType: z.string().min(1, 'Business type is required'),
   teamSize: z.string().optional().default('1-5'),
   language: z.enum(['en', 'hi']).default('en'),
+  city: z.string().optional(),
+  storeSlug: z.string().optional(),
 });
 export type CompleteOnboardingDto = z.infer<typeof CompleteOnboardingSchema>;
 
@@ -429,7 +446,8 @@ export interface BusinessTemplateMessage {
 }
 
 export interface BusinessTemplate {
-  id: BusinessTypeEnum;
+  id: BusinessTypeEnum | string;
+  superpowers?: string[];
   title: string;
   titleHi: string;
   description: string;

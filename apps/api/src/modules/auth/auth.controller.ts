@@ -80,4 +80,13 @@ export class AuthController {
   async getMe(@CurrentUser('id') userId: string, @CurrentUser('tenantId') tenantId: string) {
     return this.authService.getMe(userId, tenantId);
   }
+
+  @Post('exit-impersonation')
+  async exitImpersonation(
+    @CurrentUser() user: any,
+    @Body() body?: { masterToken?: string },
+  ) {
+    return this.authService.exitImpersonation(user, body?.masterToken);
+  }
+
 }

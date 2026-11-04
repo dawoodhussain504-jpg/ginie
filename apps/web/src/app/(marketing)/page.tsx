@@ -37,6 +37,20 @@ import {
   TeamOutlined,
   CalendarOutlined,
   AuditOutlined,
+  BarcodeOutlined,
+  CrownOutlined,
+  ScissorOutlined,
+  ReadOutlined,
+  ExperimentOutlined,
+  CoffeeOutlined,
+  CarOutlined,
+  BuildOutlined,
+  RocketOutlined,
+  MedicineBoxOutlined,
+  CloudUploadOutlined,
+  PrinterOutlined,
+  AppstoreOutlined,
+  CameraOutlined,
 } from '@ant-design/icons';
 
 const { Title, Text, Paragraph } = Typography;
@@ -45,7 +59,7 @@ export default function MarketingLandingPage() {
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-  const [activeTab, setActiveTab] = useState<'discovery' | 'pipeline' | 'whatsapp' | 'billing' | 'cockpit'>('discovery');
+  const [activeTab, setActiveTab] = useState<'erp' | 'storefront' | 'discovery' | 'pipeline' | 'whatsapp' | 'billing' | 'cockpit'>('erp');
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -64,6 +78,40 @@ export default function MarketingLandingPage() {
   }, []);
 
   const coreModules = [
+    {
+      id: 'erp' as const,
+      name: 'Multi-Trade ERP & POS Counter',
+      badge: '100% Free Core ERP',
+      badgeColor: '#10b981',
+      icon: <BarcodeOutlined style={{ fontSize: 22, color: '#f59e0b' }} />,
+      headline: 'Lightning-Fast Barcode POS & Real-Time Inventory for 11 Trades',
+      description: 'Run your retail counter, wholesale warehouse, garage, clinic, or pharmacy with lightning speed. Includes built-in camera barcode scanner, physical laser gun listener, real-time stock deductions, and local offline bill queue.',
+      points: [
+        'Instant barcode scan with audio beep confirmation (<50ms response)',
+        'Built-in smartphone camera scanner and plug-and-play USB laser barcode gun listener',
+        'Real-time stock deduction on POS checkout with inward/outward reason logs',
+        'Daily Cash Register (Daybook) drawer tracking opening cash, cash sales, UPI, and khata',
+        'Local offline bill queue with automatic cloud sync when network reconnects',
+      ],
+      route: '/erp',
+    },
+    {
+      id: 'storefront' as const,
+      name: '0% Fee Digital Storefront',
+      badge: '100% Free Forever',
+      badgeColor: '#10b981',
+      icon: <ShopOutlined style={{ fontSize: 22, color: '#ec4899' }} />,
+      headline: 'Your Own Branded E-Commerce Storefront on ginie.space',
+      description: 'Give your customers a seamless ordering experience without paying 20% to 30% aggregator commissions. The storefront dynamically morphs to your trade — showing live gold bullion tickers, prescription uploads, or dining table selectors.',
+      points: [
+        'Shareable public link (ginie.space/store/your-slug) linked directly to your inventory',
+        'Industry-morphing layouts: Gold rate tickers, Rx uploads, Dining modes & Stylist booking',
+        'Direct customer orders sent straight to your business WhatsApp with trade details',
+        '100% commission-free: No listing fees, no transaction commissions, no hidden charges',
+        'Mobile-first responsive design optimized for fast 4G and 5G smartphone browsing',
+      ],
+      route: '/digital-store',
+    },
     {
       id: 'discovery' as const,
       name: 'Google Maps Lead Discovery',
@@ -96,7 +144,7 @@ export default function MarketingLandingPage() {
         'Identify bottleneck stages where prospective deals get stuck',
         'Unlimited deals and stages included free forever',
       ],
-      route: '/deals',
+      route: '/sales',
     },
     {
       id: 'whatsapp' as const,
@@ -153,18 +201,136 @@ export default function MarketingLandingPage() {
 
   const currentModule = coreModules.find((m) => m.id === activeTab) || coreModules[0];
 
+  const industryTrades = [
+    {
+      key: 'retail',
+      name: 'Retail & Supermarket',
+      tagline: 'किराना, मार्ट व रिटेल काउंटर',
+      icon: <ShopOutlined style={{ fontSize: 24, color: '#1677ff' }} />,
+      color: '#1677ff',
+      features: ['Laser gun & camera barcode scanner', 'Instant POS checkout with audio beep', 'Daily Cash Register & Daybook', 'Local offline bill sync queue'],
+    },
+    {
+      key: 'wholesale',
+      name: 'Wholesale & B2B',
+      tagline: 'थोक व्यापार व डिस्ट्रीब्यूशन',
+      icon: <AppstoreOutlined style={{ fontSize: 24, color: '#722ed1' }} />,
+      color: '#722ed1',
+      features: ['Tiered bulk pricing & MOQ alerts', 'Customer credit ledger (Khata)', 'Delivery Challan & E-Way prep', 'GST B2B multi-item invoices'],
+    },
+    {
+      key: 'automobile',
+      name: 'Automobile & Garage',
+      tagline: 'ऑटोमोबाइल, वर्कशॉप व गैरेज',
+      icon: <CarOutlined style={{ fontSize: 24, color: '#faad14' }} />,
+      color: '#faad14',
+      features: ['Vehicle repair job cards & reg tracking', 'OEM genuine spare parts billing', 'Mechanic service assignment', 'Doorstep pickup & drop status'],
+    },
+    {
+      key: 'pharmacy',
+      name: 'Pharmacy & Medical',
+      tagline: 'दवा दुकान व केमिस्ट स्टोर',
+      icon: <ExperimentOutlined style={{ fontSize: 24, color: '#059669' }} />,
+      color: '#059669',
+      features: ['Medicine batch & expiry date register', 'Near-expiry stock warning alerts', 'Doctor Rx prescription inward log', 'Schedule H & H1 compliance check'],
+    },
+    {
+      key: 'jewellery',
+      name: 'Jewellery & Bullion',
+      tagline: 'सर्राफा, स्वर्ण व आभूषण',
+      icon: <CrownOutlined style={{ fontSize: 24, color: '#d97706' }} />,
+      color: '#d97706',
+      features: ['Live MCX gold & silver rate board', 'BIS 916 Hallmarked stock inventory', 'Gross vs Net weight & making charges', 'Old gold exchange calculation'],
+    },
+    {
+      key: 'restaurant',
+      name: 'Restaurant & F&B',
+      tagline: 'रेस्टोरेंट, कैफे व क्लाउड किचन',
+      icon: <CoffeeOutlined style={{ fontSize: 24, color: '#ea580c' }} />,
+      color: '#ea580c',
+      features: ['Floor table manager with live sitting time', 'Kitchen Order Tickets (KOT) firing', 'Pure Veg / Non-Veg menu filters', 'Takeaway, dine-in & delivery modes'],
+    },
+    {
+      key: 'salon',
+      name: 'Salon & Spa',
+      tagline: 'सैलून, ब्यूटी पार्लर व स्पा',
+      icon: <ScissorOutlined style={{ fontSize: 24, color: '#db2777' }} />,
+      color: '#db2777',
+      features: ['Stylist chair queue & station booking', 'Service duration & slot scheduling', 'Stylist 20% daily commission tracker', 'Bridal & grooming packages'],
+    },
+    {
+      key: 'education',
+      name: 'Coaching & Education',
+      tagline: 'कोचिंग संस्थान व ट्यूशन सेंटर',
+      icon: <ReadOutlined style={{ fontSize: 24, color: '#4f46e5' }} />,
+      color: '#4f46e5',
+      features: ['Batch schedules & student enrollments', 'Monthly fee dues & ledger register', '1-Click WhatsApp fee reminders', 'Faculty timetable & attendance'],
+    },
+    {
+      key: 'clinic',
+      name: 'Clinic & Healthcare',
+      tagline: 'क्लिनिक, डॉक्टर व डायग्नोस्टिक',
+      icon: <MedicineBoxOutlined style={{ fontSize: 24, color: '#eb2f96' }} />,
+      color: '#eb2f96',
+      features: ['Live OPD token & patient queue', 'Doctor consultation fee receipts', 'Prescription diagnosis history', 'Next visit appointment reminders'],
+    },
+    {
+      key: 'manufacturing',
+      name: 'Manufacturing & Factory',
+      tagline: 'फैक्ट्री, उत्पादन व वर्कशॉप',
+      icon: <BuildOutlined style={{ fontSize: 24, color: '#fa8c16' }} />,
+      color: '#fa8c16',
+      features: ['Multi-level Bill of Materials (BOM)', 'Production work orders tracking', 'Raw material stock auto-deduction', 'Workshop scrap & wastage logs'],
+    },
+    {
+      key: 'services',
+      name: 'Services & Agencies',
+      tagline: 'एजेंसी, कंसल्टिंग व प्रोफेशनल',
+      icon: <RocketOutlined style={{ fontSize: 24, color: '#13c2c2' }} />,
+      color: '#13c2c2',
+      features: ['Milestone-based contract invoicing', 'Monthly AMC & retainer schedules', 'Client timesheets & task logs', 'GST compliance tax deductions'],
+    },
+  ];
+
   const faqItems = [
     {
       key: '1',
-      label: 'Is GINIE Core CRM really 100% free forever?',
+      label: 'Is GINIE Core CRM, ERP & Digital Storefront really 100% free forever?',
       children: (
         <Paragraph style={{ color: '#475569', fontSize: 15, lineHeight: 1.7, margin: 0 }}>
-          Yes. The core GINIE CRM — including full lead and contact management, visual Kanban sales pipeline, daily follow-up tasks (Aaj Ka Kaam), professional GST invoicing with dynamic UPI QR receipts, multi-user team collaboration, and 1-click WhatsApp messaging — is 100% free forever. There is no trial expiration date, no hidden renewal fee, and we never ask for your credit card.
+          Yes. The core GINIE platform — including the visual Kanban sales pipeline, multi-trade ERP with barcode POS, digital storefront on ginie.space, daily follow-up tasks (Aaj Ka Kaam), professional GST invoicing with dynamic UPI QR receipts, multi-user team collaboration, and 1-click WhatsApp messaging — is 100% free forever. There is no trial expiration date, no hidden renewal fee, and we never ask for your credit card.
         </Paragraph>
       ),
     },
     {
       key: '2',
+      label: 'Does GINIE include full ERP inventory and POS checkout billing?',
+      children: (
+        <Paragraph style={{ color: '#475569', fontSize: 15, lineHeight: 1.7, margin: 0 }}>
+          Yes! GINIE includes an enterprise-grade ERP with instant barcode scanning (both smartphone camera and physical laser barcode guns), real-time stock deductions on checkout, stock adjustments with audit logs, a daily Cash Register (Daybook) tracking your cash drawer, and an offline bill queue that automatically syncs when your internet returns.
+        </Paragraph>
+      ),
+    },
+    {
+      key: '3',
+      label: 'How does the 0% Commission Digital Storefront work?',
+      children: (
+        <Paragraph style={{ color: '#475569', fontSize: 15, lineHeight: 1.7, margin: 0 }}>
+          Every GINIE merchant automatically gets their own branded e-commerce storefront at ginie.space/store/your-shop-name. It morphs to match your specific industry — showing live gold bullion tickers for jewellers, Rx upload for chemists, dining mode & veg filters for restaurants, or service booking for garages. Orders are received directly on your business WhatsApp with zero marketplace commissions.
+        </Paragraph>
+      ),
+    },
+    {
+      key: '4',
+      label: 'Can I use my existing laser barcode scanner gun with GINIE?',
+      children: (
+        <Paragraph style={{ color: '#475569', fontSize: 15, lineHeight: 1.7, margin: 0 }}>
+          Absolutely. GINIE features a built-in background hardware barcode listener. Just plug in any standard USB or Bluetooth laser scanner gun and scan away — it beeps, looks up the SKU, deducts stock, and adds items to the cart in less than 50 milliseconds.
+        </Paragraph>
+      ),
+    },
+    {
+      key: '5',
       label: 'What is the ₹599 / month Find Customers add-on?',
       children: (
         <Paragraph style={{ color: '#475569', fontSize: 15, lineHeight: 1.7, margin: 0 }}>
@@ -173,7 +339,7 @@ export default function MarketingLandingPage() {
       ),
     },
     {
-      key: '3',
+      key: '6',
       label: 'How does the UPI QR payment and activation work?',
       children: (
         <Paragraph style={{ color: '#475569', fontSize: 15, lineHeight: 1.7, margin: 0 }}>
@@ -182,29 +348,20 @@ export default function MarketingLandingPage() {
       ),
     },
     {
-      key: '4',
+      key: '7',
       label: 'Are there any recurring bank deductions or auto-debits?',
       children: (
         <Paragraph style={{ color: '#475569', fontSize: 15, lineHeight: 1.7, margin: 0 }}>
-          Never. We do not set up any recurring card charges, e-mandates, or hidden subscriptions. You only pay ₹599 via manual UPI transfer for the months you actively want to discover new leads. When your 30 days finish, your core CRM remains fully functional and 100% free forever.
+          Never. We do not set up any recurring card charges, e-mandates, or hidden subscriptions. You only pay ₹599 via manual UPI transfer for the months you actively want to discover new leads. When your 30 days finish, your core CRM, ERP, and Storefront remain fully functional and 100% free forever.
         </Paragraph>
       ),
     },
     {
-      key: '5',
+      key: '8',
       label: 'How does the Dynamic UPI QR on invoices save me money?',
       children: (
         <Paragraph style={{ color: '#475569', fontSize: 15, lineHeight: 1.7, margin: 0 }}>
           When you create a quotation or invoice in GINIE, our system automatically generates a dynamic UPI QR code on the invoice PDF. The QR code contains your exact UPI ID and the balance amount. When your client scans it with Google Pay, PhonePe, or Paytm, the money transfers directly into your bank account with zero payment gateway deduction — saving you 2% to 3% in merchant gateway commissions.
-        </Paragraph>
-      ),
-    },
-    {
-      key: '6',
-      label: 'Can my sales and operations team use GINIE together?',
-      children: (
-        <Paragraph style={{ color: '#475569', fontSize: 15, lineHeight: 1.7, margin: 0 }}>
-          Yes. You can add your sales reps, telecallers, and administrative staff to your GINIE workspace. You can assign leads to specific team members, track deal progress through the Kanban board, and monitor daily follow-up activities without messy spreadsheets.
         </Paragraph>
       ),
     },
@@ -227,7 +384,7 @@ export default function MarketingLandingPage() {
         <Space direction="horizontal" size="middle" wrap style={{ justifyContent: 'center' }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#34d399' }}>
             <SafetyCertificateOutlined />
-            GINIE Core CRM is 100% Free Forever
+            GINIE Core CRM, ERP & Digital Storefront is 100% Free Forever
           </span>
           <span style={{ opacity: 0.3 }}>&bull;</span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#60a5fa' }}>
@@ -297,10 +454,10 @@ export default function MarketingLandingPage() {
                     border: '1px solid rgba(56, 189, 248, 0.25)',
                   }}
                 >
-                  Local CRM
+                  CRM &bull; ERP &bull; Store
                 </span>
               </div>
-              <div style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1 }}>India&apos;s Local Business CRM</div>
+              <div style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1 }}>India&apos;s Local Business Operating System</div>
             </div>
           </Link>
 
@@ -309,18 +466,21 @@ export default function MarketingLandingPage() {
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 28,
+              gap: 24,
             }}
             className="marketing-nav-links"
           >
             <a href="#features" style={{ color: '#cbd5e1', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
               Features
             </a>
+            <a href="#industries" style={{ color: '#cbd5e1', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
+              11 Trades
+            </a>
+            <a href="#erp" style={{ color: '#cbd5e1', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
+              ERP & POS
+            </a>
             <a href="#discovery" style={{ color: '#cbd5e1', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
               Find Customers
-            </a>
-            <a href="#comparison" style={{ color: '#cbd5e1', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
-              Why GINIE
             </a>
             <a href="#pricing" style={{ color: '#cbd5e1', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
               Pricing
@@ -411,7 +571,7 @@ export default function MarketingLandingPage() {
           borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
         }}
       >
-        <div style={{ maxWidth: 960, margin: '0 auto', position: 'relative', zIndex: 2 }}>
+        <div style={{ maxWidth: 980, margin: '0 auto', position: 'relative', zIndex: 2 }}>
           {/* Trust Badge */}
           <div style={{ display: 'inline-flex', marginBottom: 24 }}>
             <div
@@ -429,7 +589,7 @@ export default function MarketingLandingPage() {
               }}
             >
               <SafetyCertificateOutlined />
-              <span>100% Free Core CRM Forever &bull; No Credit Card Required</span>
+              <span>100% Free Core CRM, ERP & Digital Storefront Forever &bull; No Credit Card Required</span>
             </div>
           </div>
 
@@ -445,7 +605,7 @@ export default function MarketingLandingPage() {
               marginBottom: 20,
             }}
           >
-            The All-in-One Sales & WhatsApp CRM
+            The All-in-One CRM, Multi-Trade ERP
             <br />
             <span
               style={{
@@ -454,7 +614,7 @@ export default function MarketingLandingPage() {
                 WebkitTextFillColor: 'transparent',
               }}
             >
-              Built for Indian Local Businesses
+              & Digital Storefront Built for India
             </span>
           </Title>
 
@@ -464,11 +624,11 @@ export default function MarketingLandingPage() {
               color: '#94a3b8',
               fontSize: 'clamp(16px, 2vw, 19px)',
               lineHeight: 1.6,
-              maxWidth: 780,
+              maxWidth: 820,
               margin: '0 auto 36px',
             }}
           >
-            Manage customer leads, visual deal stages, daily team follow-ups, and GST invoices with instant dynamic UPI QR payments — completely free forever. Need fresh local clients? Unlock live Google Maps verified lead discovery anytime for just ₹599/month.
+            Manage customer leads, visual deal stages, daily team follow-ups, multi-trade ERP with camera & gun barcode POS, and your own 0% commission digital storefront — completely free forever. Need fresh local clients? Unlock live Google Maps verified lead discovery anytime for just ₹599/month.
           </Paragraph>
 
           {/* Call to Actions */}
@@ -488,13 +648,13 @@ export default function MarketingLandingPage() {
                 boxShadow: '0 4px 16px rgba(37, 99, 235, 0.4)',
               }}
             >
-              {isLoggedIn ? 'Open My Dashboard' : 'Create Free CRM Account'} <ArrowRightOutlined />
+              {isLoggedIn ? 'Open My Dashboard' : 'Create Free Account'} <ArrowRightOutlined />
             </Button>
 
             <Button
               size="large"
               onClick={() => {
-                const el = document.getElementById('pricing');
+                const el = document.getElementById('industries');
                 if (el) el.scrollIntoView({ behavior: 'smooth' });
               }}
               style={{
@@ -508,12 +668,12 @@ export default function MarketingLandingPage() {
                 borderColor: 'rgba(255, 255, 255, 0.18)',
               }}
             >
-              View Pricing & Plans
+              Explore 11 Trade Modules
             </Button>
 
             <Button
               size="large"
-              href="https://wa.me/918797186001?text=Hello%20GINIE%20Team,%20I%20have%20a%20question%20about%20the%20CRM"
+              href="https://wa.me/918797186001?text=Hello%20GINIE%20Team,%20I%20have%20a%20question%20about%20the%20CRM%20and%20ERP"
               target="_blank"
               icon={<WhatsAppOutlined style={{ color: '#25D366', fontSize: 17 }} />}
               style={{
@@ -547,15 +707,19 @@ export default function MarketingLandingPage() {
           >
             <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <CheckCircleFilled style={{ color: '#10b981' }} />
-              100% Free Core CRM Forever
+              100% Free Core CRM & ERP
+            </span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <CheckCircleFilled style={{ color: '#10b981' }} />
+              Camera & Laser Gun Barcode POS
+            </span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <CheckCircleFilled style={{ color: '#10b981' }} />
+              0% Fee Digital Storefront
             </span>
             <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <CheckCircleFilled style={{ color: '#10b981' }} />
               Google Maps Discovery: ₹599 / Month
-            </span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <CheckCircleFilled style={{ color: '#10b981' }} />
-              Zero Auto-Debit or Credit Card
             </span>
             <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <CheckCircleFilled style={{ color: '#10b981' }} />
@@ -673,7 +837,7 @@ export default function MarketingLandingPage() {
                     borderRadius: 8,
                   }}
                 >
-                  {isLoggedIn ? `Open ${currentModule.name}` : 'Get Started Free'} <ArrowRightOutlined />
+                  {isLoggedIn ? ('Open ' + currentModule.name) : 'Get Started Free'} <ArrowRightOutlined />
                 </Button>
               </Col>
 
@@ -688,6 +852,113 @@ export default function MarketingLandingPage() {
                     boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)',
                   }}
                 >
+                  {/* TAB 1: ERP & POS MOCKUP */}
+                  {activeTab === 'erp' && (
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                        <div>
+                          <Text strong style={{ fontSize: 16, color: '#0f172a' }}>Quick POS Checkout & Live Barcode Hub</Text>
+                          <div style={{ fontSize: 12, color: '#64748b' }}>Hardware laser gun & live camera barcode lookup</div>
+                        </div>
+                        <Tag color="green" style={{ fontWeight: 700 }}>100% Free Core ERP</Tag>
+                      </div>
+
+                      <div style={{ background: '#ffffff', padding: 12, borderRadius: 8, border: '1px solid #e2e8f0', marginBottom: 14 }}>
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                          <div style={{ flex: 1, background: '#f8fafc', padding: '8px 12px', borderRadius: 6, border: '1px solid #cbd5e1', display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <BarcodeOutlined style={{ color: '#2563eb', fontSize: 18 }} />
+                            <span style={{ fontSize: 12, color: '#0f172a', fontWeight: 600 }}>8901030882103 (Auto-detected)</span>
+                          </div>
+                          <Button size="small" type="primary" icon={<CameraOutlined />}>Camera</Button>
+                        </div>
+                      </div>
+
+                      {/* Cart Items */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
+                        <div style={{ background: '#ffffff', padding: '10px 12px', borderRadius: 6, border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div>
+                            <Text strong style={{ fontSize: 13 }}>Amoxicillin 500mg (Augmentin)</Text>
+                            <div style={{ fontSize: 11, color: '#64748b' }}>Batch: AG-8902 &bull; Rack B-04 &bull; Qty: 2</div>
+                          </div>
+                          <span style={{ fontWeight: 800, color: '#0f172a' }}>₹390</span>
+                        </div>
+
+                        <div style={{ background: '#ffffff', padding: '10px 12px', borderRadius: 6, border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div>
+                            <Text strong style={{ fontSize: 13 }}>Castrol Magnatec 4L Oil</Text>
+                            <div style={{ fontSize: 11, color: '#64748b' }}>SKU: MOT-4L-01 &bull; Qty: 1</div>
+                          </div>
+                          <span style={{ fontWeight: 800, color: '#0f172a' }}>₹1,850</span>
+                        </div>
+                      </div>
+
+                      <div style={{ background: '#f1f5f9', padding: '10px 14px', borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                        <div>
+                          <div style={{ fontSize: 11, color: '#64748b' }}>Total Bill (2 Items)</div>
+                          <div style={{ fontSize: 18, fontWeight: 900, color: '#0f172a' }}>₹2,240</div>
+                        </div>
+                        <Space>
+                          <Tag color="blue">UPI QR</Tag>
+                          <Tag color="green">Cash in Till</Tag>
+                          <Tag color="purple">Khata Ledger</Tag>
+                        </Space>
+                      </div>
+
+                      <div style={{ fontSize: 11, color: '#059669', background: '#ecfdf5', padding: '6px 10px', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <CheckCircleFilled />
+                        <span>Real-time inventory deducted &bull; Daybook cash drawer updated &bull; Thermal slip ready</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TAB 2: DIGITAL STOREFRONT MOCKUP */}
+                  {activeTab === 'storefront' && (
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                        <div>
+                          <Text strong style={{ fontSize: 16, color: '#0f172a' }}>Branded E-Commerce Storefront</Text>
+                          <div style={{ fontSize: 12, color: '#64748b' }}>ginie.space/store/apex-medical-store</div>
+                        </div>
+                        <Tag color="magenta" style={{ fontWeight: 700 }}>0% Commission</Tag>
+                      </div>
+
+                      {/* Storefront Live Ticker Bar */}
+                      <div style={{ background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)', border: '1px solid #86efac', padding: '8px 12px', borderRadius: 8, marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: '#166534' }}>Upload Doctor Prescription (Rx)</span>
+                        <Tag color="green">Instant WhatsApp Verification</Tag>
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 12 }}>
+                        <div style={{ background: '#ffffff', padding: 12, borderRadius: 8, border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <Text strong style={{ fontSize: 13 }}>Dolo 650mg Paracetamol</Text>
+                              <Tag color="cyan" style={{ fontSize: 10 }}>Rx Verified</Tag>
+                            </div>
+                            <div style={{ fontSize: 11, color: '#64748b' }}>Pack of 15 tablets &bull; In Stock</div>
+                          </div>
+                          <span style={{ fontWeight: 800, color: '#059669', fontSize: 14 }}>₹32</span>
+                        </div>
+
+                        <div style={{ background: '#ffffff', padding: 12, borderRadius: 8, border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <Text strong style={{ fontSize: 13 }}>Ascoril-D Cough Formula</Text>
+                              <Tag color="green" style={{ fontSize: 10 }}>100ml Syrup</Tag>
+                            </div>
+                            <div style={{ fontSize: 11, color: '#64748b' }}>Sugar Free &bull; In Stock</div>
+                          </div>
+                          <span style={{ fontWeight: 800, color: '#059669', fontSize: 14 }}>₹110</span>
+                        </div>
+                      </div>
+
+                      <Button type="primary" block icon={<WhatsAppOutlined />} style={{ background: '#25D366', borderColor: '#25D366', fontWeight: 700, height: 38 }}>
+                        Send Order Directly on WhatsApp
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* TAB 3: DISCOVERY */}
                   {activeTab === 'discovery' && (
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
@@ -751,6 +1022,7 @@ export default function MarketingLandingPage() {
                     </div>
                   )}
 
+                  {/* TAB 4: PIPELINE */}
                   {activeTab === 'pipeline' && (
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
@@ -798,6 +1070,7 @@ export default function MarketingLandingPage() {
                     </div>
                   )}
 
+                  {/* TAB 5: WHATSAPP */}
                   {activeTab === 'whatsapp' && (
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
@@ -826,6 +1099,7 @@ export default function MarketingLandingPage() {
                     </div>
                   )}
 
+                  {/* TAB 6: BILLING */}
                   {activeTab === 'billing' && (
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
@@ -855,6 +1129,7 @@ export default function MarketingLandingPage() {
                     </div>
                   )}
 
+                  {/* TAB 7: COCKPIT */}
                   {activeTab === 'cockpit' && (
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
@@ -893,6 +1168,68 @@ export default function MarketingLandingPage() {
         </Card>
       </section>
 
+      {/* NEW SECTION: 11 Specialized Indian Trades */}
+      <section id="industries" style={{ maxWidth: 1200, margin: '0 auto 80px', padding: '0 24px' }}>
+        <div style={{ textAlign: 'center', marginBottom: 40 }}>
+          <Tag color="purple" style={{ fontWeight: 800, padding: '4px 14px', fontSize: 12, borderRadius: 999 }}>
+            ONE PLATFORM &bull; 11 SPECIALIZED TRADES
+          </Tag>
+          <Title level={2} style={{ color: '#0f172a', fontWeight: 900, marginTop: 12, marginBottom: 12 }}>
+            Tailored Specifically for Your Exact Business Type
+          </Title>
+          <Paragraph style={{ color: '#64748b', fontSize: 16, maxWidth: 720, margin: '0 auto' }}>
+            No generic spreadsheets. When you select your trade, GINIE automatically activates specialized ERP registers, POS workflows, and storefront widgets engineered for your industry.
+          </Paragraph>
+        </div>
+
+        <Row gutter={[20, 20]}>
+          {industryTrades.map((trade) => (
+            <Col xs={24} sm={12} lg={8} key={trade.key}>
+              <Card
+                hoverable
+                style={{
+                  borderRadius: 12,
+                  border: '1px solid #e2e8f0',
+                  height: '100%',
+                  background: '#ffffff',
+                }}
+                bodyStyle={{ padding: 22 }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+                  <div
+                    style={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: 10,
+                      background: '#f8fafc',
+                      border: '1px solid #e2e8f0',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    {trade.icon}
+                  </div>
+                  <div>
+                    <Text strong style={{ fontSize: 16, color: '#0f172a', display: 'block' }}>{trade.name}</Text>
+                    <span style={{ fontSize: 12, color: trade.color, fontWeight: 700 }}>{trade.tagline}</span>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {trade.features.map((feat, fidx) => (
+                    <div key={fidx} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#475569' }}>
+                      <CheckCircleFilled style={{ color: trade.color, fontSize: 13, flexShrink: 0 }} />
+                      <span>{feat}</span>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </Col>
+          ))}
+        </Row>
+      </section>
+
       {/* Real Core Modules Section */}
       <section id="features" style={{ maxWidth: 1200, margin: '0 auto 80px', padding: '0 24px' }}>
         <div style={{ textAlign: 'center', marginBottom: 48 }}>
@@ -900,10 +1237,10 @@ export default function MarketingLandingPage() {
             EVERYTHING YOU NEED TO SCALE
           </Tag>
           <Title level={2} style={{ color: '#0f172a', fontWeight: 900, marginTop: 12, marginBottom: 12 }}>
-            5 Real Modules. Zero Fluff. Built for India.
+            7 Powerful Modules. Zero Fluff. Built for India.
           </Title>
           <Paragraph style={{ color: '#64748b', fontSize: 16, maxWidth: 680, margin: '0 auto' }}>
-            Foreign CRMs are bloated and priced in expensive US Dollars. GINIE is engineered specifically for Indian businesses, wholesalers, clinics, and service providers.
+            Foreign CRMs are bloated and priced in expensive US Dollars. GINIE combines CRM, ERP, and Digital Storefront engineered specifically for Indian businesses.
           </Paragraph>
         </div>
 
@@ -975,12 +1312,12 @@ export default function MarketingLandingPage() {
               Stop Paying Expensive Dollar Subscriptions
             </Title>
             <Paragraph style={{ color: '#64748b', fontSize: 16, maxWidth: 680, margin: '0 auto' }}>
-              See why hundreds of Indian traders, clinics, agencies, and small businesses choose GINIE over traditional foreign CRMs or disorganized Excel diaries.
+              See why hundreds of Indian traders, clinics, agencies, and small businesses choose GINIE over traditional foreign software or disorganized paper diaries.
             </Paragraph>
           </div>
 
           <Row gutter={[24, 24]}>
-            {/* Foreign CRMs / Manual Diary */}
+            {/* Foreign Software / Manual Diary */}
             <Col xs={24} md={12}>
               <Card
                 style={{
@@ -1006,7 +1343,7 @@ export default function MarketingLandingPage() {
                     <LockOutlined style={{ color: '#ef4444', fontSize: 18 }} />
                   </div>
                   <div>
-                    <Text strong style={{ fontSize: 17, color: '#991b1b' }}>Traditional Foreign CRMs / Excel</Text>
+                    <Text strong style={{ fontSize: 17, color: '#991b1b' }}>Traditional Foreign Software / Excel</Text>
                     <div style={{ fontSize: 12, color: '#b91c1c' }}>HubSpot, Zoho, Salesforce or Paper Diaries</div>
                   </div>
                 </div>
@@ -1026,11 +1363,11 @@ export default function MarketingLandingPage() {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                     <span style={{ color: '#ef4444', fontWeight: 900, fontSize: 16, lineHeight: 1 }}>&times;</span>
-                    <span style={{ fontSize: 14, color: '#7f1d1d' }}>Overly complex English configuration with hundreds of enterprise settings your staff will never use</span>
+                    <span style={{ fontSize: 14, color: '#7f1d1d' }}>No integrated multi-trade ERP or barcode POS counter — you must buy separate billing software</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                     <span style={{ color: '#ef4444', fontWeight: 900, fontSize: 16, lineHeight: 1 }}>&times;</span>
-                    <span style={{ fontSize: 14, color: '#7f1d1d' }}>Scattered customer phone numbers across staff mobile phones with no central communication history</span>
+                    <span style={{ fontSize: 14, color: '#7f1d1d' }}>Aggregator storefronts charge 20% to 30% commission per sale and withhold customer data</span>
                   </div>
                 </div>
               </Card>
@@ -1064,30 +1401,30 @@ export default function MarketingLandingPage() {
                   </div>
                   <div>
                     <Text strong style={{ fontSize: 17, color: '#166534' }}>The GINIE Advantage</Text>
-                    <div style={{ fontSize: 12, color: '#15803d' }}>India&apos;s Local Business CRM</div>
+                    <div style={{ fontSize: 12, color: '#15803d' }}>India&apos;s Local Business Operating System</div>
                   </div>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 20 }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                     <CheckCircleFilled style={{ color: '#10b981', fontSize: 16, marginTop: 2, flexShrink: 0 }} />
-                    <span style={{ fontSize: 14, color: '#14532d', fontWeight: 600 }}>100% Free Core CRM Forever: No credit card, no 14-day expiry limit, no monthly billing shock</span>
+                    <span style={{ fontSize: 14, color: '#14532d', fontWeight: 600 }}>100% Free Core CRM & ERP: No credit card, no 14-day expiry limit, no monthly billing shock</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                     <CheckCircleFilled style={{ color: '#10b981', fontSize: 16, marginTop: 2, flexShrink: 0 }} />
-                    <span style={{ fontSize: 14, color: '#14532d', fontWeight: 600 }}>Integrated Google Maps Lead Discovery: Search local buyers anytime for flat ₹599/month via UPI</span>
+                    <span style={{ fontSize: 14, color: '#14532d', fontWeight: 600 }}>Integrated Multi-Trade ERP & Barcode POS: 11 specialized modules with laser gun and camera scanning</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                    <CheckCircleFilled style={{ color: '#10b981', fontSize: 16, marginTop: 2, flexShrink: 0 }} />
+                    <span style={{ fontSize: 14, color: '#14532d', fontWeight: 600 }}>0% Commission Digital Storefront: Your own shareable web link with WhatsApp checkout</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                    <CheckCircleFilled style={{ color: '#10b981', fontSize: 16, marginTop: 2, flexShrink: 0 }} />
+                    <span style={{ fontSize: 14, color: '#14532d', fontWeight: 600 }}>Google Maps Lead Discovery: Search verified local buyers anytime for flat ₹599/month via UPI</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                     <CheckCircleFilled style={{ color: '#10b981', fontSize: 16, marginTop: 2, flexShrink: 0 }} />
                     <span style={{ fontSize: 14, color: '#14532d', fontWeight: 600 }}>Dynamic UPI QR Invoicing: Auto-embeds your UPI QR on invoice PDFs for instant 0% fee bank receipts</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                    <CheckCircleFilled style={{ color: '#10b981', fontSize: 16, marginTop: 2, flexShrink: 0 }} />
-                    <span style={{ fontSize: 14, color: '#14532d', fontWeight: 600 }}>WhatsApp Web Outreach: Message prospects instantly without saving numbers on your personal phone</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                    <CheckCircleFilled style={{ color: '#10b981', fontSize: 16, marginTop: 2, flexShrink: 0 }} />
-                    <span style={{ fontSize: 14, color: '#14532d', fontWeight: 600 }}>Built for India: Clean, bilingual Hindi/English design that any salesperson or receptionist can master in 5 minutes</span>
                   </div>
                 </div>
               </Card>
@@ -1096,7 +1433,7 @@ export default function MarketingLandingPage() {
         </div>
       </section>
 
-      {/* 100% Honest Pricing Section (Strictly 2 Cards, Zero Emojis) */}
+      {/* 100% Honest Pricing Section */}
       <section id="pricing" style={{ maxWidth: 1080, margin: '0 auto', padding: '90px 24px 80px' }}>
         <div style={{ textAlign: 'center', marginBottom: 54 }}>
           <Tag color="green" style={{ fontWeight: 800, padding: '4px 14px', fontSize: 12, borderRadius: 999 }}>
@@ -1106,12 +1443,12 @@ export default function MarketingLandingPage() {
             Simple Pricing. No Credit Card. No Surprises.
           </Title>
           <Paragraph style={{ color: '#64748b', fontSize: 16, maxWidth: 650, margin: '0 auto' }}>
-            The entire core CRM is 100% free forever for all your team members. When you need fresh local business leads from Google Maps, activate Discovery anytime via UPI for just ₹599/month.
+            The entire core CRM, ERP operations hub, and digital storefront are 100% free forever for all your team members. When you need fresh local business leads from Google Maps, activate Discovery anytime via UPI for just ₹599/month.
           </Paragraph>
         </div>
 
         <Row gutter={[28, 28]} align="stretch">
-          {/* Card 1: GINIE Core CRM */}
+          {/* Card 1: GINIE Core Platform */}
           <Col xs={24} md={12}>
             <Card
               style={{
@@ -1129,10 +1466,10 @@ export default function MarketingLandingPage() {
                   CORE PLATFORM
                 </Tag>
                 <Title level={3} style={{ color: '#0f172a', fontWeight: 800, marginTop: 10, marginBottom: 6 }}>
-                  GINIE Core CRM
+                  GINIE Core CRM & ERP
                 </Title>
                 <Paragraph style={{ color: '#64748b', fontSize: 14, margin: 0 }}>
-                  Everything you need to organize leads, sales pipeline, follow-ups, and GST invoices in one central platform.
+                  Everything you need to organize leads, sales pipeline, multi-trade ERP inventory, POS counter, and digital store in one place.
                 </Paragraph>
               </div>
 
@@ -1144,7 +1481,11 @@ export default function MarketingLandingPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flexGrow: 1, marginBottom: 28 }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                   <CheckOutlined style={{ color: '#10b981', fontSize: 15, marginTop: 3, flexShrink: 0 }} />
-                  <span style={{ fontSize: 14, color: '#334155' }}>Full Lead & Customer Directory</span>
+                  <span style={{ fontSize: 14, color: '#334155' }}>Multi-Trade ERP & Barcode POS Counter (11 Industries)</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                  <CheckOutlined style={{ color: '#10b981', fontSize: 15, marginTop: 3, flexShrink: 0 }} />
+                  <span style={{ fontSize: 14, color: '#334155' }}>Commission-Free Digital Storefront (ginie.space/store/...)</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                   <CheckOutlined style={{ color: '#10b981', fontSize: 15, marginTop: 3, flexShrink: 0 }} />
@@ -1169,10 +1510,6 @@ export default function MarketingLandingPage() {
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                   <CheckOutlined style={{ color: '#10b981', fontSize: 15, marginTop: 3, flexShrink: 0 }} />
                   <span style={{ fontSize: 14, color: '#334155' }}>Multi-User Team Member Collaboration</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                  <CheckOutlined style={{ color: '#10b981', fontSize: 15, marginTop: 3, flexShrink: 0 }} />
-                  <span style={{ fontSize: 14, color: '#334155' }}>100% Cloud Synced & Secure Database</span>
                 </div>
               </div>
 
@@ -1299,7 +1636,7 @@ export default function MarketingLandingPage() {
               Everything You Need to Know
             </Title>
             <Paragraph style={{ color: '#64748b', fontSize: 15 }}>
-              Got questions? Here are honest answers regarding our free CRM and ₹599 UPI add-on.
+              Got questions? Here are honest answers regarding our free CRM, ERP, and Storefront platform.
             </Paragraph>
           </div>
 
@@ -1324,10 +1661,10 @@ export default function MarketingLandingPage() {
       >
         <div style={{ maxWidth: 740, margin: '0 auto' }}>
           <Title level={2} style={{ color: '#ffffff', fontWeight: 900, marginBottom: 14 }}>
-            Ready to Streamline Your Sales and Customer Follow-ups?
+            Ready to Run Your Entire Sales, ERP & Storefront on GINIE?
           </Title>
           <Paragraph style={{ color: '#94a3b8', fontSize: 16, lineHeight: 1.6, marginBottom: 32 }}>
-            Join smart Indian local businesses managing their deals, WhatsApp pitches, and GST invoices on GINIE. Create your free account in under 30 seconds.
+            Join smart Indian local businesses managing their deals, barcode POS, WhatsApp orders, and GST invoices on GINIE. Create your free account in under 30 seconds.
           </Paragraph>
           <Space size="middle" wrap style={{ justifyContent: 'center' }}>
             <Button
@@ -1349,7 +1686,7 @@ export default function MarketingLandingPage() {
 
             <Button
               size="large"
-              href="https://wa.me/918797186001?text=Hello%20GINIE%20Team,%20I%20have%20a%20question%20about%20the%20CRM"
+              href="https://wa.me/918797186001?text=Hello%20GINIE%20Team,%20I%20have%20a%20question%20about%20the%20CRM%20and%20ERP"
               target="_blank"
               icon={<WhatsAppOutlined style={{ color: '#25D366' }} />}
               style={{
@@ -1369,7 +1706,7 @@ export default function MarketingLandingPage() {
         </div>
       </section>
 
-      {/* Modern Clean Footer (Zero Emojis) */}
+      {/* Modern Clean Footer */}
       <footer
         style={{
           background: '#0B0F19',
@@ -1409,11 +1746,11 @@ export default function MarketingLandingPage() {
                     border: '1px solid rgba(56, 189, 248, 0.25)',
                   }}
                 >
-                  Local CRM
+                  CRM &bull; ERP &bull; Store
                 </span>
               </div>
               <Paragraph style={{ color: '#64748b', fontSize: 14, lineHeight: 1.6, maxWidth: 360, marginBottom: 16 }}>
-                India&apos;s dedicated sales CRM for local businesses, clinics, manufacturers, and agencies. 100% Free Core CRM with on-demand Google Maps lead discovery via UPI.
+                India&apos;s dedicated sales CRM, multi-trade ERP, and commission-free digital storefront for local businesses, clinics, manufacturers, and agencies. 100% Free Core with on-demand Google Maps lead discovery via UPI.
               </Paragraph>
               <div style={{ fontSize: 13, color: '#94a3b8' }}>
                 GINIE WhatsApp Support:{' '}
@@ -1434,8 +1771,9 @@ export default function MarketingLandingPage() {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 14 }}>
                 <a href="#features" style={{ color: '#94a3b8', textDecoration: 'none' }}>Features</a>
+                <a href="#industries" style={{ color: '#94a3b8', textDecoration: 'none' }}>11 Specialized Trades</a>
+                <a href="#erp" style={{ color: '#94a3b8', textDecoration: 'none' }}>ERP & Barcode POS</a>
                 <a href="#discovery" style={{ color: '#94a3b8', textDecoration: 'none' }}>Find Customers</a>
-                <a href="#comparison" style={{ color: '#94a3b8', textDecoration: 'none' }}>Why GINIE</a>
                 <a href="#pricing" style={{ color: '#94a3b8', textDecoration: 'none' }}>Pricing</a>
                 <a href="#faqs" style={{ color: '#94a3b8', textDecoration: 'none' }}>FAQs</a>
               </div>
@@ -1449,26 +1787,24 @@ export default function MarketingLandingPage() {
                 <Link href="/login" style={{ color: '#94a3b8', textDecoration: 'none' }}>Log In</Link>
                 <Link href="/register" style={{ color: '#94a3b8', textDecoration: 'none' }}>Create Free Account</Link>
                 <Link href="/dashboard" style={{ color: '#94a3b8', textDecoration: 'none' }}>Dashboard</Link>
+                <Link href="/erp" style={{ color: '#94a3b8', textDecoration: 'none' }}>ERP Operations Hub</Link>
+                <Link href="/digital-store" style={{ color: '#94a3b8', textDecoration: 'none' }}>Digital Storefront</Link>
                 <Link href="/find-customers" style={{ color: '#94a3b8', textDecoration: 'none' }}>Find Customers (₹599)</Link>
               </div>
             </Col>
 
             <Col xs={24} md={4}>
               <div style={{ fontSize: 13, fontWeight: 800, color: '#ffffff', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 14 }}>
-                Trust & Support
+                Legal & Support
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#10b981' }}>
+                <Link href="/privacy" style={{ color: '#94a3b8', textDecoration: 'none' }}>Privacy Policy</Link>
+                <Link href="/terms" style={{ color: '#94a3b8', textDecoration: 'none' }}>Terms of Service</Link>
+                <Link href="/refund-policy" style={{ color: '#94a3b8', textDecoration: 'none' }}>Refund & Cancellation</Link>
+                <Link href="/contact" style={{ color: '#94a3b8', textDecoration: 'none' }}>Contact & Helpdesk</Link>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#10b981', marginTop: 6 }}>
                   <SafetyCertificateOutlined />
-                  <span>100% Free Core CRM</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#60a5fa' }}>
-                  <CompassOutlined />
-                  <span>₹599 / Mo UPI Add-on</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#cbd5e1' }}>
-                  <LockOutlined />
-                  <span>Secure SSL Encryption</span>
+                  <span>100% Free Core Suite</span>
                 </div>
               </div>
             </Col>
@@ -1487,11 +1823,14 @@ export default function MarketingLandingPage() {
               color: '#64748b',
             }}
           >
-            <div>&copy; {new Date().getFullYear()} GINIE Space. All rights reserved. Built for India.</div>
-            <div style={{ display: 'flex', gap: 20 }}>
+            <div>&copy; {new Date().getFullYear()} GINIE Space. All rights reserved. Built with pride for Indian Businesses.</div>
+            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+              <Link href="/privacy" style={{ color: '#64748b', textDecoration: 'none' }}>Privacy</Link>
+              <Link href="/terms" style={{ color: '#64748b', textDecoration: 'none' }}>Terms</Link>
+              <Link href="/refund-policy" style={{ color: '#64748b', textDecoration: 'none' }}>Refunds</Link>
+              <Link href="/contact" style={{ color: '#64748b', textDecoration: 'none' }}>Contact</Link>
               <span>Zero E-Mandate</span>
               <span>Zero Auto-Debit</span>
-              <span>Flat UPI QR Activation</span>
             </div>
           </div>
         </div>

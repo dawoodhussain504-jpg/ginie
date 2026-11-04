@@ -72,6 +72,9 @@ export default function BillingPage() {
   const [isListening, setIsListening] = useState(false);
   const [voiceTranscript, setVoiceTranscript] = useState('');
   const [reconcilingUpi, setReconcilingUpi] = useState(false);
+  const [recordPaymentModalOpen, setRecordPaymentModalOpen] = useState(false);
+  const [recordingPayment, setRecordingPayment] = useState(false);
+  const [paymentForm] = Form.useForm();
 
   const [productForm] = Form.useForm();
   const [quoteForm] = Form.useForm();
@@ -329,23 +332,55 @@ export default function BillingPage() {
     message.success('Sales Daybook CSV exported successfully.');
   };
 
-  // UPI Instant Webhook Simulation / Auto-Reconciliation
-  const handleSimulateUpiWebhook = async (invoiceId: string) => {
-    setReconcilingUpi(true);
-    message.loading({ content: 'Listening for UPI NPCI Settlement Webhook...', key: 'upi_rec', duration: 2 });
-    
-    setTimeout(async () => {
-      try {
-        await handleUpdateStatus(invoiceId, 'paid');
-        const refNo = Math.floor(100000000000 + Math.random() * 900000000000);
-        message.destroy('upi_rec');
-        message.success(`🎉 UPI Payment Verified via Webhook! RRN #${refNo} received. Invoice marked as PAID.`);
-      } catch (err) {
-        message.error('Failed to reconcile status.');
-      } finally {
-        setReconcilingUpi(false);
-      }
-    }, 1500);
+  // Record Genuine Manual / UPI / Bank Payment
+  const handleOpenRecordPayment = (invoice: any) => {
+    setSelectedInvoice(invoice);
+    paymentForm.setFieldsValue({
+      amount: Number(invoice.total || 0),
+      method: "upi",
+      paymentDate: new Date().toISOString().split("T")[0],
+      referenceNo: "",
+      notes: "",
+    });
+    setRecordPaymentModalOpen(true);
+  };
+
+  const handleRecordPaymentSubmit = async (values: any) => {
+    if (!selectedInvoice) return;
+    setRecordingPayment(true);
+    try {
+      await handleUpdateStatus(selectedInvoice.id, "paid");
+      message.success(`Payment of ₹${Number(values.amount).toLocaleString("en-IN")} recorded successfully via ${values.method?.toUpperCase()} (Ref: ${values.referenceNo || "Direct Settlement"}).`);
+      setRecordPaymentModalOpen(false);
+      paymentForm.resetFields();
+    } catch (err: any) {
+      message.error(err.message || "Failed to record payment.");
+    } finally {
+      setRecordingPayment(false);
+    }
+  };
+
+  const handleSendPaymentReminder = (record: any) => {
+    const cust = getInvoiceCustomerInfo(record);
+    const phone = cust?.phone || record.contact?.phone || "";
+    const cleanPhone = phone.replace(/[^0-9]/g, "");
+    if (!cleanPhone) {
+      message.warning("No customer phone number found on this invoice to send WhatsApp reminder.");
+      return;
+    }
+    const target = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+    const payee = company?.settings?.upiName || company?.name || "Ginie Space";
+    const upiUri = buildUpiUri({
+      vpa: adminUpiVpa,
+      payeeName: payee,
+      amount: Number(record.total || 0),
+      transactionNote: `Bill ${record.invoiceNumber}`,
+    });
+    const msg = encodeURIComponent(
+      `नमस्ते ${cust?.name || "Customer जी"},\n\nआपके बिल #${record.invoiceNumber} की राशि ₹${Number(record.total).toLocaleString("en-IN")} का भुगतान बाकी है।\n\nDirect UPI से तुरंत भुगतान करने के लिए इस लिंक पर क्लिक करें:\n${upiUri}\n\nधन्यवाद,\n${company?.name || "Team GINIE"}`
+    );
+    window.open(`https://wa.me/${target}?text=${msg}`, "_blank");
+    message.success("Payment reminder WhatsApp chat opened!");
   };
 
   const handleSendInvoiceWhatsApp = (invoice?: any) => {
@@ -707,6 +742,7 @@ export default function BillingPage() {
             rowKey="id"
             loading={loading}
             pagination={{ pageSize: 10 }}
+            scroll={{ x: 800 }}
             locale={{ emptyText: 'No invoices generated yet. Click "+ New GST Invoice" to create one.' }}
           />
         </Card>
@@ -741,6 +777,7 @@ export default function BillingPage() {
             rowKey="id"
             loading={loading}
             pagination={{ pageSize: 10 }}
+            scroll={{ x: 800 }}
             locale={{ emptyText: 'No price quotes created yet.' }}
           />
         </Card>
@@ -763,7 +800,7 @@ export default function BillingPage() {
                   icon={<ShopOutlined />}
                   onClick={() => window.open('/store/catalog', '_blank')}
                 >
-                  View Digital Storefront 🛍️
+                  View Digital Storefront
                 </Button>
                 <Button
                   type="primary"
@@ -783,6 +820,7 @@ export default function BillingPage() {
             rowKey="id"
             loading={loading}
             pagination={{ pageSize: 10 }}
+            scroll={{ x: 750 }}
             locale={{ emptyText: 'No products or services added yet.' }}
           />
         </Card>
@@ -1266,13 +1304,15 @@ export default function BillingPage() {
               </Button>
               <Button
                 type="primary"
-                icon={<SyncOutlined spin={reconcilingUpi} />}
-                onClick={() => handleSimulateUpiWebhook(selectedInvoice.id)}
-                loading={reconcilingUpi}
+                icon={<CheckCircleOutlined />}
+                onClick={() => {
+                  setUpiModalVisible(false);
+                  handleOpenRecordPayment(selectedInvoice);
+                }}
                 block
-                style={{ height: 42, background: '#0284c7', borderColor: '#0284c7', fontWeight: 600 }}
+                style={{ height: 42, background: "#16a34a", borderColor: "#16a34a", fontWeight: 700 }}
               >
-                ⚡ Simulate Instant UPI Webhook (Auto-Reconcile)
+                Record Payment Received (Cash / UPI / Bank)
               </Button>
               <Button
                 icon={<CopyOutlined />}
@@ -1286,9 +1326,88 @@ export default function BillingPage() {
               </Button>
             </Space>
             <div style={{ marginTop: 14, padding: '8px 12px', background: '#f8fafc', borderRadius: 8, fontSize: 11, color: '#475569' }}>
-              <Tag color="processing" style={{ marginRight: 6 }}>🟢 Live Bank Webhook Active</Tag>
-              <span>Instant settlement callback auto-marks invoices as PAID.</span>
+              <Tag color="green" style={{ marginRight: 6 }}>Direct Settlement</Tag>
+              <span>Funds are deposited straight into your bank UPI VPA with zero gateway fees.</span>
             </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* RECORD PAYMENT MODAL */}
+      <Modal
+        title={
+          <Space>
+            <CheckCircleOutlined style={{ color: "#16a34a" }} />
+            <span>Record Payment Received / भुगतान दर्ज करें</span>
+          </Space>
+        }
+        open={recordPaymentModalOpen}
+        onCancel={() => setRecordPaymentModalOpen(false)}
+        footer={null}
+        width={520}
+      >
+        {selectedInvoice && (
+          <div>
+            <div style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: 8, marginBottom: 20, border: "1px solid #e2e8f0" }}>
+              <Row justify="space-between">
+                <div>
+                  <Text type="secondary" style={{ fontSize: 12 }}>Invoice</Text>
+                  <div style={{ fontWeight: 800, fontSize: 15 }}>{selectedInvoice.invoiceNumber}</div>
+                </div>
+                <div>
+                  <Text type="secondary" style={{ fontSize: 12 }}>Customer</Text>
+                  <div style={{ fontWeight: 700 }}>{selectedInvoice.contact?.name || "Customer"}</div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <Text type="secondary" style={{ fontSize: 12 }}>Total Payable</Text>
+                  <div style={{ fontWeight: 900, fontSize: 17, color: "#16a34a" }}>₹{Number(selectedInvoice.total || 0).toLocaleString("en-IN")}</div>
+                </div>
+              </Row>
+            </div>
+
+            <Form form={paymentForm} layout="vertical" onFinish={handleRecordPaymentSubmit}>
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item name="method" label="Payment Mode / माध्यम" rules={[{ required: true }]}>
+                    <Select>
+                      <Select.Option value="upi">UPI (GPay / PhonePe / Paytm)</Select.Option>
+                      <Select.Option value="cash">Cash (नकद)</Select.Option>
+                      <Select.Option value="bank">Bank Transfer (NEFT / RTGS)</Select.Option>
+                      <Select.Option value="cheque">Cheque (चेक)</Select.Option>
+                    </Select>
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item name="amount" label="Amount Received / राशि (₹)" rules={[{ required: true }]}>
+                    <InputNumber min={1} style={{ width: "100%" }} />
+                  </Form.Item>
+                </Col>
+              </Row>
+
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item name="paymentDate" label="Payment Date / दिनांक" rules={[{ required: true }]}>
+                    <Input placeholder="YYYY-MM-DD" />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item name="referenceNo" label="UTR / Ref / Cheque No">
+                    <Input placeholder="e.g. 12-digit UTR or Cheque #" />
+                  </Form.Item>
+                </Col>
+              </Row>
+
+              <Form.Item name="notes" label="Payment Note / टिप्पणी (Optional)">
+                <Input placeholder="e.g. Received at shop counter" />
+              </Form.Item>
+
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 16 }}>
+                <Button onClick={() => setRecordPaymentModalOpen(false)}>Cancel</Button>
+                <Button type="primary" htmlType="submit" loading={recordingPayment} style={{ background: "#16a34a", borderColor: "#16a34a", fontWeight: 700 }}>
+                  Save & Mark as PAID
+                </Button>
+              </div>
+            </Form>
           </div>
         )}
       </Modal>

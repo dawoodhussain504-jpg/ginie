@@ -302,7 +302,7 @@ function CustomersContent() {
                 {data.tier}
               </Tag>
               <Text strong style={{ color: '#059669', fontSize: 13 }}>
-                🪙 {data.points} pts
+                <DollarCircleOutlined style={{ marginRight: 4 }} />{data.points} pts
               </Text>
             </Space>
             <div style={{ marginTop: 2 }}>
@@ -543,6 +543,7 @@ function CustomersContent() {
                   rowKey="id"
                   loading={loading}
                   pagination={{ pageSize: 10 }}
+                  scroll={{ x: 750 }}
                   style={{ marginTop: 8 }}
                 />
               ),
@@ -561,6 +562,7 @@ function CustomersContent() {
                   rowKey="id"
                   loading={loading}
                   pagination={{ pageSize: 10 }}
+                  scroll={{ x: 650 }}
                   style={{ marginTop: 8 }}
                 />
               ),

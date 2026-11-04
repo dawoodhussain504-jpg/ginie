@@ -781,6 +781,7 @@ export default function FindCustomersPage() {
           dataSource={filteredResults}
           rowKey="id"
           loading={loading}
+          scroll={{ x: 800 }}
           locale={{ emptyText: t.discovery.empty }}
           pagination={{ pageSize: 10 }}
         />

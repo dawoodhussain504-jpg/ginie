@@ -31,6 +31,7 @@ import {
   DollarCircleOutlined,
   PlusOutlined,
   FireOutlined,
+  ThunderboltFilled,
 } from '@ant-design/icons';
 import { useApp } from '@/context/AppContext';
 import { api } from '@/lib/api';
@@ -244,8 +245,8 @@ export default function HomePage() {
           boxShadow: '0 4px 16px rgba(22, 119, 255, 0.06)',
         }}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <span
               style={{
                 background: '#1677ff',
@@ -255,9 +256,11 @@ export default function HomePage() {
                 fontSize: 13,
                 fontWeight: 700,
                 letterSpacing: 0.5,
+                display: 'inline-flex',
+                alignItems: 'center',
               }}
             >
-              ⚡ AAJ KA KAAM (आज का काम)
+              <ThunderboltFilled style={{ marginRight: 6 }} /> AAJ KA KAAM (आज का काम)
             </span>
             <Text strong style={{ fontSize: 16, color: '#0958d9' }}>
               Priority Actions & Follow-ups
@@ -543,6 +546,7 @@ export default function HomePage() {
               rowKey="id"
               pagination={false}
               size="small"
+              scroll={{ x: 600 }}
               locale={{ emptyText: t.customers.empty }}
             />
           </Card>
