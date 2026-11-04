@@ -218,12 +218,12 @@ export class SettingsService {
 
   async completeOnboarding(tenantId: string, dto: CompleteOnboardingDto) {
     const existing = await prisma.tenant.findUnique({ where: { id: tenantId } });
-    // LOCKED: Preserve existing businessType if already onboarded; never allow switching
-    const businessType = (existing?.onboardingCompleted && existing?.businessType)
-      ? existing.businessType
-      : (dto.businessType || 'retail');
+    
+    // Cleanly map business type (handling legacy aliases)
+    const rawType = dto.businessType || existing?.businessType || 'retail';
+    const businessType = rawType === 'shop' ? 'retail' : rawType === 'school' ? 'education' : rawType === 'factory' ? 'manufacturing' : rawType;
 
-    const template = BUSINESS_TEMPLATES[businessType] || BUSINESS_TEMPLATES.other;
+    const template = BUSINESS_TEMPLATES[businessType] || BUSINESS_TEMPLATES[rawType] || BUSINESS_TEMPLATES.other;
 
     const tenant = await prisma.tenant.update({
       where: { id: tenantId },
@@ -235,6 +235,8 @@ export class SettingsService {
           ...((existing?.settings as any) || {}),
           teamSize: dto.teamSize,
           language: dto.language,
+          city: dto.city || ((existing?.settings as any)?.city),
+          storeSlug: dto.storeSlug || ((existing?.settings as any)?.storeSlug),
         },
       },
     });
@@ -244,41 +246,76 @@ export class SettingsService {
       const prodCount = await prisma.product.count({ where: { tenantId } });
       if (prodCount === 0) {
         const catalog: Record<string, any[]> = {
-          restaurant: [
-            { name: 'Paneer Butter Masala', category: 'Main Course', price: 260, code: 'REST-01', unit: 'plate', stockInHand: 40, description: 'Rich cottage cheese cubes in buttery creamy tomato gravy (Veg)' },
-            { name: 'Butter Tandoori Naan', category: 'Breads', price: 45, code: 'REST-02', unit: 'piece', stockInHand: 100, description: 'Crisp hot tandoori bread topped with fresh butter (Veg)' },
-            { name: 'Dum Handi Veg Biryani', category: 'Biryani & Rice', price: 240, code: 'REST-03', unit: 'pot', stockInHand: 30, description: 'Aromatic basmati rice layered with fresh veggies & saffron (Veg)' },
-            { name: 'Cold Coffee with Ice Cream', category: 'Beverages', price: 110, code: 'REST-04', unit: 'glass', stockInHand: 50, description: 'Chilled creamy blended coffee topped with vanilla scoop' },
-          ],
-          wholesale: [
-            { name: 'Heavy Duty Packaging Tape (Box of 72)', category: 'Packaging Materials', price: 3240, code: 'B2B-01', unit: 'box', stockInHand: 25, description: 'Brown self-adhesive 65m tape rolls for cartons (MOQ: 1 Box)' },
-            { name: 'Plain Cotton Round-Neck T-Shirts (Lot of 50)', category: 'Apparel Bulk', price: 11500, code: 'B2B-02', unit: 'lot', stockInHand: 15, description: '180 GSM combed cotton bulk blanks (MOQ: 1 Lot)' },
-            { name: 'A4 Copier Paper 75 GSM (Carton of 5 Reams)', category: 'Stationery', price: 1450, code: 'B2B-03', unit: 'carton', stockInHand: 35, description: 'Super bright high speed photocopy paper (MOQ: 2 Cartons)' },
-          ],
-          clinic: [
-            { name: 'General Physician OPD Consultation', category: 'Doctor Consultation', price: 500, code: 'MED-01', unit: 'session', stockInHand: 100, description: 'Comprehensive diagnostic checkup & medical prescription' },
-            { name: 'Complete Blood Count (CBC) Profile', category: 'Diagnostics & Pathology', price: 350, code: 'MED-02', unit: 'test', stockInHand: 100, description: 'Automated 24-parameter blood test report within 4 hours' },
-            { name: 'Full Body Preventive Screening Package', category: 'Health Packages', price: 2499, code: 'MED-03', unit: 'package', stockInHand: 50, description: '65 vital health tests including Lipid, Liver, Kidney & Sugar' },
-          ],
-          services: [
-            { name: 'Social Media Management & Growth (Monthly)', category: 'Digital Marketing', price: 14999, code: 'SRV-01', unit: 'month', stockInHand: 20, description: '12 high quality graphic creatives + reel videos + ads management' },
-            { name: 'Company GST Filing & Accounting Retainer', category: 'Tax & Compliance', price: 2999, code: 'SRV-02', unit: 'month', stockInHand: 50, description: 'GSTR-1, GSTR-3B filing, reconciliation & monthly tax report' },
-            { name: 'Custom Business Website & Domain Setup', category: 'Web Development', price: 24999, code: 'SRV-03', unit: 'project', stockInHand: 10, description: 'Modern responsive Next.js website with lead capturing & SEO' },
-          ],
-          factory: [
-            { name: 'Precision CNC Machined Aluminum Flange', category: 'Machined Components', price: 1850, code: 'MFG-01', unit: 'piece', stockInHand: 60, description: 'High tolerance aerospace grade 6061-T6 aluminum flange' },
-            { name: 'Heavy Duty Industrial Ball Valve 2-Inch', category: 'Valves & Fittings', price: 4200, code: 'MFG-02', unit: 'piece', stockInHand: 30, description: 'Stainless steel 316 rated for 1000 WOG high pressure' },
-            { name: 'Mild Steel Laser-Cut Mounting Bracket', category: 'Sheet Metal', price: 320, code: 'MFG-03', unit: 'piece', stockInHand: 150, description: '3mm hot rolled steel powder-coated black bracket' },
-          ],
           retail: [
             { name: 'Premium Royal Basmati Rice (5kg Bag)', category: 'Groceries & Staples', price: 480, code: 'RET-01', unit: 'bag', stockInHand: 45, description: 'Extra long grain aged basmati rice for daily cooking' },
             { name: 'Cold Pressed Pure Mustard Oil (1 Litre)', category: 'Cooking Oils', price: 195, code: 'RET-02', unit: 'bottle', stockInHand: 60, description: '100% natural kachi ghani unrefined mustard oil' },
             { name: 'Wireless Bluetooth Earbuds with Mic', category: 'Electronics', price: 1299, code: 'RET-03', unit: 'piece', stockInHand: 25, description: 'Active environmental noise cancellation with 30hr battery' },
             { name: 'Stainless Steel Insulated Water Bottle 1L', category: 'Home & Kitchen', price: 550, code: 'RET-04', unit: 'piece', stockInHand: 35, description: 'Double-walled vacuum insulated flask keeps liquids hot/cold for 24h' },
           ],
+          wholesale: [
+            { name: 'Heavy Duty Packaging Tape (Box of 72)', category: 'Packaging Materials', price: 3240, code: 'B2B-01', unit: 'box', stockInHand: 25, description: 'Brown self-adhesive 65m tape rolls for cartons (MOQ: 1 Box)' },
+            { name: 'Plain Cotton Round-Neck T-Shirts (Lot of 50)', category: 'Apparel Bulk', price: 11500, code: 'B2B-02', unit: 'lot', stockInHand: 15, description: '180 GSM combed cotton bulk blanks (MOQ: 1 Lot)' },
+            { name: 'A4 Copier Paper 75 GSM (Carton of 5 Reams)', category: 'Stationery', price: 1450, code: 'B2B-03', unit: 'carton', stockInHand: 35, description: 'Super bright high speed photocopy paper (MOQ: 2 Cartons)' },
+          ],
+          automobile: [
+            { name: 'Castrol GTX 15W-40 Synthetic Engine Oil (3.5L)', category: 'Lubricants & Fluids', price: 1450, code: 'AUTO-01', unit: 'can', stockInHand: 25, description: 'Advanced synthetic blend protection against engine sludge' },
+            { name: 'Ceramic Front Disc Brake Pads Set', category: 'Braking & Safety', price: 1200, code: 'AUTO-02', unit: 'set', stockInHand: 30, description: 'Low-dust premium ceramic compound with anti-squeal shims' },
+            { name: 'High Flow Air & Oil Filter Service Kit', category: 'Filters & Service Parts', price: 650, code: 'AUTO-03', unit: 'kit', stockInHand: 45, description: 'OEM replacement oil filter + heavy-duty air filter' },
+            { name: 'Chain Cleaner & Synthetic Lube Spray Duo (500ml)', category: 'Maintenance Sprays', price: 480, code: 'AUTO-04', unit: 'pack', stockInHand: 40, description: 'Deep degreaser formula with Teflon dry lubricant' },
+          ],
+          pharmacy: [
+            { name: 'Paracetamol 650mg Fast-Action (Strip of 15)', category: 'Analgesics & Fever', price: 32, code: 'PHARM-01', unit: 'strip', stockInHand: 120, description: 'Rapid relief antipyretic tablets (Batch: PCM-2026-X, Exp: 12/2027)' },
+            { name: 'Amoxicillin & Clavulanate 625mg (Strip of 10)', category: 'Antibiotics', price: 185, code: 'PHARM-02', unit: 'strip', stockInHand: 60, description: 'Broad-spectrum antibiotic tablets (Rx Prescribed, Exp: 09/2027)' },
+            { name: 'Vitamin C 500mg Chewable (Bottle of 60)', category: 'Vitamins & Supplements', price: 240, code: 'PHARM-03', unit: 'bottle', stockInHand: 50, description: 'Immunity booster orange chewable tablets with zinc' },
+            { name: 'WHO Formula ORS Electrolyte Drink Mix (Box of 20)', category: 'Hydration & Nutrition', price: 110, code: 'PHARM-04', unit: 'box', stockInHand: 75, description: 'Oral rehydration salts WHO approved formulation' },
+          ],
+          jewellery: [
+            { name: '22K Yellow Gold Classic Rope Chain 10g (916 Hallmark)', category: 'Gold Chains & Necklaces', price: 74500, code: 'JEW-01', unit: 'piece', stockInHand: 5, description: 'BIS 916 hallmarked pure 22kt handcrafted rope design' },
+            { name: '24K Pure Gold Laxmi-Ganesh Minted Coin 5g (999 Purity)', category: 'Gold Coins & Bullion', price: 39800, code: 'JEW-02', unit: 'piece', stockInHand: 12, description: 'Tamper-proof certicard 999 fineness minted gold coin' },
+            { name: '925 Sterling Silver Royal Bridal Payal Pair 50g', category: 'Silver Ornaments', price: 4650, code: 'JEW-03', unit: 'pair', stockInHand: 15, description: 'Authentic 92.5 hallmark traditional silver anklets pair' },
+            { name: '18K Rose Gold Solitaire Diamond Ring (0.25ct VVS-EF)', category: 'Diamond Rings', price: 28500, code: 'JEW-04', unit: 'piece', stockInHand: 8, description: 'IGI certified natural diamond in 18kt hallmarked gold' },
+          ],
+          restaurant: [
+            { name: 'Paneer Butter Masala', category: 'Main Course', price: 260, code: 'REST-01', unit: 'plate', stockInHand: 40, description: 'Rich cottage cheese cubes in buttery creamy tomato gravy (Veg)' },
+            { name: 'Butter Tandoori Naan', category: 'Breads', price: 45, code: 'REST-02', unit: 'piece', stockInHand: 100, description: 'Crisp hot tandoori bread topped with fresh butter (Veg)' },
+            { name: 'Dum Handi Veg Biryani', category: 'Biryani & Rice', price: 240, code: 'REST-03', unit: 'pot', stockInHand: 30, description: 'Aromatic basmati rice layered with fresh veggies & saffron (Veg)' },
+            { name: 'Cold Coffee with Ice Cream', category: 'Beverages', price: 110, code: 'REST-04', unit: 'glass', stockInHand: 50, description: 'Chilled creamy blended coffee topped with vanilla scoop' },
+          ],
+          salon: [
+            { name: 'Royal Bridal HD Makeup & Styling Package', category: 'Bridal & Occasion', price: 8500, code: 'SAL-01', unit: 'package', stockInHand: 10, description: 'Complete HD waterproof bridal makeup with hairstyling & draping' },
+            { name: 'Moroccan Argan Oil Intensive Hair Spa', category: 'Hair Therapy', price: 1499, code: 'SAL-02', unit: 'session', stockInHand: 30, description: 'Deep nourishing argan oil steam treatment with relaxing scalp massage' },
+            { name: 'Herbal Hydra Glow Deep Cleansing Facial', category: 'Skin & Facials', price: 999, code: 'SAL-03', unit: 'session', stockInHand: 40, description: 'Multi-step organic herbal facial with ultrasonic pore cleansing' },
+            { name: 'Precision Haircut, Beard Styling & Head Massage', category: 'Grooming & Haircut', price: 450, code: 'SAL-04', unit: 'service', stockInHand: 60, description: 'Custom hair wash, haircut, beard contouring & cool mint massage' },
+          ],
+          education: [
+            { name: 'Class 10 CBSE Board Comprehensive Annual Batch', category: 'School Board Tuitions', price: 18000, code: 'EDU-01', unit: 'course', stockInHand: 50, description: 'Full syllabus Math, Science & English with weekly test series' },
+            { name: 'NEET / JEE Physics-Chemistry Crash Prep 2026', category: 'Competitive Coaching', price: 24500, code: 'EDU-02', unit: 'course', stockInHand: 35, description: 'Daily problem solving, past 10 year papers & doubt clearing' },
+            { name: 'Spoken English & Corporate Communication 60-Day Masterclass', category: 'Skill Development', price: 4999, code: 'EDU-03', unit: 'batch', stockInHand: 60, description: 'Live interactive fluency practice, GD preparation & accent coaching' },
+            { name: 'Complete Class 10 Board Mock Test Series & Formula Book', category: 'Study Materials', price: 850, code: 'EDU-04', unit: 'kit', stockInHand: 100, description: '15 printed sample test papers with solution keys and pocket formula handbook' },
+          ],
+          clinic: [
+            { name: 'General Physician OPD Consultation', category: 'Doctor Consultation', price: 500, code: 'MED-01', unit: 'session', stockInHand: 100, description: 'Comprehensive diagnostic checkup & medical prescription' },
+            { name: 'Complete Blood Count (CBC) Profile', category: 'Diagnostics & Pathology', price: 350, code: 'MED-02', unit: 'test', stockInHand: 100, description: 'Automated 24-parameter blood test report within 4 hours' },
+            { name: 'Full Body Preventive Screening Package', category: 'Health Packages', price: 2499, code: 'MED-03', unit: 'package', stockInHand: 50, description: '65 vital health tests including Lipid, Liver, Kidney & Sugar' },
+          ],
+          manufacturing: [
+            { name: 'Precision CNC Machined Aluminum Flange', category: 'Machined Components', price: 1850, code: 'MFG-01', unit: 'piece', stockInHand: 60, description: 'High tolerance aerospace grade 6061-T6 aluminum flange' },
+            { name: 'Heavy Duty Industrial Ball Valve 2-Inch', category: 'Valves & Fittings', price: 4200, code: 'MFG-02', unit: 'piece', stockInHand: 30, description: 'Stainless steel 316 rated for 1000 WOG high pressure' },
+            { name: 'Mild Steel Laser-Cut Mounting Bracket', category: 'Sheet Metal', price: 320, code: 'MFG-03', unit: 'piece', stockInHand: 150, description: '3mm hot rolled steel powder-coated black bracket' },
+          ],
+          services: [
+            { name: 'Social Media Management & Growth (Monthly)', category: 'Digital Marketing', price: 14999, code: 'SRV-01', unit: 'month', stockInHand: 20, description: '12 high quality graphic creatives + reel videos + ads management' },
+            { name: 'Company GST Filing & Accounting Retainer', category: 'Tax & Compliance', price: 2999, code: 'SRV-02', unit: 'month', stockInHand: 50, description: 'GSTR-1, GSTR-3B filing, reconciliation & monthly tax report' },
+            { name: 'Custom Business Website & Domain Setup', category: 'Web Development', price: 24999, code: 'SRV-03', unit: 'project', stockInHand: 10, description: 'Modern responsive Next.js website with lead capturing & SEO' },
+          ],
         };
 
-        const prods = catalog[dto.businessType] || catalog.retail;
+        // Aliases
+        catalog.shop = catalog.retail;
+        catalog.school = catalog.education;
+        catalog.factory = catalog.manufacturing;
+
+        const prods = catalog[businessType] || catalog[rawType] || catalog.retail;
         for (const p of prods) {
           await prisma.product.create({
             data: {
