@@ -9,7 +9,6 @@ import {
   LockOutlined,
   PhoneOutlined,
   GlobalOutlined,
-  CheckCircleOutlined,
   WhatsAppOutlined,
 } from '@ant-design/icons';
 import { useApp } from '@/context/AppContext';
@@ -17,10 +16,10 @@ import { api } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
 
 export default function RegisterPage() {
-  const { t, login, locale, setLocale, brandColor } = useApp();
+  const { login, locale, setLocale, brandColor } = useApp();
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const router = useRouter();
@@ -33,7 +32,9 @@ export default function RegisterPage() {
       const last10 = cleanDigits.slice(-10);
       const payload = {
         ...values,
-        email: values.email.trim(),
+        companyName: (values.companyName || '').trim(),
+        name: (values.name || '').trim(),
+        email: (values.email || '').trim(),
         phone: `+91 ${last10}`,
       };
       const res = await api.post('/api/auth/register', payload);
@@ -127,35 +128,41 @@ export default function RegisterPage() {
           />
         )}
 
-        <Form layout="vertical" onFinish={onFinish} size="large">
+        <Form layout="vertical" onFinish={onFinish} size="large" autoComplete="off">
           <Form.Item
             label={locale === 'hi' ? 'दुकान / बिजनेस / कंपनी का नाम' : 'Business / Company Name'}
             name="companyName"
             rules={[
-              { required: true, message: 'Please enter your business or company name' },
+              { required: true, message: locale === 'hi' ? 'कृपया अपने बिजनेस या दुकान का नाम दर्ज करें' : 'Please enter your business or company name' },
               { min: 2, message: 'Must be at least 2 characters' },
             ]}
           >
             <Input
               prefix={<ShopOutlined />}
-              placeholder={locale === 'hi' ? 'उदा. शर्मा इलेक्ट्रॉनिक्स' : 'e.g. Apex Engineering, Sharma Traders'}
+              placeholder={locale === 'hi' ? 'दुकान या कंपनी का नाम दर्ज करें' : 'Enter business or company name'}
+              autoComplete="off"
             />
           </Form.Item>
 
           <Form.Item
             label={locale === 'hi' ? 'बिजनेस की श्रेणी (Business Category)' : 'Business Category / Industry'}
             name="businessType"
-            initialValue="retail"
-            rules={[{ required: true, message: 'Please select your business category' }]}
+            rules={[{ required: true, message: locale === 'hi' ? 'कृपया अपनी बिजनेस श्रेणी चुनें' : 'Please select your business category' }]}
           >
             <Select
+              placeholder={locale === 'hi' ? 'अपनी बिजनेस श्रेणी चुनें' : 'Select your business category'}
               options={[
-                { value: 'retail', label: locale === 'hi' ? 'दुकान, रीटेल, इलेक्ट्रॉनिक्स व किराना (Retail & Store)' : 'Retail Store, Kirana & Electronics' },
+                { value: 'kirana', label: locale === 'hi' ? 'किराना व सुपरमार्केट (Kirana & Grocery)' : 'Kirana & Supermarket' },
+                { value: 'garments', label: locale === 'hi' ? 'कपड़े व फैशन (Garments & Apparel)' : 'Garments & Fashion' },
+                { value: 'electronics', label: locale === 'hi' ? 'इलेक्ट्रॉनिक्स व मोबाइल (Electronics & Mobile)' : 'Electronics & Mobile' },
+                { value: 'hardware', label: locale === 'hi' ? 'हार्डवेयर व सैनिटरी (Hardware & Sanitary)' : 'Hardware & Sanitary' },
+                { value: 'pharma', label: locale === 'hi' ? 'फार्मेसी व केमिस्ट (Pharmacy & Healthcare)' : 'Pharmacy & Chemist' },
                 { value: 'restaurant', label: locale === 'hi' ? 'रेस्टोरेंट, कैफे व फूड (Restaurant, Cafe & Food)' : 'Restaurant, Cafe & Food' },
-                { value: 'wholesale', label: locale === 'hi' ? 'थोक व्यापार, डिस्ट्रीब्यूशन व बी2बी (Wholesale & B2B)' : 'Wholesale, Distribution & B2B' },
-                { value: 'clinic', label: locale === 'hi' ? 'क्लिनिक, डॉक्टर व स्वास्थ्य (Clinic & Healthcare)' : 'Clinic, Doctor & Healthcare' },
-                { value: 'services', label: locale === 'hi' ? 'सर्विस, कंसल्टिंग व एजेंसी (Services & Agency)' : 'Services, Consulting & Agency' },
-                { value: 'factory', label: locale === 'hi' ? 'फैक्ट्री, मैन्युफैक्चरिंग व उद्योग (Factory & Manufacturing)' : 'Factory & Manufacturing' },
+                { value: 'automobile', label: locale === 'hi' ? 'ऑटोमोबाइल व गैराज (Automobile & Garage)' : 'Automobile & Garage' },
+                { value: 'footwear', label: locale === 'hi' ? 'फुटवियर व जूता स्टोर (Footwear & Shoes)' : 'Footwear & Shoes' },
+                { value: 'jewellery', label: locale === 'hi' ? 'ज्वैलरी व आभूषण (Jewellery Store)' : 'Jewellery Store' },
+                { value: 'salon', label: locale === 'hi' ? 'सैलून व ब्यूटी पार्लर (Salon & Spa)' : 'Salon & Spa' },
+                { value: 'services', label: locale === 'hi' ? 'सर्विस, कंसल्टिंग व एजेंसी (Services & Agency)' : 'Services & Consulting' },
               ]}
             />
           </Form.Item>
@@ -164,13 +171,14 @@ export default function RegisterPage() {
             label={locale === 'hi' ? 'आपका पूरा नाम' : 'Your Full Name'}
             name="name"
             rules={[
-              { required: true, message: 'Please enter your full name' },
+              { required: true, message: locale === 'hi' ? 'कृपया अपना पूरा नाम दर्ज करें' : 'Please enter your full name' },
               { min: 2, message: 'Must be at least 2 characters' },
             ]}
           >
             <Input
               prefix={<UserOutlined />}
-              placeholder={locale === 'hi' ? 'उदा. अमित शर्मा' : 'e.g. Rajesh Sharma'}
+              placeholder={locale === 'hi' ? 'अपना नाम दर्ज करें' : 'Enter your name'}
+              autoComplete="off"
             />
           </Form.Item>
 
@@ -200,8 +208,9 @@ export default function RegisterPage() {
             <Input
               prefix={<PhoneOutlined />}
               addonBefore="+91"
-              placeholder="98765 43210"
+              placeholder={locale === 'hi' ? '10-अंकों का नंबर दर्ज करें' : 'Enter 10-digit number'}
               maxLength={15}
+              autoComplete="off"
             />
           </Form.Item>
 
@@ -209,13 +218,14 @@ export default function RegisterPage() {
             label={locale === 'hi' ? 'ईमेल एड्रेस' : 'Email Address'}
             name="email"
             rules={[
-              { required: true, message: 'Please enter a valid email address' },
-              { type: 'email', message: 'Please enter a valid email' },
+              { required: true, message: locale === 'hi' ? 'कृपया ईमेल एड्रेस दर्ज करें' : 'Please enter a valid email address' },
+              { type: 'email', message: locale === 'hi' ? 'मान्य ईमेल दर्ज करें' : 'Please enter a valid email' },
             ]}
           >
             <Input
               prefix={<MailOutlined />}
-              placeholder="owner@yourbusiness.com"
+              placeholder={locale === 'hi' ? 'ईमेल एड्रेस दर्ज करें' : 'Enter email address'}
+              autoComplete="off"
             />
           </Form.Item>
 
@@ -223,13 +233,14 @@ export default function RegisterPage() {
             label={locale === 'hi' ? 'पासवर्ड (कम से कम 6 अक्षर)' : 'Password (min. 6 characters)'}
             name="password"
             rules={[
-              { required: true, message: 'Please enter a password' },
-              { min: 6, message: 'Password must be at least 6 characters' },
+              { required: true, message: locale === 'hi' ? 'कृपया पासवर्ड दर्ज करें' : 'Please enter a password' },
+              { min: 6, message: locale === 'hi' ? 'पासवर्ड कम से कम 6 अक्षरों का होना चाहिए' : 'Password must be at least 6 characters' },
             ]}
           >
             <Input.Password
               prefix={<LockOutlined />}
-              placeholder="••••••••"
+              placeholder={locale === 'hi' ? 'पासवर्ड दर्ज करें' : 'Enter password'}
+              autoComplete="new-password"
             />
           </Form.Item>
 
