@@ -1196,6 +1196,58 @@ export default function ErpPage() {
         </Col>
       </Row>
 
+      {/* Staff & HR Quick Bar for Operations */}
+      <div
+        style={{
+          background: 'linear-gradient(90deg, #eff6ff 0%, #f0fdf4 100%)',
+          borderRadius: 12,
+          padding: '12px 20px',
+          marginBottom: 20,
+          border: '1px solid #bfdbfe',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 12,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 8,
+              background: '#2563eb',
+              color: '#fff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <TeamOutlined style={{ fontSize: 18 }} />
+          </div>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 14, color: '#0f172a' }}>
+              Staff & Payroll OS (कर्मचारी, दैनिक हाज़िरी व वेतन)
+            </div>
+            <div style={{ fontSize: 12, color: '#64748b' }}>
+              Factory wagers, kitchen chefs, sales floor staff ki daily haaziri, udhari khata aur WhatsApp salary slips
+            </div>
+          </div>
+        </div>
+
+        <Space>
+          <Button
+            type="primary"
+            icon={<TeamOutlined />}
+            href="/staff"
+            style={{ borderRadius: 8, fontWeight: 700, background: '#2563eb', borderColor: '#2563eb' }}
+          >
+            Open Staff & Haaziri ↗
+          </Button>
+        </Space>
+      </div>
+
       {/* DYNAMIC INDUSTRY MODULES */}
 
       {/* 1. RETAIL & TRADING MODULE */}

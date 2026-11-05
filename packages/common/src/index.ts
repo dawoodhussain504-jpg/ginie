@@ -502,4 +502,56 @@ export interface ImportResultSummary {
   errors: Array<{ row: number; name: string; error: string }>;
 }
 
+// ========================================================
+// 17. HR, Staff & Payroll Management Schemas
+// ========================================================
+export const CreateEmployeeSchema = z.object({
+  name: z.string().min(2, 'Employee name must be at least 2 characters'),
+  phone: z.string().min(10, 'Valid 10-digit phone number is required'),
+  email: z.string().email().optional().or(z.literal('')),
+  role: z.string().min(1, 'Role / Designation is required'),
+  department: z.string().optional().or(z.literal('')),
+  salaryType: z.enum(['monthly', 'daily', 'commission', 'hourly']).default('monthly'),
+  baseSalary: z.number().nonnegative('Base salary cannot be negative').default(0),
+  commissionPct: z.number().min(0).max(100).default(0).optional(),
+  upiId: z.string().optional().or(z.literal('')),
+  bankAccount: z.string().optional().or(z.literal('')),
+  bankIfsc: z.string().optional().or(z.literal('')),
+  status: z.enum(['active', 'inactive', 'on_leave']).default('active'),
+  notes: z.string().optional().or(z.literal('')),
+});
+export type CreateEmployeeDto = z.infer<typeof CreateEmployeeSchema>;
+
+export const UpdateEmployeeSchema = CreateEmployeeSchema.partial();
+export type UpdateEmployeeDto = z.infer<typeof UpdateEmployeeSchema>;
+
+export const MarkAttendanceItemSchema = z.object({
+  employeeId: z.string().min(1),
+  status: z.enum(['present', 'absent', 'half_day', 'paid_leave']),
+  overtimeHours: z.number().min(0).default(0).optional(),
+  notes: z.string().optional().or(z.literal('')),
+});
+
+export const BulkAttendanceSchema = z.object({
+  date: z.string().min(10), // YYYY-MM-DD
+  records: z.array(MarkAttendanceItemSchema),
+});
+export type BulkAttendanceDto = z.infer<typeof BulkAttendanceSchema>;
+
+export const CreateStaffAdvanceSchema = z.object({
+  employeeId: z.string().min(1, 'Employee is required'),
+  amount: z.number().positive('Advance amount must be positive'),
+  reason: z.string().optional().or(z.literal('')),
+  date: z.string().optional(),
+});
+export type CreateStaffAdvanceDto = z.infer<typeof CreateStaffAdvanceSchema>;
+
+export const SettlePayrollSchema = z.object({
+  paymentMethod: z.enum(['cash', 'upi', 'bank']).default('upi'),
+  paymentRef: z.string().optional().or(z.literal('')),
+  notes: z.string().optional().or(z.literal('')),
+});
+export type SettlePayrollDto = z.infer<typeof SettlePayrollSchema>;
+
 export * from './templates/business-types.data';
+

@@ -75,6 +75,10 @@ model Tenant {
   loyaltyTransactions   LoyaltyTransaction[]
   fieldCheckIns         FieldSalesCheckIn[]
   purchaseOrders        PurchaseOrder[]
+  employees             Employee[]
+  employeeAttendances   EmployeeAttendance[]
+  employeeAdvances      EmployeeAdvance[]
+  payrollRecords        PayrollRecord[]
 
   @@map("tenants")
 }
@@ -797,3 +801,102 @@ model PurchaseOrder {
   @@map("purchase_orders")
 }
 
+// ----------------------------------------------------
+// 22. HR, Staff & Payroll Management (कर्मचारी व वेतन)
+// ----------------------------------------------------
+model Employee {
+  id            String    @id @default(uuid())
+  tenantId      String
+  tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name          String
+  phone         String
+  email         String?
+  role          String    // e.g. "Head Chef", "Billing Counter", "Master Mechanic", "Sales Executive", "Helper"
+  department    String?   // "Kitchen", "Workshop", "Floor", "Accounts", etc.
+  salaryType    String    @default("monthly") // monthly, daily, commission, hourly
+  baseSalary    Decimal   @default(0) @db.Decimal(12, 2)
+  commissionPct Decimal   @default(0) @db.Decimal(5, 2)
+  upiId         String?   // For 1-click UPI payouts
+  bankAccount   String?
+  bankIfsc      String?
+  status        String    @default("active") // active, inactive, on_leave
+  joinedDate    DateTime  @default(now())
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  attendances   EmployeeAttendance[]
+  advances      EmployeeAdvance[]
+  payrollRecords PayrollRecord[]
+
+  @@index([tenantId])
+  @@map("employees")
+}
+
+model EmployeeAttendance {
+  id            String    @id @default(uuid())
+  tenantId      String
+  tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  employeeId    String
+  employee      Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  date          DateTime  @db.Date
+  status        String    @default("present") // present, absent, half_day, paid_leave
+  overtimeHours Float     @default(0)
+  checkInTime   String?
+  checkOutTime  String?
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([tenantId, employeeId, date])
+  @@index([tenantId, date])
+  @@map("employee_attendances")
+}
+
+model EmployeeAdvance {
+  id               String    @id @default(uuid())
+  tenantId         String
+  tenant           Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  employeeId       String
+  employee         Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  amount           Decimal   @db.Decimal(12, 2)
+  date             DateTime  @default(now())
+  reason           String?
+  isSettled        Boolean   @default(false)
+  settledPayrollId String?
+  createdAt        DateTime  @default(now())
+
+  @@index([tenantId, employeeId])
+  @@map("employee_advances")
+}
+
+model PayrollRecord {
+  id               String    @id @default(uuid())
+  tenantId         String
+  tenant           Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  employeeId       String
+  employee         Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  month            Int       // 1-12
+  year             Int       // e.g. 2026
+  totalDays        Int       @default(30)
+  presentDays      Float     @default(0)
+  halfDays         Float     @default(0)
+  absentDays       Float     @default(0)
+  overtimeHours    Float     @default(0)
+  basePay          Decimal   @default(0) @db.Decimal(12, 2)
+  overtimePay      Decimal   @default(0) @db.Decimal(12, 2)
+  commissionPay    Decimal   @default(0) @db.Decimal(12, 2)
+  advancesDeducted Decimal   @default(0) @db.Decimal(12, 2)
+  netPayable       Decimal   @default(0) @db.Decimal(12, 2)
+  status           String    @default("pending") // pending, paid, partially_paid
+  paymentMethod    String?   // cash, upi, bank
+  paymentRef       String?
+  paidAt           DateTime?
+  notes            String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@unique([tenantId, employeeId, month, year])
+  @@index([tenantId, month, year])
+  @@map("payroll_records")
+}

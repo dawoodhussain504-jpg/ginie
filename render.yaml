@@ -26,7 +26,7 @@ services:
       - key: ADMIN_PASSWORD
         value: Daw00d@3210
       - key: ADMIN_WHATSAPP_PHONE
-        value: "8797186001"
+        value: "7870819862"
       - key: WHATSAPP_BRIDGE_URL
         value: https://ginie-whatsapp-bridge.onrender.com
       - key: WHATSAPP_BRIDGE_SECRET
