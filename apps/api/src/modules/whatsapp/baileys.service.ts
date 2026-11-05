@@ -6,12 +6,45 @@ import makeWASocket, {
   fetchLatestBaileysVersion,
   WASocket,
   ConnectionState,
+  makeCacheableSignalKeyStore,
+  WAMessageKey,
+  proto,
 } from '@whiskeysockets/baileys';
 import pino from 'pino';
 import * as QRCodeLib from 'qrcode';
 const QRCode = (QRCodeLib as any).default || QRCodeLib;
 import * as path from 'path';
 import * as fs from 'fs';
+
+class MemoryCacheStore {
+  private store = new Map<string, { value: any; expiresAt?: number }>();
+
+  get<T>(key: string): T | undefined {
+    const item = this.store.get(key);
+    if (!item) return undefined;
+    if (item.expiresAt && Date.now() > item.expiresAt) {
+      this.store.delete(key);
+      return undefined;
+    }
+    return item.value as T;
+  }
+
+  set<T>(key: string, value: T, ttlMs?: number): boolean {
+    this.store.set(key, {
+      value,
+      expiresAt: ttlMs ? Date.now() + ttlMs : undefined,
+    });
+    return true;
+  }
+
+  del(key: string): boolean {
+    return this.store.delete(key);
+  }
+
+  flushAll(): void {
+    this.store.clear();
+  }
+}
 
 export interface BaileysLiveStatus {
   status: 'connected' | 'qr_ready' | 'disconnected';
@@ -26,6 +59,9 @@ export class BaileysService implements OnModuleInit, OnModuleDestroy {
   private sockets = new Map<string, WASocket>();
   private statusMap = new Map<string, BaileysLiveStatus>();
   private reconnecting = new Set<string>();
+  private retryCache = new MemoryCacheStore();
+  private sentMessages = new Map<string, proto.IMessage>();
+  private backupDebounceTimers = new Map<string, NodeJS.Timeout>();
   private baseStorageDir: string;
 
   constructor() {
@@ -62,12 +98,17 @@ export class BaileysService implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleDestroy() {
+    for (const timer of this.backupDebounceTimers.values()) {
+      clearTimeout(timer);
+    }
+    this.backupDebounceTimers.clear();
     for (const [id, sock] of this.sockets.entries()) {
       try {
         sock.end(undefined);
       } catch {}
     }
     this.sockets.clear();
+    this.sentMessages.clear();
   }
 
   private getSessionDir(sessionId: string): string {
@@ -126,6 +167,26 @@ export class BaileysService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  private cacheSentMessage(msgId: string, message: proto.IMessage) {
+    this.sentMessages.set(msgId, message);
+    if (this.sentMessages.size > 2000) {
+      const oldestKey = this.sentMessages.keys().next().value;
+      if (oldestKey) this.sentMessages.delete(oldestKey);
+    }
+  }
+
+  private scheduleDebouncedBackup(sessionId: string, sessionDir: string) {
+    const existing = this.backupDebounceTimers.get(sessionId);
+    if (existing) {
+      clearTimeout(existing);
+    }
+    const timer = setTimeout(() => {
+      this.backupDebounceTimers.delete(sessionId);
+      this.backupCredsToDb(sessionId, sessionDir).catch(() => {});
+    }, 2000);
+    this.backupDebounceTimers.set(sessionId, timer);
+  }
+
   async waitForQrCode(sessionId: string, maxWaitMs = 5000): Promise<BaileysLiveStatus> {
     const start = Date.now();
     while (Date.now() - start < maxWaitMs) {
@@ -159,15 +220,39 @@ export class BaileysService implements OnModuleInit, OnModuleDestroy {
         version = verInfo.version;
       } catch {}
 
+      // Automatically debounce backup to database whenever new pre-keys or session keys are written
+      const originalKeysSet = state.keys.set;
+      state.keys.set = async (data: any) => {
+        await originalKeysSet(data);
+        this.scheduleDebouncedBackup(sessionId, sessionDir);
+      };
+
+      const logger = pino({ level: 'silent' });
+      const signalKeyStore = makeCacheableSignalKeyStore(state.keys, logger, this.retryCache);
+
       const sock = makeWASocket({
         version: version as any,
-        logger: pino({ level: 'silent' }),
+        logger,
         printQRInTerminal: false,
-        auth: state,
+        auth: {
+          creds: state.creds,
+          keys: signalKeyStore,
+        },
+        msgRetryCounterCache: this.retryCache,
+        getMessage: async (key: WAMessageKey): Promise<proto.IMessage | undefined> => {
+          if (!key.id) return undefined;
+          const cached = this.sentMessages.get(key.id);
+          if (cached) {
+            this.logger.log(`[Session ${sessionId}] Served cached message for retry request (ID: ${key.id})`);
+            return cached;
+          }
+          return undefined;
+        },
         browser: ['GINIE CRM', 'Chrome', '1.0.0'],
         connectTimeoutMs: 60000,
         defaultQueryTimeoutMs: 60000,
         keepAliveIntervalMs: 25000,
+        syncFullHistory: false,
       });
 
       this.sockets.set(sessionId, sock);
@@ -179,7 +264,7 @@ export class BaileysService implements OnModuleInit, OnModuleDestroy {
       sock.ev.on('creds.update', async () => {
         try {
           await saveCreds();
-          await this.backupCredsToDb(sessionId, sessionDir);
+          this.scheduleDebouncedBackup(sessionId, sessionDir);
         } catch (err: any) {
           this.logger.warn(`[Session ${sessionId}] creds.update error: ${err.message}`);
         }
@@ -331,8 +416,22 @@ export class BaileysService implements OnModuleInit, OnModuleDestroy {
     const jid = `${standardNumber}@s.whatsapp.net`;
 
     try {
+      // Warm up presence connection for cold recipient chats
+      try {
+        await sock.presenceSubscribe(jid);
+      } catch {}
+
       const result = await sock.sendMessage(jid, { text });
       const msgId = result?.key?.id || `baileys_${Date.now()}`;
+
+      // Cache sent message payload for recipient retry / decryption requests
+      const protoMsg: proto.IMessage = (result?.message as proto.IMessage) || { conversation: text };
+      this.cacheSentMessage(msgId, protoMsg);
+
+      // Trigger session pre-key backup after sending
+      const sessionDir = this.getSessionDir(sessionId);
+      this.scheduleDebouncedBackup(sessionId, sessionDir);
+
       this.logger.log(`[Session ${sessionId}] Message sent to ${jid} (ID: ${msgId})`);
       return { messageId: msgId };
     } catch (err: any) {
