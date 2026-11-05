@@ -265,7 +265,7 @@ export default function RegisterPage() {
             </Text>
             <div style={{ marginTop: 12 }}>
               <a
-                href="https://wa.me/918797186001?text=Hello%20Team%20GINIE%2C%20I%20need%20assistance%20with%20registration"
+                href="https://wa.me/917870819862?text=Hello%20Team%20GINIE%2C%20I%20need%20assistance%20with%20registration"
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{
@@ -289,7 +289,7 @@ export default function RegisterPage() {
       {/* Floating "Chat with GINIE" WhatsApp Support Button */}
       <div style={{ position: 'fixed', bottom: 20, right: 20, zIndex: 100 }}>
         <a
-          href="https://wa.me/918797186001?text=Hello%20Team%20GINIE%2C%20I%20need%20assistance%20with%20registration"
+          href="https://wa.me/917870819862?text=Hello%20Team%20GINIE%2C%20I%20need%20assistance%20with%20registration"
           target="_blank"
           rel="noopener noreferrer"
           style={{

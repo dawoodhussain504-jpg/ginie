@@ -535,7 +535,7 @@ export default function LoginPage() {
           </Text>
           <div style={{ marginTop: 10 }}>
             <a
-              href="https://wa.me/918797186001?text=Hello%20Team%20GINIE%2C%20I%20need%20assistance%20with%20the%20CRM"
+              href="https://wa.me/917870819862?text=Hello%20Team%20GINIE%2C%20I%20need%20assistance%20with%20the%20CRM"
               target="_blank"
               rel="noopener noreferrer"
               style={{
@@ -558,7 +558,7 @@ export default function LoginPage() {
       {/* Floating "Chat with GINIE" WhatsApp Support Button */}
       <div style={{ position: 'fixed', bottom: 20, right: 20, zIndex: 100 }}>
         <a
-          href="https://wa.me/918797186001?text=Hello%20Team%20GINIE%2C%20I%20need%20assistance%20with%20the%20CRM"
+          href="https://wa.me/917870819862?text=Hello%20Team%20GINIE%2C%20I%20need%20assistance%20with%20the%20CRM"
           target="_blank"
           rel="noopener noreferrer"
           style={{

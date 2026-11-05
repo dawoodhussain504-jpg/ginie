@@ -30,7 +30,7 @@ export default function ContactPage() {
       const queryText = encodeURIComponent(
         `Hello Team GINIE, I have an inquiry:\nName: ${values.name}\nBusiness: ${values.businessName || 'N/A'}\nTrade: ${values.trade || 'General'}\nQuery: ${values.message}`
       );
-      window.open(`https://wa.me/918797186001?text=${queryText}`, '_blank');
+      window.open(`https://wa.me/917870819862?text=${queryText}`, '_blank');
       form.resetFields();
     }, 600);
   };
@@ -125,7 +125,7 @@ export default function ContactPage() {
                       Fastest response for onboarding, bug reports, and UPI verification.
                     </div>
                     <a
-                      href="https://wa.me/918797186001?text=Hello%20Team%20GINIE%2C%20I%20need%20support"
+                      href="https://wa.me/917870819862?text=Hello%20Team%20GINIE%2C%20I%20need%20support"
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{
@@ -141,7 +141,7 @@ export default function ContactPage() {
                         textDecoration: 'none',
                       }}
                     >
-                      <WhatsAppOutlined /> Message +91 8797186001
+                      <WhatsAppOutlined /> Message +91 7870819862
                     </a>
                   </div>
                 </div>

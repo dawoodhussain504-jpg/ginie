@@ -142,7 +142,7 @@ export default function PrivacyPolicyPage() {
             <div style={{ background: '#f1f5f9', padding: '16px 20px', borderRadius: 8, fontSize: 14, color: '#334155' }}>
               <div><strong>Grievance Officer:</strong> Compliance Team &bull; GINIE Space</div>
               <div><strong>Email:</strong> compliance@ginie.space / support@ginie.space</div>
-              <div><strong>WhatsApp Support:</strong> +91 8797186001</div>
+              <div><strong>WhatsApp Support:</strong> +91 7870819862</div>
               <div><strong>Jurisdiction:</strong> Bihar / New Delhi, India</div>
             </div>
           </section>

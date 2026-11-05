@@ -107,7 +107,7 @@ export default function RefundPolicyPage() {
               To request a refund under the 48-hour technical window, simply contact us with your payment transaction details:
             </Paragraph>
             <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', padding: '16px 20px', borderRadius: 8, fontSize: 14, color: '#334155' }}>
-              <div><strong>WhatsApp Support:</strong> +91 8797186001 (Send payment screenshot + UPI UTR number)</div>
+              <div><strong>WhatsApp Support:</strong> +91 7870819862 (Send payment screenshot + UPI UTR number)</div>
               <div><strong>Email:</strong> billing@ginie.space</div>
               <div><strong>Processing Time:</strong> Approved refunds are credited directly back to the originating UPI account / VPA within 3 to 5 business days.</div>
             </div>

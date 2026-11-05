@@ -398,7 +398,7 @@ export default function MarketingLandingPage() {
           <span style={{ opacity: 0.3 }}>&bull;</span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#25D366' }}>
             <WhatsAppOutlined />
-            Direct Support: +91 8797186001
+            Direct Support: +91 7870819862
           </span>
         </Space>
       </div>
@@ -773,7 +773,7 @@ export default function MarketingLandingPage() {
 
             <Button
               size="large"
-              href="https://wa.me/918797186001?text=Hello%20GINIE%20Team,%20I%20have%20a%20question%20about%20the%20CRM%20and%20ERP"
+              href="https://wa.me/917870819862?text=Hello%20GINIE%20Team,%20I%20have%20a%20question%20about%20the%20CRM%20and%20ERP"
               target="_blank"
               icon={<WhatsAppOutlined style={{ color: '#25D366', fontSize: 17 }} />}
               style={{
@@ -1788,7 +1788,7 @@ export default function MarketingLandingPage() {
 
             <Button
               size="large"
-              href="https://wa.me/918797186001?text=Hello%20GINIE%20Team,%20I%20have%20a%20question%20about%20the%20CRM%20and%20ERP"
+              href="https://wa.me/917870819862?text=Hello%20GINIE%20Team,%20I%20have%20a%20question%20about%20the%20CRM%20and%20ERP"
               target="_blank"
               icon={<WhatsAppOutlined style={{ color: '#25D366' }} />}
               style={{
@@ -1857,12 +1857,12 @@ export default function MarketingLandingPage() {
               <div style={{ fontSize: 13, color: '#94a3b8' }}>
                 GINIE WhatsApp Support:{' '}
                 <a
-                  href="https://wa.me/918797186001"
+                  href="https://wa.me/917870819862"
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{ color: '#38bdf8', textDecoration: 'none', fontWeight: 600 }}
                 >
-                  +91 8797186001
+                  +91 7870819862
                 </a>
               </div>
             </Col>
