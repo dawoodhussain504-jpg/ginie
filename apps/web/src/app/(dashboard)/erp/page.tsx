@@ -1241,29 +1241,27 @@ export default function ErpPage() {
               </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-              <div style={{ textAlign: 'right' }}>
-                <span style={{ fontSize: 11, color: '#64748b', display: 'block' }}>Opening Cash:</span>
-                <span style={{ fontWeight: 700, fontSize: 14 }}>₹{openingCash.toLocaleString('en-IN')}</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", width: "100%", maxWidth: 650, marginTop: 10 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 8, flex: 1, width: "100%" }}>
+                <div style={{ padding: "6px 10px", background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0" }}>
+                  <span style={{ fontSize: 11, color: "#64748b", display: "block" }}>Opening:</span>
+                  <span style={{ fontWeight: 700, fontSize: 13 }}>₹{openingCash.toLocaleString("en-IN")}</span>
+                </div>
+                <div style={{ padding: "6px 10px", background: "#f0fdf4", borderRadius: 8, border: "1px solid #bbf7d0" }}>
+                  <span style={{ fontSize: 11, color: "#16a34a", display: "block" }}>Cash Sale:</span>
+                  <span style={{ fontWeight: 700, fontSize: 13, color: "#16a34a" }}>+₹{cashSalesToday.toLocaleString("en-IN")}</span>
+                </div>
+                <div style={{ padding: "6px 10px", background: "#eff6ff", borderRadius: 8, border: "1px solid #bfdbfe" }}>
+                  <span style={{ fontSize: 11, color: "#2563eb", display: "block" }}>UPI Sale:</span>
+                  <span style={{ fontWeight: 700, fontSize: 13, color: "#2563eb" }}>+₹{upiSalesToday.toLocaleString("en-IN")}</span>
+                </div>
+                <div style={{ padding: "6px 10px", background: "#f8fafc", borderRadius: 8, border: "1px solid #cbd5e1" }}>
+                  <span style={{ fontSize: 11, color: "#0f172a", display: "block" }}>Drawer Total:</span>
+                  <span style={{ fontWeight: 900, fontSize: 14, color: "#0f172a" }}>₹{totalCashInDrawer.toLocaleString("en-IN")}</span>
+                </div>
               </div>
-              <div style={{ textAlign: 'right' }}>
-                <span style={{ fontSize: 11, color: '#64748b', display: 'block' }}>Today's Cash Sale:</span>
-                <span style={{ fontWeight: 700, fontSize: 14, color: '#16a34a' }}>+₹{cashSalesToday.toLocaleString('en-IN')}</span>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <span style={{ fontSize: 11, color: '#64748b', display: 'block' }}>Today's UPI Sale:</span>
-                <span style={{ fontWeight: 700, fontSize: 14, color: '#2563eb' }}>+₹{upiSalesToday.toLocaleString('en-IN')}</span>
-              </div>
-              <div style={{ textAlign: 'right', padding: '4px 12px', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
-                <span style={{ fontSize: 11, color: '#64748b', display: 'block' }}>Drawer Total Cash:</span>
-                <span style={{ fontWeight: 900, fontSize: 16, color: '#0f172a' }}>₹{totalCashInDrawer.toLocaleString('en-IN')}</span>
-              </div>
-              <Button
-                size="middle"
-                onClick={() => setCashDrawerModalOpen(true)}
-                style={{ borderRadius: 8, fontWeight: 600 }}
-              >
-                Reconcile Drawer
+              <Button size="middle" onClick={() => setCashDrawerModalOpen(true)} style={{ borderRadius: 8, fontWeight: 600 }}>
+                Reconcile
               </Button>
             </div>
           </div>
@@ -1634,6 +1632,49 @@ export default function ErpPage() {
               </Card>
             </Col>
           </Row>
+          {/* Mobile Floating Sticky POS Checkout Bar */}
+          {posCart.length > 0 && (
+            <div
+              className="show-on-mobile"
+              style={{
+                position: "fixed",
+                bottom: "68px",
+                left: "12px",
+                right: "12px",
+                zIndex: 999,
+                background: "#0f172a",
+                color: "#ffffff",
+                padding: "10px 14px",
+                borderRadius: 12,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
+                border: "1px solid #334155",
+              }}
+            >
+              <div>
+                <div style={{ fontSize: 11, color: "#94a3b8" }}>{posCart.length} item(s) in Cart</div>
+                <div style={{ fontSize: 18, fontWeight: 900, color: "#4ade80" }}>
+                  ₹{posGrandTotal.toLocaleString("en-IN")}
+                </div>
+              </div>
+              <Button
+                type="primary"
+                icon={<CheckCircleOutlined />}
+                onClick={handlePosCheckout}
+                style={{
+                  background: "#16a34a",
+                  borderColor: "#16a34a",
+                  fontWeight: 800,
+                  borderRadius: 8,
+                  height: 38,
+                }}
+              >
+                Collect & Bill
+              </Button>
+            </div>
+          )}
         </div>
       )}
 

@@ -240,7 +240,7 @@ export default function HomePage() {
           background: 'linear-gradient(135deg, #f0f7ff 0%, #ffffff 100%)',
           border: '1.5px solid #bae0ff',
           borderRadius: 16,
-          padding: '20px 24px',
+          padding: '16px 14px',
           marginBottom: 24,
           boxShadow: '0 4px 16px rgba(22, 119, 255, 0.06)',
         }}
@@ -445,8 +445,8 @@ export default function HomePage() {
 
       {/* KPI Statistic Cards */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        <Col xs={24} sm={12} lg={6}>
-          <Card loading={loading} hoverable style={{ borderRadius: 12 }}>
+        <Col xs={12} sm={12} lg={6}>
+          <Card loading={loading} hoverable style={{ borderRadius: 12 }} bodyStyle={{ padding: "14px 12px" }}>
             <Statistic
               title={t.dashboard.newCustomersCard}
               value={stats.newCustomersCount}
@@ -455,8 +455,8 @@ export default function HomePage() {
           </Card>
         </Col>
 
-        <Col xs={24} sm={12} lg={6}>
-          <Card loading={loading} hoverable style={{ borderRadius: 12 }}>
+        <Col xs={12} sm={12} lg={6}>
+          <Card loading={loading} hoverable style={{ borderRadius: 12 }} bodyStyle={{ padding: "14px 12px" }}>
             <Statistic
               title={t.dashboard.activeSalesCard}
               value={stats.activeSalesCount}
@@ -465,8 +465,8 @@ export default function HomePage() {
           </Card>
         </Col>
 
-        <Col xs={24} sm={12} lg={6}>
-          <Card loading={loading} hoverable style={{ borderRadius: 12 }}>
+        <Col xs={12} sm={12} lg={6}>
+          <Card loading={loading} hoverable style={{ borderRadius: 12 }} bodyStyle={{ padding: "14px 12px" }}>
             <Statistic
               title={t.dashboard.wonSalesCard}
               value={stats.salesWonAmount}
@@ -476,8 +476,8 @@ export default function HomePage() {
           </Card>
         </Col>
 
-        <Col xs={24} sm={12} lg={6}>
-          <Card loading={loading} hoverable style={{ borderRadius: 12 }}>
+        <Col xs={12} sm={12} lg={6}>
+          <Card loading={loading} hoverable style={{ borderRadius: 12 }} bodyStyle={{ padding: "14px 12px" }}>
             <Statistic
               title={t.dashboard.tasksDueCard}
               value={stats.tasksDueCount}

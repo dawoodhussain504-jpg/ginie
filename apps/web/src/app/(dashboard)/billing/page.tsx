@@ -20,6 +20,7 @@ import {
   Col,
   Switch,
   Tooltip,
+  Dropdown,
 } from 'antd';
 import {
   PlusOutlined,
@@ -38,6 +39,7 @@ import {
   DownloadOutlined,
   SyncOutlined,
   CloudUploadOutlined,
+  MoreOutlined,
 } from '@ant-design/icons';
 import { useApp } from '@/context/AppContext';
 import { api } from '@/lib/api';
@@ -647,26 +649,93 @@ export default function BillingPage() {
     {
       title: 'Actions',
       key: 'actions',
-      render: (_: any, record: any) => (
-        <Space size="small">
-          <Button
-            size="small"
-            type="primary"
-            icon={<EyeOutlined />}
-            onClick={() => handleOpenPreview(record)}
-          >
-            View / Print
-          </Button>
-          <Button
-            size="small"
-            icon={<QrcodeOutlined />}
-            onClick={() => handleOpenUpiModal(record)}
-            style={{ color: '#25D366', borderColor: '#25D366' }}
-          >
-            UPI & WA
-          </Button>
-        </Space>
-      ),
+      render: (_: any, record: any) => {
+        const moreItems = [
+          {
+            key: 'upi',
+            icon: <QrcodeOutlined style={{ color: '#0ea5e9' }} />,
+            label: 'View UPI QR Code',
+            onClick: () => handleOpenUpiModal(record),
+          },
+          ...(record.status !== 'paid'
+            ? [
+                {
+                  key: 'pay',
+                  icon: <CheckCircleOutlined style={{ color: '#16a34a' }} />,
+                  label: 'Record Payment (Cash/UPI)',
+                  onClick: () => handleOpenRecordPayment(record),
+                },
+                {
+                  key: 'remind',
+                  icon: <WhatsAppOutlined style={{ color: '#25D366' }} />,
+                  label: 'WhatsApp Reminder',
+                  onClick: () => handleSendPaymentReminder(record),
+                },
+              ]
+            : []),
+        ];
+
+        return (
+          <>
+            {/* Desktop Actions */}
+            <div className="hide-on-mobile">
+              <Space size="small">
+                <Button
+                  size="small"
+                  type="primary"
+                  icon={<EyeOutlined />}
+                  onClick={() => handleOpenPreview(record)}
+                >
+                  View / Print
+                </Button>
+                <Button
+                  size="small"
+                  icon={<QrcodeOutlined />}
+                  onClick={() => handleOpenUpiModal(record)}
+                  style={{ color: '#0ea5e9', borderColor: '#0ea5e9' }}
+                >
+                  UPI QR
+                </Button>
+                {record.status !== 'paid' && (
+                  <>
+                    <Button
+                      size="small"
+                      icon={<CheckCircleOutlined />}
+                      onClick={() => handleOpenRecordPayment(record)}
+                      style={{ color: '#16a34a', borderColor: '#16a34a', fontWeight: 600 }}
+                    >
+                      Record Pay
+                    </Button>
+                    <Button
+                      size="small"
+                      icon={<WhatsAppOutlined />}
+                      onClick={() => handleSendPaymentReminder(record)}
+                      style={{ color: '#25D366', borderColor: '#25D366' }}
+                    >
+                      Reminder
+                    </Button>
+                  </>
+                )}
+              </Space>
+            </div>
+
+            {/* Mobile Compact Actions */}
+            <div className="show-on-mobile" style={{ alignItems: 'center', gap: 6 }}>
+              <Button
+                size="small"
+                type="primary"
+                icon={<EyeOutlined />}
+                onClick={() => handleOpenPreview(record)}
+              >
+                View
+              </Button>
+              <Dropdown menu={{ items: moreItems }} trigger={['click']}>
+                <Button size="small" icon={<MoreOutlined />} />
+              </Dropdown>
+            </div>
+          </>
+        );
+      },
     },
   ];
 

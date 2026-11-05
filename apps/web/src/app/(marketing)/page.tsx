@@ -14,6 +14,7 @@ import {
   Collapse,
   Badge,
   Divider,
+  Drawer,
 } from 'antd';
 import {
   WhatsAppOutlined,
@@ -51,6 +52,8 @@ import {
   PrinterOutlined,
   AppstoreOutlined,
   CameraOutlined,
+  MenuOutlined,
+  CloseOutlined,
 } from '@ant-design/icons';
 
 const { Title, Text, Paragraph } = Typography;
@@ -60,6 +63,7 @@ export default function MarketingLandingPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [activeTab, setActiveTab] = useState<'erp' | 'storefront' | 'discovery' | 'pipeline' | 'whatsapp' | 'billing' | 'cockpit'>('erp');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -490,7 +494,36 @@ export default function MarketingLandingPage() {
             </a>
           </nav>
 
-          {/* Right Action Buttons */}
+          {/* Mobile Menu & Quick Action */}
+          <div className="show-on-mobile" style={{ alignItems: 'center', gap: 8 }}>
+            <Button
+              type="primary"
+              size="middle"
+              onClick={() => router.push(isLoggedIn ? '/dashboard' : '/register')}
+              style={{
+                borderRadius: 8,
+                fontWeight: 700,
+                background: '#2563eb',
+                borderColor: '#2563eb',
+                fontSize: 13,
+              }}
+            >
+              {isLoggedIn ? 'Dashboard' : 'Sign Up'}
+            </Button>
+            <Button
+              icon={<MenuOutlined style={{ color: '#ffffff' }} />}
+              onClick={() => setMobileMenuOpen(true)}
+              style={{
+                background: 'rgba(255,255,255,0.1)',
+                borderColor: 'rgba(255,255,255,0.2)',
+                borderRadius: 8,
+                color: '#ffffff',
+              }}
+            />
+          </div>
+
+          {/* Desktop Right Action Buttons */}
+          <div className="hide-on-mobile">
           <Space size="middle">
             {isLoggedIn ? (
               <>
@@ -556,8 +589,75 @@ export default function MarketingLandingPage() {
               </>
             )}
           </Space>
+          </div>
         </div>
       </header>
+      {/* Mobile Navigation Drawer */}
+      <Drawer
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: 8,
+                background: '#2563eb',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <ThunderboltFilled style={{ color: '#ffffff', fontSize: 14 }} />
+            </div>
+            <span style={{ fontWeight: 800, fontSize: 16 }}>GINIE Navigation</span>
+          </div>
+        }
+        placement="right"
+        onClose={() => setMobileMenuOpen(false)}
+        open={mobileMenuOpen}
+        width={300}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, fontSize: 16, fontWeight: 600 }}>
+          <a href="#features" onClick={() => setMobileMenuOpen(false)} style={{ color: '#0f172a', textDecoration: 'none', padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>Features</a>
+          <a href="#industries" onClick={() => setMobileMenuOpen(false)} style={{ color: '#0f172a', textDecoration: 'none', padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>11 Indian Trades</a>
+          <a href="#erp" onClick={() => setMobileMenuOpen(false)} style={{ color: '#0f172a', textDecoration: 'none', padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>ERP & Barcode POS</a>
+          <a href="#discovery" onClick={() => setMobileMenuOpen(false)} style={{ color: '#0f172a', textDecoration: 'none', padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>Find Customers (₹599)</a>
+          <a href="#pricing" onClick={() => setMobileMenuOpen(false)} style={{ color: '#0f172a', textDecoration: 'none', padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>Pricing & Plans</a>
+          <a href="#faqs" onClick={() => setMobileMenuOpen(false)} style={{ color: '#0f172a', textDecoration: 'none', padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>FAQs</a>
+          <Link href="/contact" onClick={() => setMobileMenuOpen(false)} style={{ color: '#0f172a', textDecoration: 'none', padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>Contact & Helpdesk</Link>
+          <Link href="/privacy" onClick={() => setMobileMenuOpen(false)} style={{ color: '#64748b', fontSize: 14, textDecoration: 'none' }}>Privacy Policy</Link>
+          <Link href="/terms" onClick={() => setMobileMenuOpen(false)} style={{ color: '#64748b', fontSize: 14, textDecoration: 'none' }}>Terms of Service</Link>
+
+          <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <Button
+              block
+              size="large"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                router.push(isLoggedIn ? '/dashboard' : '/login');
+              }}
+              style={{ fontWeight: 700, borderRadius: 8 }}
+            >
+              {isLoggedIn ? 'Go to Dashboard' : 'Log In'}
+            </Button>
+            {!isLoggedIn && (
+              <Button
+                type="primary"
+                block
+                size="large"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  router.push('/register');
+                }}
+                style={{ background: '#2563eb', borderColor: '#2563eb', fontWeight: 800, borderRadius: 8 }}
+              >
+                Create Free Account
+              </Button>
+            )}
+          </div>
+        </div>
+      </Drawer>
+
 
       {/* Hero Section */}
       <section
@@ -763,8 +863,8 @@ export default function MarketingLandingPage() {
               </span>
             </div>
 
-            {/* Tab Selectors */}
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {/* Tab Selectors - Smooth Touch Horizontal Scroll */}
+            <div className="horizontal-scroll-pills" style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
               {coreModules.map((m) => {
                 const isSelected = activeTab === m.id;
                 return (
@@ -780,6 +880,8 @@ export default function MarketingLandingPage() {
                       fontSize: 13,
                       fontWeight: 700,
                       cursor: 'pointer',
+                      flexShrink: 0,
+                      whiteSpace: 'nowrap',
                       display: 'flex',
                       alignItems: 'center',
                       gap: 6,
@@ -794,7 +896,7 @@ export default function MarketingLandingPage() {
           </div>
 
           {/* Cockpit Active Module Showcase */}
-          <div style={{ padding: '36px 32px', background: '#ffffff' }}>
+          <div className="responsive-cockpit-body" style={{ padding: '36px 32px', background: '#ffffff' }}>
             <Row gutter={[32, 32]} align="middle">
               <Col xs={24} lg={11}>
                 <div style={{ display: 'inline-block', marginBottom: 12 }}>
@@ -1169,7 +1271,7 @@ export default function MarketingLandingPage() {
       </section>
 
       {/* NEW SECTION: 11 Specialized Indian Trades */}
-      <section id="industries" style={{ maxWidth: 1200, margin: '0 auto 80px', padding: '0 24px' }}>
+      <section id="industries" className="responsive-section" style={{ maxWidth: 1200, margin: '0 auto 80px', padding: '0 24px' }}>
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
           <Tag color="purple" style={{ fontWeight: 800, padding: '4px 14px', fontSize: 12, borderRadius: 999 }}>
             ONE PLATFORM &bull; 11 SPECIALIZED TRADES
@@ -1231,7 +1333,7 @@ export default function MarketingLandingPage() {
       </section>
 
       {/* Real Core Modules Section */}
-      <section id="features" style={{ maxWidth: 1200, margin: '0 auto 80px', padding: '0 24px' }}>
+      <section id="features" className="responsive-section" style={{ maxWidth: 1200, margin: '0 auto 80px', padding: '0 24px' }}>
         <div style={{ textAlign: 'center', marginBottom: 48 }}>
           <Tag color="blue" style={{ fontWeight: 800, padding: '4px 12px', fontSize: 12, borderRadius: 999 }}>
             EVERYTHING YOU NEED TO SCALE
@@ -1302,7 +1404,7 @@ export default function MarketingLandingPage() {
       </section>
 
       {/* Comparison Section: Foreign CRMs vs GINIE */}
-      <section id="comparison" style={{ background: '#ffffff', padding: '80px 24px', borderTop: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0' }}>
+      <section id="comparison" className="responsive-section" style={{ background: '#ffffff', padding: '80px 24px', borderTop: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
             <Tag color="orange" style={{ fontWeight: 800, padding: '4px 12px', fontSize: 12, borderRadius: 999 }}>
@@ -1434,7 +1536,7 @@ export default function MarketingLandingPage() {
       </section>
 
       {/* 100% Honest Pricing Section */}
-      <section id="pricing" style={{ maxWidth: 1080, margin: '0 auto', padding: '90px 24px 80px' }}>
+      <section id="pricing" className="responsive-section" style={{ maxWidth: 1080, margin: '0 auto', padding: '90px 24px 80px' }}>
         <div style={{ textAlign: 'center', marginBottom: 54 }}>
           <Tag color="green" style={{ fontWeight: 800, padding: '4px 14px', fontSize: 12, borderRadius: 999 }}>
             TRANSPARENT & HONEST PRICING
@@ -1626,7 +1728,7 @@ export default function MarketingLandingPage() {
       </section>
 
       {/* Frequently Asked Questions */}
-      <section id="faqs" style={{ background: '#ffffff', padding: '80px 24px', borderTop: '1px solid #e2e8f0' }}>
+      <section id="faqs" className="responsive-section" style={{ background: '#ffffff', padding: '80px 24px', borderTop: '1px solid #e2e8f0' }}>
         <div style={{ maxWidth: 840, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 44 }}>
             <Tag color="blue" style={{ fontWeight: 800, padding: '4px 12px', fontSize: 12, borderRadius: 999 }}>

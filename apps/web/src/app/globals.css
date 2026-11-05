@@ -55,6 +55,22 @@ html, body {
 }
 
 /* Modern Segmented Tab Pills */
+
+/* Smooth Touch Horizontal Scroll for Tabs & Pills */
+.horizontal-scroll-pills {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 4px 2px;
+}
+.horizontal-scroll-pills::-webkit-scrollbar {
+  display: none;
+}
+
 .ginie-pill-tabs {
   background: #f1f5f9;
   padding: 4px;
@@ -107,7 +123,8 @@ html, body {
     display: flex !important;
   }
 
-  .marketing-nav-desktop {
+  .marketing-nav-desktop,
+  .marketing-nav-links {
     display: none !important;
   }
 
@@ -163,6 +180,18 @@ html, body {
   .ant-card .ant-card-head {
     padding: 0 12px !important;
     min-height: 48px !important;
+  }
+
+  
+  /* Responsive Section & Card Paddings for Mobile */
+  .responsive-section {
+    padding: 44px 16px !important;
+  }
+  .responsive-cockpit-body {
+    padding: 18px 14px !important;
+  }
+  .responsive-card-body {
+    padding: 18px 14px !important;
   }
 
   .ginie-page-container {
