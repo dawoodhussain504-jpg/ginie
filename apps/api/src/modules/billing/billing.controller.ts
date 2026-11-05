@@ -174,4 +174,38 @@ export class BillingController {
   ) {
     return this.billingService.updateInvoiceStatus(tenantId, id, body.status);
   }
+
+  // WhatsApp Automated Direct Dispatches
+  @Post('invoices/:id/send-whatsapp')
+  async sendInvoiceWhatsApp(
+    @CurrentTenant() tenantId: string,
+    @Param('id') id: string,
+  ) {
+    return this.billingService.sendInvoiceWhatsApp(tenantId, id);
+  }
+
+  @Post('invoices/:id/remind-whatsapp')
+  async sendInvoiceReminderWhatsApp(
+    @CurrentTenant() tenantId: string,
+    @Param('id') id: string,
+  ) {
+    return this.billingService.sendInvoiceReminderWhatsApp(tenantId, id);
+  }
+
+  @Post('quotations/:id/send-whatsapp')
+  async sendQuotationWhatsApp(
+    @CurrentTenant() tenantId: string,
+    @Param('id') id: string,
+  ) {
+    return this.billingService.sendQuotationWhatsApp(tenantId, id);
+  }
+
+  @Post('store-orders/:id/send-whatsapp')
+  async sendStoreOrderWhatsApp(
+    @CurrentTenant() tenantId: string,
+    @Param('id') id: string,
+  ) {
+    return this.billingService.sendStoreOrderWhatsApp(tenantId, id);
+  }
 }
+

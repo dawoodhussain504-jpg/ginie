@@ -709,12 +709,19 @@ export default function ErpPage() {
 
   const handleSendJobCardWa = async (id: string) => {
     try {
+      message.loading({ content: 'Job card update WhatsApp par send ho raha hai...', key: 'wa-job' });
       const res = await api.post(`/api/erp/job-cards/${id}/send-whatsapp`);
-      if (res?.waClickUrl) {
-        window.open(res.waClickUrl, '_blank');
+      message.destroy('wa-job');
+      if (res?.sentViaAutomation) {
+        message.success(`Job card update customer (+${res.phone}) ke WhatsApp par bhej diya gaya!`);
+      } else {
+        message.warning('WhatsApp device connect nahi hai. WhatsApp Web open kiya ja raha hai...');
+        if (res?.waClickUrl) {
+          window.open(res.waClickUrl, '_blank');
+        }
       }
-      message.success('Job card update customer ko WhatsApp par bhej diya gaya!');
     } catch (err: any) {
+      message.destroy('wa-job');
       message.error('WhatsApp update send karne me error aaya.');
     }
   };
@@ -767,12 +774,19 @@ export default function ErpPage() {
 
   const handleSendPrescriptionWa = async (id: string) => {
     try {
+      message.loading({ content: 'Prescription WhatsApp par dispatch ho rahi hai...', key: 'wa-rx' });
       const res = await api.post(`/api/erp/prescriptions/${id}/send-whatsapp`);
-      if (res?.waClickUrl) {
-        window.open(res.waClickUrl, '_blank');
+      message.destroy('wa-rx');
+      if (res?.sentViaAutomation) {
+        message.success(`Digital prescription patient (+${res.phone}) ke WhatsApp par safalta se bhej di gayi!`);
+      } else {
+        message.warning('WhatsApp device connect nahi hai. WhatsApp Web open kiya ja raha hai...');
+        if (res?.waClickUrl) {
+          window.open(res.waClickUrl, '_blank');
+        }
       }
-      message.success('Digital prescription patient ko WhatsApp par bhej diya gaya!');
     } catch (err: any) {
+      message.destroy('wa-rx');
       message.error('WhatsApp send karne me error aaya.');
     }
   };

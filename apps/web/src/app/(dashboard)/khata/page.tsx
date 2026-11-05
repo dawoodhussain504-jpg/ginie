@@ -153,15 +153,15 @@ export default function KhataPage() {
   // Send WhatsApp Reminder Handler
   const handleSendReminder = async (acc: any) => {
     try {
-      message.loading({ content: 'WhatsApp reminder prepare ho raha hai...', key: 'wa-remind' });
+      message.loading({ content: 'WhatsApp reminder dispatch ho raha hai...', key: 'wa-remind' });
       const res = await api.post(`/api/erp/khata/remind/${acc.id}`);
       message.destroy('wa-remind');
-      setWaResult(res);
-      setWaModalOpen(true);
       if (res.sentViaAutomation) {
-        message.success('Payment reminder WhatsApp par bhej diya gaya!');
+        message.success(`Payment reminder customer (+${res.phone}) ke WhatsApp par safalta se bhej diya gaya!`);
       } else {
-        message.info('Direct WhatsApp payment link ready hai!');
+        setWaResult(res);
+        setWaModalOpen(true);
+        message.warning('WhatsApp device connect nahi hai. Manual WhatsApp Web link ready hai.');
       }
     } catch (err: any) {
       message.destroy('wa-remind');

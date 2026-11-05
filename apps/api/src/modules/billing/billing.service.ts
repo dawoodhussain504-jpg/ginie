@@ -1,13 +1,17 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { prisma } from '@ginie/database';
 import {
   CreateProductDto,
   CreateQuotationDto,
   CreateInvoiceDto,
 } from '@ginie/common';
+import { WhatsAppService } from '../whatsapp/whatsapp.service';
 
 @Injectable()
 export class BillingService {
+  private readonly logger = new Logger(BillingService.name);
+
+  constructor(private readonly whatsAppService: WhatsAppService) {}
   // Products
   async getProducts(tenantId: string) {
     return prisma.product.findMany({
@@ -853,4 +857,341 @@ export class BillingService {
       },
     });
   }
+
+  // ========================================================
+  // Direct WhatsApp Dispatch & Automation (Invoices & Quotes)
+  // ========================================================
+  async sendInvoiceWhatsApp(tenantId: string, invoiceId: string) {
+    const invoice: any = await prisma.invoice.findFirst({
+      where: { id: invoiceId, tenantId },
+      include: {
+        contact: true,
+        tenant: {
+          select: { name: true, settings: true },
+        },
+      },
+    });
+
+    if (!invoice) {
+      throw new NotFoundException('Invoice nahi mila.');
+    }
+
+    let customerPhone = '';
+    let customerName = invoice.contact?.name || 'Customer';
+
+    if (invoice.contact?.phone) {
+      customerPhone = invoice.contact.phone.replace(/[^0-9]/g, '');
+    }
+
+    if (invoice.notes) {
+      try {
+        const parsed = JSON.parse(invoice.notes);
+        if (parsed?.gstMeta?.customerPhone) {
+          customerPhone = parsed.gstMeta.customerPhone.replace(/[^0-9]/g, '');
+        }
+        if (parsed?.gstMeta?.customerName) {
+          customerName = parsed.gstMeta.customerName;
+        }
+      } catch {}
+    }
+
+    if (!customerPhone) {
+      throw new BadRequestException('Is invoice me customer ka mobile number darj nahi hai.');
+    }
+
+    const cleanPhone = customerPhone.length === 10 ? `91${customerPhone}` : customerPhone;
+    const companyName = invoice.tenant?.name || 'GINIE Business';
+    const tenantSettings: any = invoice.tenant?.settings || {};
+    const upiVpa = tenantSettings.upiId || tenantSettings.adminUpiVpa || '7870819862@paytm';
+    const upiName = encodeURIComponent(tenantSettings.upiName || companyName);
+    const amount = Number(invoice.total || 0);
+    const upiNote = encodeURIComponent(`Bill ${invoice.invoiceNumber}`);
+    const upiUri = `upi://pay?pa=${upiVpa}&pn=${upiName}&am=${amount.toFixed(2)}&cu=INR&tn=${upiNote}`;
+
+    const items = Array.isArray(invoice.items) ? (invoice.items as any[]) : [];
+    const itemsSummary = items
+      .slice(0, 5)
+      .map((it: any, idx: number) => `  ${idx + 1}. ${it.name || 'Item'} (x${it.quantity || 1}) - ₹${Number(it.total || (it.price * (it.quantity || 1))).toLocaleString('en-IN')}`)
+      .join('\n');
+    const extraItemsCount = items.length > 5 ? `\n  ... (+${items.length - 5} items)` : '';
+
+    const isPaid = invoice.status === 'paid';
+
+    const text =
+`*🧾 TAX INVOICE: ${invoice.invoiceNumber}*
+----------------------------------------
+प्रिय *${customerName}* जी,
+*${companyName}* से आपका बिल तैयार है:
+
+*आइटम्स (Items):*
+${itemsSummary || '  Standard Products & Services'}${extraItemsCount}
+
+*कुल देय राशि (Total Amount):* ₹${amount.toLocaleString('en-IN')}
+*बिल स्थिति (Status):* ${isPaid ? '✅ PAID (भुगतान प्राप्त)' : '⏳ PAYMENT DUE (भुगतान बाकी)'}
+${!isPaid ? `
+👉 *Pay Instantly via UPI (GPay/PhonePe/Paytm/BHIM):*
+${upiUri}
+` : ''}
+धन्यवाद! 🙏
+_${companyName} via GINIE Business OS_`;
+
+    const waClickUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
+    let sentViaAutomation = false;
+    let errorDetail: string | null = null;
+
+    try {
+      await this.whatsAppService.sendMessage(tenantId, 'system', {
+        phone: cleanPhone,
+        message: text,
+        contactId: invoice.contactId || undefined,
+      });
+      sentViaAutomation = true;
+    } catch (err: any) {
+      errorDetail = err?.message || 'Direct WhatsApp session not active';
+      this.logger.warn(`Could not dispatch automated WhatsApp invoice: ${errorDetail}`);
+    }
+
+    return {
+      success: true,
+      sentViaAutomation,
+      phone: cleanPhone,
+      customerName,
+      invoiceNumber: invoice.invoiceNumber,
+      amount,
+      messagePreview: text,
+      waClickUrl,
+      errorDetail,
+    };
+  }
+
+  async sendInvoiceReminderWhatsApp(tenantId: string, invoiceId: string) {
+    const invoice: any = await prisma.invoice.findFirst({
+      where: { id: invoiceId, tenantId },
+      include: {
+        contact: true,
+        tenant: {
+          select: { name: true, settings: true },
+        },
+      },
+    });
+
+    if (!invoice) {
+      throw new NotFoundException('Invoice nahi mila.');
+    }
+
+    let customerPhone = '';
+    let customerName = invoice.contact?.name || 'Customer';
+
+    if (invoice.contact?.phone) {
+      customerPhone = invoice.contact.phone.replace(/[^0-9]/g, '');
+    }
+
+    if (invoice.notes) {
+      try {
+        const parsed = JSON.parse(invoice.notes);
+        if (parsed?.gstMeta?.customerPhone) {
+          customerPhone = parsed.gstMeta.customerPhone.replace(/[^0-9]/g, '');
+        }
+        if (parsed?.gstMeta?.customerName) {
+          customerName = parsed.gstMeta.customerName;
+        }
+      } catch {}
+    }
+
+    if (!customerPhone) {
+      throw new BadRequestException('Is invoice me customer ka phone number darj nahi hai.');
+    }
+
+    const cleanPhone = customerPhone.length === 10 ? `91${customerPhone}` : customerPhone;
+    const companyName = invoice.tenant?.name || 'GINIE Business';
+    const tenantSettings: any = invoice.tenant?.settings || {};
+    const upiVpa = tenantSettings.upiId || tenantSettings.adminUpiVpa || '7870819862@paytm';
+    const upiName = encodeURIComponent(tenantSettings.upiName || companyName);
+    const amount = Number(invoice.total || 0);
+    const upiNote = encodeURIComponent(`Bill ${invoice.invoiceNumber}`);
+    const upiUri = `upi://pay?pa=${upiVpa}&pn=${upiName}&am=${amount.toFixed(2)}&cu=INR&tn=${upiNote}`;
+
+    const text =
+`*⏰ PAYMENT REMINDER (तकादा)*
+----------------------------------------
+नमस्ते *${customerName}* जी,
+
+आपके बिल *#${invoice.invoiceNumber}* की राशि *₹${amount.toLocaleString('en-IN')}* का भुगतान बाकी है।
+
+👉 *Direct UPI से तुरंत भुगतान करने के लिए इस लिंक पर क्लिक करें:*
+${upiUri}
+
+_यदि आपने पहले ही भुगतान कर दिया है, तो कृपया इस संदेश को अनदेखा करें।_
+धन्यवाद! 🙏
+_${companyName} via GINIE Business OS_`;
+
+    const waClickUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
+    let sentViaAutomation = false;
+    let errorDetail: string | null = null;
+
+    try {
+      await this.whatsAppService.sendMessage(tenantId, 'system', {
+        phone: cleanPhone,
+        message: text,
+        contactId: invoice.contactId || undefined,
+      });
+      sentViaAutomation = true;
+    } catch (err: any) {
+      errorDetail = err?.message || 'Direct WhatsApp session not active';
+      this.logger.warn(`Could not dispatch automated WhatsApp payment reminder: ${errorDetail}`);
+    }
+
+    return {
+      success: true,
+      sentViaAutomation,
+      phone: cleanPhone,
+      customerName,
+      invoiceNumber: invoice.invoiceNumber,
+      amount,
+      messagePreview: text,
+      waClickUrl,
+      errorDetail,
+    };
+  }
+
+  async sendQuotationWhatsApp(tenantId: string, quotationId: string) {
+    const quotation: any = await prisma.quotation.findFirst({
+      where: { id: quotationId, tenantId },
+      include: {
+        contact: true,
+        tenant: { select: { name: true, settings: true } },
+      },
+    });
+    if (!quotation) throw new NotFoundException('Quotation nahi mila.');
+
+    let customerPhone = quotation.contact?.phone?.replace(/[^0-9]/g, '') || '';
+    let customerName = quotation.contact?.name || 'Customer';
+
+    if (quotation.notes) {
+      try {
+        const parsed = JSON.parse(quotation.notes);
+        if (parsed?.customerPhone) customerPhone = parsed.customerPhone.replace(/[^0-9]/g, '');
+        if (parsed?.customerName) customerName = parsed.customerName;
+      } catch {}
+    }
+
+    if (!customerPhone) {
+      throw new BadRequestException('Customer ka phone number darj nahi hai.');
+    }
+
+    const cleanPhone = customerPhone.length === 10 ? `91${customerPhone}` : customerPhone;
+    const companyName = quotation.tenant?.name || 'GINIE Business';
+    const amount = Number(quotation.total || 0);
+
+    const items = Array.isArray(quotation.items) ? (quotation.items as any[]) : [];
+    const itemsSummary = items
+      .map((it: any, idx: number) => `  ${idx + 1}. ${it.name || 'Item'} (x${it.quantity || 1}) - ₹${Number(it.total || (it.price * (it.quantity || 1))).toLocaleString('en-IN')}`)
+      .join('\n');
+
+    const text =
+`*📋 PRICE ESTIMATE / QUOTATION: ${quotation.quotationNumber}*
+----------------------------------------
+नमस्ते *${customerName}* जी,
+*${companyName}* की तरफ से आपका कोटेशन तैयार है:
+
+*प्रस्तावित वस्तुएं (Items):*
+${itemsSummary || '  Standard Services'}
+
+*कुल अनुमानित राशि (Total Amount):* ₹${amount.toLocaleString('en-IN')}
+
+_यह कोटेशन 15 दिनों के लिए मान्य है।_
+कृपया इसकी पुष्टि करें ताकि हम काम शुरू कर सकें।
+धन्यवाद! 🙏
+_${companyName} via GINIE Business OS_`;
+
+    const waClickUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
+    let sentViaAutomation = false;
+    let errorDetail: string | null = null;
+
+    try {
+      await this.whatsAppService.sendMessage(tenantId, 'system', {
+        phone: cleanPhone,
+        message: text,
+        contactId: quotation.contactId || undefined,
+      });
+      sentViaAutomation = true;
+    } catch (err: any) {
+      errorDetail = err?.message || 'Direct WhatsApp session not active';
+    }
+
+    return {
+      success: true,
+      sentViaAutomation,
+      phone: cleanPhone,
+      customerName,
+      messagePreview: text,
+      waClickUrl,
+      errorDetail,
+    };
+  }
+
+  async sendStoreOrderWhatsApp(tenantId: string, orderId: string) {
+    const order = await (prisma as any).storeOrder.findFirst({
+      where: { id: orderId, tenantId },
+      include: {
+        tenant: { select: { name: true, phone: true } },
+      },
+    });
+
+    if (!order) throw new NotFoundException('Store order nahi mila.');
+    const rawDigits = (order.customerPhone || '').replace(/\D/g, '');
+    if (!rawDigits) throw new BadRequestException('Customer ka phone number nahi mila.');
+    const cleanPhone = rawDigits.length === 10 ? `91${rawDigits}` : rawDigits;
+    const companyName = order.tenant?.name || 'GINIE Store';
+
+    const items = Array.isArray(order.items) ? (order.items as any[]) : [];
+    const itemsList = items
+      .map((it: any, idx: number) => `  ${idx + 1}. ${it.name || 'Item'} x ${it.qty || it.quantity || 1}`)
+      .join('\n');
+
+    const statusHindi =
+      order.status === 'confirmed' ? 'स्वीकृत (Confirmed)' :
+      order.status === 'delivered' ? 'वितरित (Delivered)' :
+      order.status === 'cancelled' ? 'रद्द (Cancelled)' : 'प्राप्त हुआ (Received)';
+
+    const text =
+`*🛍️ DIGITAL STORE ORDER UPDATE*
+----------------------------------------
+नमस्ते *${order.customerName}* जी!
+*${companyName}* से आपके ऑर्डर का ताजा स्टेटस:
+
+*ऑर्डर आईडी:* #${order.id.slice(-6).toUpperCase()}
+*स्थिति (Status):* ${statusHindi}
+*कुल राशि:* ₹${Number(order.total || 0).toLocaleString('en-IN')}
+
+*ऑर्डर आइटम:*
+${itemsList || '  Order items'}
+
+धन्यवाद! हम आपके ऑर्डर को बेहतरीन सेवा के साथ पूरा कर रहे हैं।
+_${companyName} via GINIE Business OS_`;
+
+    const waClickUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
+    let sentViaAutomation = false;
+    let errorDetail: string | null = null;
+
+    try {
+      await this.whatsAppService.sendMessage(tenantId, 'system', {
+        phone: cleanPhone,
+        message: text,
+      });
+      sentViaAutomation = true;
+    } catch (err: any) {
+      errorDetail = err?.message || 'Direct WhatsApp session not active';
+    }
+
+    return {
+      success: true,
+      sentViaAutomation,
+      phone: cleanPhone,
+      messagePreview: text,
+      waClickUrl,
+      errorDetail,
+    };
+  }
 }
+

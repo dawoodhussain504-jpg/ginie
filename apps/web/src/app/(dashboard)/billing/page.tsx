@@ -368,71 +368,64 @@ export default function BillingPage() {
     }
   };
 
-  const handleSendPaymentReminder = (record: any) => {
-    const cust = getInvoiceCustomerInfo(record);
-    const phone = cust?.phone || record.contact?.phone || "";
-    const cleanPhone = phone.replace(/[^0-9]/g, "");
-    if (!cleanPhone) {
-      message.warning("No customer phone number found on this invoice to send WhatsApp reminder.");
-      return;
+  const handleSendPaymentReminder = async (record: any) => {
+    try {
+      message.loading({ content: 'WhatsApp reminder dispatch ho raha hai...', key: 'wa-remind' });
+      const res = await api.post(`/api/billing/invoices/${record.id}/remind-whatsapp`);
+      message.destroy('wa-remind');
+      if (res?.sentViaAutomation) {
+        message.success(`Payment reminder customer (+${res.phone}) ke WhatsApp par safalta se bhej diya gaya!`);
+      } else {
+        message.warning('WhatsApp device connect nahi hai. WhatsApp Web open kiya ja raha hai...');
+        if (res?.waClickUrl) {
+          window.open(res.waClickUrl, '_blank');
+        }
+      }
+    } catch (err: any) {
+      message.destroy('wa-remind');
+      message.error(err.message || 'Payment reminder send karne me error aaya.');
     }
-    const target = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
-    const payee = company?.settings?.upiName || company?.name || "Ginie Space";
-    const upiUri = buildUpiUri({
-      vpa: adminUpiVpa,
-      payeeName: payee,
-      amount: Number(record.total || 0),
-      transactionNote: `Bill ${record.invoiceNumber}`,
-    });
-    const msg = encodeURIComponent(
-      `नमस्ते ${cust?.name || "Customer जी"},\n\nआपके बिल #${record.invoiceNumber} की राशि ₹${Number(record.total).toLocaleString("en-IN")} का भुगतान बाकी है।\n\nDirect UPI से तुरंत भुगतान करने के लिए इस लिंक पर क्लिक करें:\n${upiUri}\n\nधन्यवाद,\n${company?.name || "Team GINIE"}`
-    );
-    window.open(`https://wa.me/${target}?text=${msg}`, "_blank");
-    message.success("Payment reminder WhatsApp chat opened!");
   };
 
-  const handleSendInvoiceWhatsApp = (invoice?: any) => {
+  const handleSendInvoiceWhatsApp = async (invoice?: any) => {
     const inv = invoice || selectedInvoice;
     if (!inv) return;
 
-    const payee = company?.settings?.upiName || company?.name || 'Ginie Space';
-    const upiUri = buildUpiUri({
-      vpa: adminUpiVpa,
-      payeeName: payee,
-      amount: Number(inv.total || 0),
-      transactionNote: `Invoice ${inv.invoiceNumber}`,
-    });
-
-    let customerPhone = '';
-    if (inv.contact?.phone) {
-      customerPhone = inv.contact.phone.replace(/[^0-9]/g, '');
-    } else if (inv.notes) {
-      try {
-        const parsed = JSON.parse(inv.notes);
-        if (parsed?.gstMeta?.customerPhone) {
-          customerPhone = parsed.gstMeta.customerPhone.replace(/[^0-9]/g, '');
+    try {
+      message.loading({ content: 'Invoice WhatsApp par dispatch ho raha hai...', key: 'wa-invoice' });
+      const res = await api.post(`/api/billing/invoices/${inv.id}/send-whatsapp`);
+      message.destroy('wa-invoice');
+      if (res?.sentViaAutomation) {
+        message.success(`Bill #${res.invoiceNumber} safalta se customer (+${res.phone}) ke WhatsApp par bhej diya gaya!`);
+      } else {
+        message.warning('WhatsApp device connect nahi hai. WhatsApp Web open kiya ja raha hai...');
+        if (res?.waClickUrl) {
+          window.open(res.waClickUrl, '_blank');
         }
-      } catch {}
+      }
+    } catch (err: any) {
+      message.destroy('wa-invoice');
+      message.error(err.message || 'Invoice WhatsApp par send karne me error aaya.');
     }
+  };
 
-    if (customerPhone.length === 10) {
-      customerPhone = '91' + customerPhone;
+  const handleSendQuotationWhatsApp = async (quote: any) => {
+    try {
+      message.loading({ content: 'Quotation WhatsApp par dispatch ho raha hai...', key: 'wa-quote' });
+      const res = await api.post(`/api/billing/quotations/${quote.id}/send-whatsapp`);
+      message.destroy('wa-quote');
+      if (res?.sentViaAutomation) {
+        message.success(`Quotation ${quote.quotationNumber} customer (+${res.phone}) ke WhatsApp par bhej diya gaya!`);
+      } else {
+        message.warning('WhatsApp device connect nahi hai. WhatsApp Web open kiya ja raha hai...');
+        if (res?.waClickUrl) {
+          window.open(res.waClickUrl, '_blank');
+        }
+      }
+    } catch (err: any) {
+      message.destroy('wa-quote');
+      message.error(err.message || 'Quotation send karne me error aaya.');
     }
-
-    const text =
-      `*TAX INVOICE: ${inv.invoiceNumber}*\n` +
-      `From: ${company?.name || 'Our Company'}\n` +
-      `Amount Due: ₹${Number(inv.total || 0).toLocaleString('en-IN')}\n` +
-      `Due Date: ${inv.dueDate ? formatDateIndian(inv.dueDate) : 'Immediate'}\n\n` +
-      `👉 *Pay instantly via GooglePay / PhonePe / Paytm / BHIM:*\n` +
-      `${upiUri}\n\n` +
-      `Thank you for your business!`;
-
-    const waUrl = customerPhone
-      ? `https://wa.me/${customerPhone}?text=${encodeURIComponent(text)}`
-      : `https://wa.me/?text=${encodeURIComponent(text)}`;
-
-    window.open(waUrl, '_blank');
   };
 
   const handlePrintInvoice = () => {
@@ -568,18 +561,29 @@ export default function BillingPage() {
     {
       title: 'Actions',
       key: 'actions',
-      render: (_: any, record: any) =>
-        record.status !== 'converted' ? (
+      render: (_: any, record: any) => (
+        <Space>
+          {record.status !== 'converted' ? (
+            <Button
+              size="small"
+              type="primary"
+              onClick={() => handleConvertToInvoice(record.id)}
+            >
+              {t.billing.convertToInvoice}
+            </Button>
+          ) : (
+            <Tag color="green">Converted</Tag>
+          )}
           <Button
             size="small"
-            type="primary"
-            onClick={() => handleConvertToInvoice(record.id)}
+            icon={<WhatsAppOutlined style={{ color: '#25D366' }} />}
+            onClick={() => handleSendQuotationWhatsApp(record)}
+            style={{ borderColor: '#25D366', color: '#25D366', fontWeight: 600 }}
           >
-            {t.billing.convertToInvoice}
+            WhatsApp
           </Button>
-        ) : (
-          <Tag color="green">Converted to Invoice</Tag>
-        ),
+        </Space>
+      ),
     },
   ];
 

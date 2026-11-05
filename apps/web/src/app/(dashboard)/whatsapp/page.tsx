@@ -123,7 +123,7 @@ function WhatsAppContent() {
   const [broadcastTemplate, setBroadcastTemplate] = useState('voucher');
   const [customWinbackMsg, setCustomWinbackMsg] = useState('We miss your visits! Enjoy 15% off using code WINBACK15.');
 
-  const handleSendWinbackOffer = (customer: any) => {
+  const handleSendWinbackOffer = async (customer: any) => {
     const digits = customer.phone.replace(/[^0-9]/g, '');
     const cleanPhone = digits.length === 10 ? `91${digits}` : digits;
 
@@ -136,8 +136,19 @@ function WhatsAppContent() {
       msg = `*Namaste ${customer.name} ji!*\n\n${customWinbackMsg}\n\nYou have ₹${customer.walletPoints} in your GINIE wallet ready to use.`;
     }
 
-    window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
-    message.success(`WhatsApp dispatched to ${customer.name}!`);
+    try {
+      message.loading({ content: `Sending offer to ${customer.name}...`, key: 'wa-winback' });
+      await api.post('/api/whatsapp/messages', {
+        phone: cleanPhone,
+        message: msg,
+      });
+      message.destroy('wa-winback');
+      message.success(`Offer dispatched to ${customer.name} on WhatsApp!`);
+    } catch {
+      message.destroy('wa-winback');
+      window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+      message.info(`WhatsApp Web opened for ${customer.name}`);
+    }
   };
 
   useEffect(() => {

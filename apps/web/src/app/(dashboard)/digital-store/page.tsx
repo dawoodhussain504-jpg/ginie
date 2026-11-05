@@ -179,6 +179,26 @@ export default function DigitalStoreDashboardPage() {
     }
   };
 
+  // Send WhatsApp Order Update via Backend Automation
+  const handleSendStoreOrderWhatsApp = async (order: any) => {
+    try {
+      message.loading({ content: 'WhatsApp update dispatch ho raha hai...', key: 'wa-store-order' });
+      const res = await api.post(`/api/billing/store-orders/${order.id}/send-whatsapp`);
+      message.destroy('wa-store-order');
+      if (res?.sentViaAutomation) {
+        message.success(`Order update customer (+${res.phone}) ke WhatsApp par bhej diya gaya!`);
+      } else {
+        message.warning('WhatsApp device connect nahi hai. WhatsApp Web open kiya ja raha hai...');
+        if (res?.waClickUrl) {
+          window.open(res.waClickUrl, '_blank');
+        }
+      }
+    } catch (err: any) {
+      message.destroy('wa-store-order');
+      message.error(err.message || 'WhatsApp message send karne me dikkat aayi.');
+    }
+  };
+
   // Save Store Settings
   const handleSaveSettings = async (values: any) => {
     try {
@@ -393,9 +413,9 @@ export default function DigitalStoreDashboardPage() {
               <Button
                 size="small"
                 icon={<WhatsAppOutlined style={{ color: '#25D366' }} />}
-                href={`https://wa.me/${targetPhone}?text=${waText}`}
-                target="_blank"
+                onClick={() => handleSendStoreOrderWhatsApp(r)}
                 title="Send status update on WhatsApp"
+                style={{ borderColor: '#25D366', color: '#25D366', fontWeight: 600 }}
               >
                 WhatsApp
               </Button>

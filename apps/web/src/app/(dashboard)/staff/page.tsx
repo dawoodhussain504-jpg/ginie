@@ -48,6 +48,7 @@ import {
   SendOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
+import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useApp } from '@/context/AppContext';
 
@@ -55,6 +56,7 @@ const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
 
 export default function StaffPage() {
+  const router = useRouter();
   const { user } = useApp();
   const [activeTab, setActiveTab] = useState('attendance');
   const [loading, setLoading] = useState(false);
@@ -325,15 +327,15 @@ export default function StaffPage() {
 
   const handleSendWhatsAppSlip = async (record: any) => {
     try {
-      message.loading({ content: 'WhatsApp salary slip prepare ho rahi hai...', key: 'wa-slip' });
+      message.loading({ content: 'WhatsApp salary slip dispatch ho rahi hai...', key: 'wa-slip' });
       const res = await api.post(`/api/staff/payroll/${record.id}/send-whatsapp`);
       message.destroy('wa-slip');
-      setWaResult(res);
-      setWaModalOpen(true);
       if (res.sentViaAutomation) {
-        message.success('Salary slip staff ke WhatsApp par bhej di gayi!');
+        message.success(`Salary slip staff (+${res.phone}) ke WhatsApp par safalta se bhej di gayi!`);
       } else {
-        message.info('Direct WhatsApp link ready hai!');
+        setWaResult(res);
+        setWaModalOpen(true);
+        message.warning('WhatsApp device connect nahi hai. Manual link open kiya gaya hai.');
       }
     } catch (err: any) {
       message.destroy('wa-slip');
@@ -712,12 +714,14 @@ export default function StaffPage() {
                           <Space>
                             <PhoneOutlined style={{ color: '#64748b' }} />
                             <Text copyable>{phone}</Text>
-                            <Button
-                              size="small"
-                              type="text"
-                              icon={<WhatsAppOutlined style={{ color: '#25D366', fontSize: 16 }} />}
-                              onClick={() => window.open(`https://wa.me/91${phone}`, '_blank')}
-                            />
+                            <Tooltip title="Chat in WhatsApp Inbox">
+                              <Button
+                                size="small"
+                                type="text"
+                                icon={<WhatsAppOutlined style={{ color: '#25D366', fontSize: 16 }} />}
+                                onClick={() => router.push(`/whatsapp?phone=91${phone}`)}
+                              />
+                            </Tooltip>
                           </Space>
                         ),
                       },
