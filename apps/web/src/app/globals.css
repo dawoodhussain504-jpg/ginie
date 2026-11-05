@@ -132,6 +132,14 @@ html, body {
   height: 100%;
 }
 
+.whatsapp-message-bubble {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  word-wrap: break-word;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
 /* Mobile bottom navigation styling */
 .ginie-mobile-bottom-nav {
   display: none;
@@ -314,6 +322,11 @@ html, body {
 
   .whatsapp-message-bubble {
     max-width: 86% !important;
+    word-break: break-word !important;
+    overflow-wrap: anywhere !important;
+    word-wrap: break-word !important;
+    box-sizing: border-box !important;
+    min-width: 0 !important;
   }
 }
 

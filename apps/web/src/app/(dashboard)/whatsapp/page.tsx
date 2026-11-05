@@ -51,6 +51,13 @@ import { useSearchParams } from 'next/navigation';
 
 const { Title, Text, Paragraph } = Typography;
 
+function formatMessageTime(dateInput: any) {
+  if (!dateInput) return '';
+  const d = new Date(dateInput);
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+}
+
 function WhatsAppContent() {
   const { t, brandColor, user } = useApp();
   const searchParams = useSearchParams();
@@ -439,33 +446,33 @@ function WhatsAppContent() {
                               transition: 'all 0.15s ease',
                             }}
                           >
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                              <Space size={8}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4, gap: 8 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flex: 1 }}>
                                 <Avatar
                                   size="small"
-                                  style={{ backgroundColor: conv.isOptedOut ? '#ff4d4f' : '#1677ff' }}
+                                  style={{ backgroundColor: conv.isOptedOut ? '#ff4d4f' : '#1677ff', flexShrink: 0 }}
                                   icon={<UserOutlined />}
                                 />
-                                <Text strong style={{ fontSize: 13, maxWidth: 140 }} ellipsis>
+                                <Text strong style={{ fontSize: 13, minWidth: 0 }} ellipsis>
                                   {conv.customerName || conv.phone}
                                 </Text>
-                              </Space>
-                              <Text type="secondary" style={{ fontSize: 11 }}>
+                              </div>
+                              <Text type="secondary" style={{ fontSize: 11, flexShrink: 0 }}>
                                 {conv.lastMessage?.createdAt ? formatDateIndian(conv.lastMessage.createdAt) : ''}
                               </Text>
                             </div>
 
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, minWidth: 0 }}>
                               <Text
                                 type="secondary"
-                                style={{ fontSize: 12, maxWidth: 190 }}
+                                style={{ fontSize: 12, flex: 1, minWidth: 0 }}
                                 ellipsis
                               >
                                 {conv.lastMessage?.direction === 'outbound' ? 'You: ' : ''}
                                 {conv.lastMessage?.body || 'No messages'}
                               </Text>
 
-                              <Space size={4}>
+                              <Space size={4} style={{ flexShrink: 0 }}>
                                 {conv.isOptedOut && (
                                   <Tag color="red" style={{ fontSize: 10, padding: '0 4px', margin: 0 }}>
                                     STOP
@@ -562,6 +569,7 @@ function WhatsAppContent() {
                         style={{
                           flex: 1,
                           overflowY: 'auto',
+                          overflowX: 'hidden',
                           padding: 14,
                           background: '#efeae2',
                           backgroundImage: 'radial-gradient(#dfd7cc 1px, transparent 1px)',
@@ -577,21 +585,40 @@ function WhatsAppContent() {
                               style={{
                                 display: 'flex',
                                 justifyContent: isOutbound ? 'flex-end' : 'flex-start',
-                                marginBottom: 10,
+                                marginBottom: 8,
+                                width: '100%',
                               }}
                             >
                               <div
                                 className="whatsapp-message-bubble"
                                 style={{
-                                  maxWidth: '78%',
-                                  padding: '8px 14px',
-                                  borderRadius: 10,
+                                  maxWidth: '82%',
+                                  minWidth: 72,
+                                  padding: '8px 12px 6px 12px',
+                                  borderRadius: isOutbound ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
                                   background: isOutbound ? '#d9fdd3' : '#ffffff',
                                   boxShadow: '0 1px 2px rgba(0, 0, 0, 0.08)',
                                   wordBreak: 'break-word',
+                                  overflowWrap: 'anywhere',
+                                  wordWrap: 'break-word',
+                                  boxSizing: 'border-box',
+                                  minWidth: 0,
+                                  display: 'flex',
+                                  flexDirection: 'column',
                                 }}
                               >
-                                <div style={{ fontSize: 13, lineHeight: '1.4', color: '#111827' }}>
+                                <div
+                                  style={{
+                                    fontSize: 13,
+                                    lineHeight: '1.45',
+                                    color: '#111827',
+                                    whiteSpace: 'pre-wrap',
+                                    wordBreak: 'break-word',
+                                    overflowWrap: 'anywhere',
+                                    wordWrap: 'break-word',
+                                    minWidth: 0,
+                                  }}
+                                >
                                   {msg.body}
                                 </div>
                                 <div
@@ -600,15 +627,23 @@ function WhatsAppContent() {
                                     justifyContent: 'flex-end',
                                     alignItems: 'center',
                                     gap: 4,
-                                    marginTop: 4,
+                                    marginTop: 3,
                                     fontSize: 10,
                                     color: '#6b7280',
+                                    flexShrink: 0,
+                                    userSelect: 'none',
                                   }}
                                 >
-                                  {msg.ruleId && <Tag color="purple" style={{ fontSize: 9, padding: '0 2px', margin: 0 }}>Auto</Tag>}
-                                  <span>{formatDateIndian(msg.createdAt)}</span>
+                                  {msg.ruleId && (
+                                    <Tag color="purple" style={{ fontSize: 9, padding: '0 3px', margin: 0, lineHeight: '14px' }}>
+                                      Auto
+                                    </Tag>
+                                  )}
+                                  <span style={{ fontSize: 10, whiteSpace: 'nowrap' }}>
+                                    {formatMessageTime(msg.createdAt)}
+                                  </span>
                                   {isOutbound && (
-                                    <span style={{ color: msg.status === 'sent' || msg.status === 'delivered' ? '#1677ff' : '#9ca3af' }}>
+                                    <span style={{ color: msg.status === 'sent' || msg.status === 'delivered' ? '#1677ff' : '#9ca3af', display: 'inline-flex' }}>
                                       <CheckOutlined style={{ fontSize: 10 }} />
                                     </span>
                                   )}

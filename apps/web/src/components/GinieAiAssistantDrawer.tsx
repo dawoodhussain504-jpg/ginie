@@ -166,6 +166,11 @@ export default function GinieAiAssistantDrawer({
                   fontSize: 13,
                   lineHeight: 1.5,
                   whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word',
+                  overflowWrap: 'anywhere',
+                  wordWrap: 'break-word',
+                  minWidth: 0,
+                  boxSizing: 'border-box',
                 }}
               >
                 {m.text}
