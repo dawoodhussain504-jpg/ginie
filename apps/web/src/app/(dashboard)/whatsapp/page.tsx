@@ -42,6 +42,7 @@ import {
   MessageOutlined,
   NotificationOutlined,
   FireOutlined,
+  ArrowLeftOutlined,
 } from '@ant-design/icons';
 import { useApp } from '@/context/AppContext';
 import { api } from '@/lib/api';
@@ -55,6 +56,7 @@ function WhatsAppContent() {
   const searchParams = useSearchParams();
   const phoneParam = searchParams ? searchParams.get('phone') : null;
   const [activeTab, setActiveTab] = useState('inbox');
+  const [mobileChatOpen, setMobileChatOpen] = useState(false);
   const [session, setSession] = useState<any | null>(null);
   const [conversations, setConversations] = useState<any[]>([]);
   const [selectedPhone, setSelectedPhone] = useState<string | null>(null);
@@ -144,6 +146,7 @@ function WhatsAppContent() {
       const clean = phoneParam.replace(/\D/g, '');
       const fullPhone = clean.length === 10 ? `91${clean}` : clean;
       setSelectedPhone(fullPhone);
+      setMobileChatOpen(true);
       setActiveTab('inbox');
     }
   }, [phoneParam]);
@@ -330,30 +333,49 @@ function WhatsAppContent() {
   });
 
   return (
-    <div>
+    <div className={mobileChatOpen && activeTab === 'inbox' ? 'whatsapp-chat-active' : ''}>
       {/* Header */}
-      <div style={{ marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+      <div
+        className="whatsapp-header-section"
+        style={{
+          marginBottom: 14,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: 10,
+        }}
+      >
         <div>
-          <Title level={3} style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <WhatsAppOutlined style={{ color: '#25D366' }} /> Messages & WhatsApp Inbox
+          <Title level={4} style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <WhatsAppOutlined style={{ color: '#25D366' }} /> Messages & WhatsApp
           </Title>
-          <Text type="secondary">
+          <Text type="secondary" className="hide-on-mobile" style={{ fontSize: 13 }}>
             Unified Customer Inbox, Anti-Ban Protection Shield & Automated Lead Engagement
           </Text>
         </div>
 
-        <Space wrap>
+        <Space wrap size={8}>
           <Tooltip title="Scan conversations with no response in 2+ days and create high-priority follow-up tasks">
             <Button
               icon={<ScheduleOutlined />}
               loading={checkingFollowups}
               onClick={handleRunFollowupCheck}
+              size="middle"
             >
-              Run Inactive Follow-ups Check
+              <span className="hide-on-mobile">Run Inactive Follow-ups Check</span>
+              <span className="show-on-mobile-inline">Follow-ups</span>
             </Button>
           </Tooltip>
-          <Button icon={<SyncOutlined />} onClick={() => { loadConversations(); if (selectedPhone) loadThread(selectedPhone); }}>
-            Refresh
+          <Button
+            icon={<SyncOutlined />}
+            onClick={() => {
+              loadConversations();
+              if (selectedPhone) loadThread(selectedPhone);
+            }}
+            size="middle"
+          >
+            <span className="hide-on-mobile">Refresh</span>
           </Button>
         </Space>
       </div>
@@ -361,6 +383,7 @@ function WhatsAppContent() {
       {/* Tabs */}
       <Tabs
         activeKey={activeTab}
+        className="whatsapp-tabs-nav horizontal-scroll-pills"
         onChange={(key) => {
           setActiveTab(key);
           if (key === 'connect') {
@@ -372,13 +395,14 @@ function WhatsAppContent() {
             key: 'inbox',
             label: (
               <span>
-                <MessageOutlined /> Unified Chat Inbox ({conversations.length})
+                <MessageOutlined /> <span className="hide-on-mobile">Unified Chat Inbox</span><span className="show-on-mobile-inline">Chats</span> ({conversations.length})
               </span>
             ),
             children: (
-              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 340px) 1fr', gap: 16, height: 'calc(100vh - 220px)', minHeight: 600 }}>
+              <div className="whatsapp-grid-container">
                 {/* Left Column: Conversations List */}
                 <Card
+                  className={`whatsapp-list-col ${mobileChatOpen ? 'whatsapp-hide-mobile-col' : ''}`}
                   bodyStyle={{ padding: 0, display: 'flex', flexDirection: 'column', height: '100%' }}
                   style={{ borderRadius: 12, overflow: 'hidden' }}
                 >
@@ -402,7 +426,10 @@ function WhatsAppContent() {
                         return (
                           <div
                             key={conv.phone}
-                            onClick={() => setSelectedPhone(conv.phone)}
+                            onClick={() => {
+                              setSelectedPhone(conv.phone);
+                              setMobileChatOpen(true);
+                            }}
                             style={{
                               padding: '12px 14px',
                               borderBottom: '1px solid #f5f5f5',
@@ -458,6 +485,7 @@ function WhatsAppContent() {
 
                 {/* Right Column: Chat Window */}
                 <Card
+                  className={`whatsapp-chat-col ${!mobileChatOpen ? 'whatsapp-hide-mobile-col' : ''}`}
                   bodyStyle={{ padding: 0, display: 'flex', flexDirection: 'column', height: '100%' }}
                   style={{ borderRadius: 12, overflow: 'hidden' }}
                 >
@@ -466,7 +494,7 @@ function WhatsAppContent() {
                       {/* Chat Header */}
                       <div
                         style={{
-                          padding: '12px 18px',
+                          padding: '10px 14px',
                           borderBottom: '1px solid #f0f0f0',
                           display: 'flex',
                           justifyContent: 'space-between',
@@ -474,40 +502,47 @@ function WhatsAppContent() {
                           background: '#fafafa',
                         }}
                       >
-                        <div>
-                          <Space size={8}>
-                            <Avatar style={{ backgroundColor: '#25D366' }} icon={<WhatsAppOutlined />} />
-                            <div>
-                              <Text strong style={{ fontSize: 14 }}>
-                                {activeThread.customer?.name || activeThread.phone}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, flex: 1 }}>
+                          {/* Back Button on Mobile */}
+                          <Button
+                            type="text"
+                            icon={<ArrowLeftOutlined style={{ fontSize: 16 }} />}
+                            className="show-on-mobile-inline"
+                            onClick={() => setMobileChatOpen(false)}
+                            style={{ padding: '4px 6px', marginRight: 2 }}
+                          />
+                          <Avatar style={{ backgroundColor: '#25D366', flexShrink: 0 }} icon={<WhatsAppOutlined />} />
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <Text strong style={{ fontSize: 14 }} ellipsis>
+                              {activeThread.customer?.name || activeThread.phone}
+                            </Text>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'nowrap', overflow: 'hidden' }}>
+                              <Text type="secondary" style={{ fontSize: 11 }} ellipsis>
+                                {activeThread.phone}
                               </Text>
-                              <br />
-                              <Space size={6}>
-                                <Text type="secondary" style={{ fontSize: 12 }}>
-                                  {activeThread.phone}
-                                </Text>
-                                <Tag color="blue" style={{ fontSize: 10 }}>
+                              {activeThread.customerType && (
+                                <Tag color="blue" style={{ fontSize: 9, padding: '0 4px', margin: 0, lineHeight: '16px' }}>
                                   {activeThread.customerType}
                                 </Tag>
-                                {activeThread.isOptedOut && (
-                                  <Tag color="error" icon={<StopOutlined />} style={{ fontSize: 10 }}>
-                                    Opted-out (STOP)
-                                  </Tag>
-                                )}
-                              </Space>
+                              )}
+                              {activeThread.isOptedOut && (
+                                <Tag color="error" icon={<StopOutlined />} style={{ fontSize: 9, padding: '0 4px', margin: 0, lineHeight: '16px' }}>
+                                  STOP
+                                </Tag>
+                              )}
                             </div>
-                          </Space>
+                          </div>
                         </div>
 
-                        <Space>
+                        <Space size={4} style={{ flexShrink: 0 }}>
                           <Button
                             size="small"
                             type="link"
                             href={`https://wa.me/${activeThread.phone.replace(/\D/g, '')}`}
                             target="_blank"
-                            icon={<WhatsAppOutlined />}
+                            icon={<WhatsAppOutlined style={{ color: '#25D366', fontSize: 16 }} />}
                           >
-                            Open in WhatsApp Web
+                            <span className="hide-on-mobile">Open in WhatsApp Web</span>
                           </Button>
                         </Space>
                       </div>
@@ -527,10 +562,11 @@ function WhatsAppContent() {
                         style={{
                           flex: 1,
                           overflowY: 'auto',
-                          padding: 16,
+                          padding: 14,
                           background: '#efeae2',
                           backgroundImage: 'radial-gradient(#dfd7cc 1px, transparent 1px)',
                           backgroundSize: '16px 16px',
+                          WebkitOverflowScrolling: 'touch',
                         }}
                       >
                         {activeThread.messages?.map((msg: any) => {
@@ -545,12 +581,13 @@ function WhatsAppContent() {
                               }}
                             >
                               <div
+                                className="whatsapp-message-bubble"
                                 style={{
-                                  maxWidth: '72%',
+                                  maxWidth: '78%',
                                   padding: '8px 14px',
                                   borderRadius: 10,
                                   background: isOutbound ? '#d9fdd3' : '#ffffff',
-                                  boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
+                                  boxShadow: '0 1px 2px rgba(0, 0, 0, 0.08)',
                                   wordBreak: 'break-word',
                                 }}
                               >
@@ -584,7 +621,19 @@ function WhatsAppContent() {
                       </div>
 
                       {/* Quick Reply Templates Bar */}
-                      <div style={{ padding: '6px 12px', background: '#fafafa', borderTop: '1px solid #f0f0f0', display: 'flex', gap: 8, overflowX: 'auto', alignItems: 'center' }}>
+                      <div
+                        className="horizontal-scroll-pills"
+                        style={{
+                          padding: '6px 12px',
+                          background: '#fafafa',
+                          borderTop: '1px solid #f0f0f0',
+                          display: 'flex',
+                          gap: 8,
+                          overflowX: 'auto',
+                          alignItems: 'center',
+                          WebkitOverflowScrolling: 'touch',
+                        }}
+                      >
                         <Text type="secondary" style={{ fontSize: 11, whiteSpace: 'nowrap' }}>
                           Quick Replies:
                         </Text>
@@ -601,10 +650,10 @@ function WhatsAppContent() {
                       </div>
 
                       {/* Composer Box */}
-                      <div style={{ padding: 12, background: '#fff', borderTop: '1px solid #f0f0f0' }}>
-                        <div style={{ display: 'flex', gap: 10 }}>
+                      <div className="whatsapp-composer-box" style={{ padding: 12, background: '#fff', borderTop: '1px solid #f0f0f0' }}>
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
                           <Input.TextArea
-                            rows={2}
+                            autoSize={{ minRows: 1, maxRows: 3 }}
                             placeholder={activeThread.isOptedOut ? 'Cannot send: contact is opted out' : 'Type a message (English or Hindi)...'}
                             value={replyText}
                             onChange={(e) => setReplyText(e.target.value)}
@@ -615,6 +664,7 @@ function WhatsAppContent() {
                               }
                             }}
                             disabled={activeThread.isOptedOut}
+                            style={{ borderRadius: 16, padding: '7px 12px' }}
                           />
                           <Button
                             type="primary"
@@ -622,9 +672,18 @@ function WhatsAppContent() {
                             onClick={handleSendReply}
                             loading={sendingReply}
                             disabled={activeThread.isOptedOut || !replyText.trim()}
-                            style={{ height: 'auto', background: '#25D366', borderColor: '#25D366', fontWeight: 600 }}
+                            style={{
+                              borderRadius: 16,
+                              height: 36,
+                              background: '#25D366',
+                              borderColor: '#25D366',
+                              fontWeight: 600,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
                           >
-                            Send
+                            <span className="hide-on-mobile">Send</span>
                           </Button>
                         </div>
                       </div>
@@ -642,7 +701,7 @@ function WhatsAppContent() {
             key: 'anti-ban',
             label: (
               <span>
-                <SafetyCertificateOutlined /> Anti-Ban Shield & Safety
+                <SafetyCertificateOutlined /> <span className="hide-on-mobile">Anti-Ban Shield & Safety</span><span className="show-on-mobile-inline">Anti-Ban</span>
               </span>
             ),
             children: (
@@ -705,7 +764,7 @@ function WhatsAppContent() {
             key: 'rules',
             label: (
               <span>
-                <SettingOutlined /> Auto-Reply Rules ({rules.length})
+                <SettingOutlined /> <span className="hide-on-mobile">Auto-Reply Rules</span><span className="show-on-mobile-inline">Rules</span> ({rules.length})
               </span>
             ),
             children: (
@@ -768,7 +827,7 @@ function WhatsAppContent() {
             key: 'connect',
             label: (
               <span>
-                <QrcodeOutlined /> Phone Session & QR Pairing
+                <QrcodeOutlined /> <span className="hide-on-mobile">Phone Session & QR Pairing</span><span className="show-on-mobile-inline">QR Pair</span>
               </span>
             ),
             children: (
@@ -848,7 +907,7 @@ function WhatsAppContent() {
             key: 'broadcast',
             label: (
               <span>
-                <NotificationOutlined /> Smart Inactive Win-Back ({inactiveCustomers.length})
+                <NotificationOutlined /> <span className="hide-on-mobile">Smart Inactive Win-Back</span><span className="show-on-mobile-inline">Win-Back</span> ({inactiveCustomers.length})
               </span>
             ),
             children: (

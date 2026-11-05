@@ -108,6 +108,29 @@ html, body {
 .show-on-mobile {
   display: none !important;
 }
+.show-on-mobile-inline {
+  display: none !important;
+}
+
+.whatsapp-grid-container {
+  display: grid;
+  grid-template-columns: minmax(280px, 340px) 1fr;
+  gap: 16px;
+  height: calc(100vh - 220px);
+  min-height: 600px;
+}
+
+.whatsapp-list-col {
+  display: flex !important;
+  flex-direction: column;
+  height: 100%;
+}
+
+.whatsapp-chat-col {
+  display: flex !important;
+  flex-direction: column;
+  height: 100%;
+}
 
 /* Mobile bottom navigation styling */
 .ginie-mobile-bottom-nav {
@@ -121,6 +144,10 @@ html, body {
 
   .show-on-mobile {
     display: flex !important;
+  }
+
+  .show-on-mobile-inline {
+    display: inline-flex !important;
   }
 
   .marketing-nav-desktop,
@@ -244,6 +271,49 @@ html, body {
   .bottom-nav-item.active {
     color: var(--brand-primary);
     font-weight: 700;
+  }
+
+  /* WhatsApp Master-Detail & Mobile Layout */
+  .whatsapp-grid-container {
+    display: block !important;
+    height: auto !important;
+    min-height: auto !important;
+  }
+
+  .whatsapp-list-col {
+    height: calc(100dvh - 225px) !important;
+    min-height: 460px !important;
+  }
+
+  .whatsapp-chat-col {
+    height: calc(100dvh - 225px) !important;
+    min-height: 460px !important;
+  }
+
+  .whatsapp-hide-mobile-col {
+    display: none !important;
+  }
+
+  .whatsapp-chat-active .whatsapp-header-section {
+    display: none !important;
+  }
+
+  .whatsapp-chat-active .whatsapp-tabs-nav > .ant-tabs-nav {
+    display: none !important;
+  }
+
+  .whatsapp-chat-active .whatsapp-chat-col {
+    height: calc(100dvh - 145px) !important;
+    min-height: auto !important;
+    margin-top: -6px !important;
+  }
+
+  .whatsapp-composer-box {
+    padding: 8px 10px !important;
+  }
+
+  .whatsapp-message-bubble {
+    max-width: 86% !important;
   }
 }
 
