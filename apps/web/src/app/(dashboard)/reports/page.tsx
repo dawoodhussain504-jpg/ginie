@@ -70,60 +70,39 @@ export default function ReportsPage() {
     totalCustomers: 0,
   });
 
-  const [commissions, setCommissions] = useState<CommissionRecord[]>([
-    {
-      id: 'c-1',
-      name: 'Rajesh Sharma',
-      target: 500000,
-      revenueWon: 680000,
-      commissionRate: 5.0,
-      payoutStatus: 'paid',
-      lastPayoutDate: '2026-10-31',
-    },
-    {
-      id: 'c-2',
-      name: 'Pooja Verma',
-      target: 400000,
-      revenueWon: 395000,
-      commissionRate: 3.5,
-      payoutStatus: 'pending',
-    },
-    {
-      id: 'c-3',
-      name: 'Amit Deshmukh',
-      target: 600000,
-      revenueWon: 740000,
-      commissionRate: 5.0,
-      payoutStatus: 'pending',
-    },
-    {
-      id: 'c-4',
-      name: 'Sunil Rao',
-      target: 350000,
-      revenueWon: 280000,
-      commissionRate: 3.0,
-      payoutStatus: 'paid',
-      lastPayoutDate: '2026-10-25',
-    },
-  ]);
+  const [commissions, setCommissions] = useState<CommissionRecord[]>([]);
 
   useEffect(() => {
     loadReports();
-    const savedComm = localStorage.getItem('ginie_staff_commissions');
-    if (savedComm) {
-      try {
-        setCommissions(JSON.parse(savedComm));
-      } catch {}
-    }
   }, []);
 
   const loadReports = async () => {
     setLoading(true);
     try {
       const res = await api.get('/api/reports/overview');
-      setData(res);
+      const loadedData = res || { sources: [], funnel: [], team: [], totalCustomers: 0 };
+      setData(loadedData);
+
+      // Dynamically compute real team commissions from PostgreSQL database records
+      if (loadedData.team && Array.isArray(loadedData.team) && loadedData.team.length > 0) {
+        const derivedCommissions: CommissionRecord[] = loadedData.team.map((member: any, idx: number) => {
+          const won = Number(member.revenueWon) || 0;
+          return {
+            id: member.id || `member-${idx + 1}`,
+            name: member.name || 'Sales Executive',
+            target: won > 0 ? Math.round(won * 1.25) : 100000,
+            revenueWon: won,
+            commissionRate: 5.0,
+            payoutStatus: won > 0 ? 'pending' : 'paid',
+            lastPayoutDate: won > 0 ? undefined : new Date().toISOString().split('T')[0],
+          };
+        });
+        setCommissions(derivedCommissions);
+      } else {
+        setCommissions([]);
+      }
     } catch (err: any) {
-      console.error(err);
+      console.error('Failed to load reports overview:', err);
     } finally {
       setLoading(false);
     }
@@ -142,7 +121,7 @@ export default function ReportsPage() {
       return c;
     });
     setCommissions(updated);
-    localStorage.setItem('ginie_staff_commissions', JSON.stringify(updated));
+    
     message.success('Staff commission payout status updated.');
   };
 

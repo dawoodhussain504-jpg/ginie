@@ -606,6 +606,9 @@ export default function ErpPage() {
 
       if (compRes) {
         setCompany(compRes);
+        if (compRes.settings?.openingCash !== undefined) {
+          setOpeningCash(Number(compRes.settings.openingCash) || 2000);
+        }
         if (compRes.businessType) {
           const bType = compRes.businessType.toLowerCase();
           const match = INDUSTRY_CATEGORIES.find((c) => c.key === bType || (bType === 'factory' && c.key === 'manufacturing') || (bType === 'shop' && c.key === 'retail'));
@@ -2955,8 +2958,13 @@ export default function ErpPage() {
           <Button
             key="save"
             type="primary"
-            onClick={() => {
+            onClick={async () => {
               localStorage.setItem('ginie_opening_cash', String(openingCash));
+              try {
+                await api.patch('/api/settings/company', {
+                  settings: { ...(company?.settings || {}), openingCash },
+                });
+              } catch {}
               message.success('Opening cash & drawer balance updated!');
               setCashDrawerModalOpen(false);
             }}

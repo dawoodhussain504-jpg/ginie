@@ -37,7 +37,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 const { Title, Text } = Typography;
 
 function SalesAndTasksContent() {
-  const { t, brandColor } = useApp();
+  const { t, brandColor, user } = useApp();
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -73,51 +73,25 @@ function SalesAndTasksContent() {
     loadVisits();
   }, []);
 
-  const loadVisits = () => {
-    const saved = localStorage.getItem('ginie_field_visits');
-    if (saved) {
-      try {
-        setVisits(JSON.parse(saved));
-        return;
-      } catch {}
+  const loadVisits = async () => {
+    try {
+      const res = await api.get('/api/deals/check-ins');
+      if (Array.isArray(res)) {
+        setVisits(res.map((ci: any) => ({
+          id: ci.id,
+          executive: ci.user?.name || user?.name || 'Field Executive',
+          client: ci.clientName,
+          purpose: ci.notes?.split(' - ')[0] || 'Client Visit',
+          outcome: ci.notes?.split(' - ')[1] || 'Visit verified with GPS satellite timestamp',
+          latitude: ci.lat,
+          longitude: ci.lng,
+          accuracy: ci.accuracy || 10,
+          timestamp: ci.createdAt,
+        })));
+      }
+    } catch (err) {
+      console.warn('Failed to load check-ins from database', err);
     }
-    const defaultVisits = [
-      {
-        id: 'v-1',
-        executive: 'Rajesh Sharma',
-        client: 'Apex Industrial Parts, MIDC Bhosari',
-        purpose: 'Sample Demo & Price Negotiation',
-        outcome: 'Client approved initial batch of 200 units. Awaiting PO.',
-        latitude: 18.6279,
-        longitude: 73.8443,
-        accuracy: 8,
-        timestamp: new Date(Date.now() - 3600000 * 3).toISOString(),
-      },
-      {
-        id: 'v-2',
-        executive: 'Pooja Verma',
-        client: 'Sunrise Supermarket, FC Road',
-        purpose: 'Payment Collection & Restock Check',
-        outcome: 'Collected ₹42,500 via cheque #881290. Next visit Tuesday.',
-        latitude: 18.5204,
-        longitude: 73.8567,
-        accuracy: 12,
-        timestamp: new Date(Date.now() - 3600000 * 24).toISOString(),
-      },
-      {
-        id: 'v-3',
-        executive: 'Amit Deshmukh',
-        client: 'Kalyani Tech Park, Viman Nagar',
-        purpose: 'Annual Maintenance Contract Renewal',
-        outcome: 'Signed 1-year contract extension for ₹1,80,000.',
-        latitude: 18.5679,
-        longitude: 73.9143,
-        accuracy: 5,
-        timestamp: new Date(Date.now() - 3600000 * 48).toISOString(),
-      },
-    ];
-    setVisits(defaultVisits);
-    localStorage.setItem('ginie_field_visits', JSON.stringify(defaultVisits));
   };
 
   const handleStartCheckIn = () => {
@@ -155,34 +129,22 @@ function SalesAndTasksContent() {
     );
   };
 
-  const handleSaveVisit = (values: any) => {
-    const newVisit = {
-      id: `v-${Date.now()}`,
-      executive: values.executive || 'Sales Executive',
-      client: values.client,
-      purpose: values.purpose,
-      outcome: values.outcome || 'Meeting completed successfully.',
-      latitude: currentCoords?.lat || 18.5204,
-      longitude: currentCoords?.lng || 73.8567,
-      accuracy: currentCoords?.accuracy || 10,
-      timestamp: new Date().toISOString(),
-    };
+  const handleSaveVisit = async (values: any) => {
+    try {
+      await api.post('/api/deals/check-in', {
+        clientName: values.client,
+        lat: currentCoords?.lat || 18.5204,
+        lng: currentCoords?.lng || 73.8567,
+        notes: `${values.purpose || ''} - ${values.outcome || ''}`,
+      });
 
-    const updated = [newVisit, ...visits];
-    setVisits(updated);
-    localStorage.setItem('ginie_field_visits', JSON.stringify(updated));
-
-    // Persist to backend database
-    api.post('/api/deals/check-in', {
-      clientName: values.client,
-      lat: currentCoords?.lat || 18.5204,
-      lng: currentCoords?.lng || 73.8567,
-      notes: `${values.purpose || ''} - ${values.outcome || ''}`,
-    }).catch(() => {});
-
-    setVisitModalVisible(false);
-    visitForm.resetFields();
-    message.success('Client visit check-in saved with verified GPS timestamp!');
+      message.success('Client visit check-in saved to database with verified GPS!');
+      setVisitModalVisible(false);
+      visitForm.resetFields();
+      loadVisits();
+    } catch (err: any) {
+      message.error(err.message || 'Failed to save visit check-in to database.');
+    }
   };
 
   const loadPipelines = async () => {
@@ -797,7 +759,7 @@ function SalesAndTasksContent() {
           </a>
         </div>
 
-        <Form form={visitForm} layout="vertical" onFinish={handleSaveVisit} initialValues={{ executive: 'Rajesh Sharma', purpose: 'Quotation Negotiation' }}>
+        <Form form={visitForm} layout="vertical" onFinish={handleSaveVisit} initialValues={{ executive: user?.name || 'Sales Executive', purpose: 'Quotation Negotiation' }}>
           <Form.Item name="executive" label="Staff / Sales Executive" rules={[{ required: true }]}>
             <Input placeholder="e.g. Rajesh Sharma" />
           </Form.Item>

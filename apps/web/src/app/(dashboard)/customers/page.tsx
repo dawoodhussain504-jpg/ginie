@@ -116,12 +116,6 @@ function CustomersContent() {
 
   useEffect(() => {
     loadData();
-    const savedLoyalty = localStorage.getItem('ginie_customer_loyalty');
-    if (savedLoyalty) {
-      try {
-        setLoyaltyMap(JSON.parse(savedLoyalty));
-      } catch {}
-    }
   }, []);
 
   const loadData = async () => {
@@ -135,22 +129,18 @@ function CustomersContent() {
       setContacts(loadedContacts);
       setCompanies(companiesRes || []);
 
-      // If no loyalty map existed, populate initial tiers
-      const savedLoyalty = localStorage.getItem('ginie_customer_loyalty');
-      if (!savedLoyalty && loadedContacts.length > 0) {
-        const initialMap: Record<string, LoyaltyData> = {};
-        loadedContacts.forEach((c: any, idx: number) => {
-          const tiers: ('Silver' | 'Gold' | 'Platinum')[] = ['Silver', 'Gold', 'Platinum'];
-          const pts = [150, 420, 850, 290, 600][idx % 5];
-          initialMap[c.id] = {
-            points: pts,
-            cashback: Math.round(pts * 0.5),
-            tier: tiers[idx % 3],
-          };
-        });
-        setLoyaltyMap(initialMap);
-        localStorage.setItem('ginie_customer_loyalty', JSON.stringify(initialMap));
-      }
+      // Calculate real customer loyalty points directly from PostgreSQL database
+      const realLoyaltyMap: Record<string, LoyaltyData> = {};
+      loadedContacts.forEach((c: any) => {
+        const pts = Number(c.loyaltyPoints) || 0;
+        const tier = pts >= 500 ? 'Platinum' : pts >= 200 ? 'Gold' : 'Silver';
+        realLoyaltyMap[c.id] = {
+          points: pts,
+          cashback: Math.round(pts * 0.5),
+          tier,
+        };
+      });
+      setLoyaltyMap(realLoyaltyMap);
     } catch (err: any) {
       message.error(err.message || 'Failed to load customer data');
     } finally {
@@ -160,7 +150,7 @@ function CustomersContent() {
 
   const handleOpenGiftModal = (contact: any) => {
     setSelectedLoyaltyContact(contact);
-    const existing = loyaltyMap[contact.id] || { points: 200, cashback: 50, tier: 'Silver' };
+    const existing = loyaltyMap[contact.id] || { points: Number(contact.loyaltyPoints) || 0, cashback: 0, tier: 'Silver' };
     giftForm.setFieldsValue({
       points: 100,
       reason: 'Festive Bonus / Loyalty Appreciation',
@@ -169,7 +159,7 @@ function CustomersContent() {
     setGiftModalOpen(true);
   };
 
-  const handleSaveLoyaltyGift = (values: any) => {
+  const handleSaveLoyaltyGift = async (values: any) => {
     if (!selectedLoyaltyContact) return;
     const existing = loyaltyMap[selectedLoyaltyContact.id] || { points: 0, cashback: 0, tier: 'Silver' };
     const addedPoints = Number(values.points || 0);
@@ -178,26 +168,30 @@ function CustomersContent() {
     if (newTotal > 750) newTier = 'Platinum';
     else if (newTotal > 350) newTier = 'Gold';
 
-    const updated = {
-      ...loyaltyMap,
-      [selectedLoyaltyContact.id]: {
-        points: newTotal,
-        cashback: Math.round(newTotal * 0.5),
-        tier: newTier,
-      },
-    };
+    try {
+      // Persist loyalty points to PostgreSQL database
+      await api.post(`/api/contacts/${selectedLoyaltyContact.id}/loyalty`, {
+        pointsDelta: addedPoints,
+        reason: values.reason || 'Loyalty Points Gift',
+      });
 
-    setLoyaltyMap(updated);
-    localStorage.setItem('ginie_customer_loyalty', JSON.stringify(updated));
+      const updated = {
+        ...loyaltyMap,
+        [selectedLoyaltyContact.id]: {
+          points: newTotal,
+          cashback: Math.round(newTotal * 0.5),
+          tier: newTier,
+        },
+      };
 
-    // Persist loyalty points to backend database
-    api.post(`/api/contacts/${selectedLoyaltyContact.id}/loyalty`, {
-      pointsDelta: addedPoints,
-      reason: 'Loyalty Points Gift',
-    }).catch(() => {});
-
-    message.success(`Added ${addedPoints} loyalty points to ${selectedLoyaltyContact.name}!`);
-    setGiftModalOpen(false);
+      setLoyaltyMap(updated);
+      message.success(`Added ${addedPoints} loyalty points to ${selectedLoyaltyContact.name}!`);
+      setGiftModalOpen(false);
+      loadData();
+    } catch (err: any) {
+      message.error(err.message || 'Failed to update loyalty points in database.');
+      return;
+    }
 
     // Optional WhatsApp celebration dispatch
     if (selectedLoyaltyContact.phone) {
@@ -289,7 +283,9 @@ function CustomersContent() {
       title: 'Loyalty Points & Wallet',
       key: 'loyalty',
       render: (_: any, record: any) => {
-        const data = loyaltyMap[record.id] || { points: 250, cashback: 50, tier: 'Silver' };
+        const pts = Number(record.loyaltyPoints) || 0;
+        const tier = pts >= 500 ? 'Platinum' : pts >= 200 ? 'Gold' : 'Silver';
+        const data = loyaltyMap[record.id] || { points: pts, cashback: Math.round(pts * 0.5), tier };
         const tierColors: Record<string, string> = {
           Gold: 'gold',
           Silver: 'blue',
