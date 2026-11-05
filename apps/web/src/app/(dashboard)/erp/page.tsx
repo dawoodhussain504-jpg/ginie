@@ -62,6 +62,7 @@ import {
   ScissorOutlined,
   ReadOutlined,
   ExperimentOutlined,
+  BookOutlined,
 } from '@ant-design/icons';
 import { useApp } from '@/context/AppContext';
 import { api } from '@/lib/api';
@@ -208,6 +209,21 @@ export default function ErpPage() {
   const [offlineBills, setOfflineBills] = useState<any[]>([]);
   const [offlineModalOpen, setOfflineModalOpen] = useState(false);
   const [syncingOffline, setSyncingOffline] = useState(false);
+
+  // ERP Superpowers: Purchases, Batches, Job Cards, Prescriptions
+  const [purchaseModalOpen, setPurchaseModalOpen] = useState(false);
+  const [purchasesList, setPurchasesList] = useState<any[]>([]);
+  const [batchModalOpen, setBatchModalOpen] = useState(false);
+  const [batchesList, setBatchesList] = useState<any[]>([]);
+  const [jobCardModalOpen, setJobCardModalOpen] = useState(false);
+  const [jobCardsList, setJobCardsList] = useState<any[]>([]);
+  const [rxModalOpen, setRxModalOpen] = useState(false);
+  const [prescriptionsList, setPrescriptionsList] = useState<any[]>([]);
+
+  const [purchaseForm] = Form.useForm();
+  const [batchForm] = Form.useForm();
+  const [jobCardForm] = Form.useForm();
+  const [rxForm] = Form.useForm();
 
   // Manufacturing BOM State
   const [boms, setBoms] = useState<any[]>([
@@ -603,6 +619,161 @@ export default function ErpPage() {
       console.error('Failed to load ERP data:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ERP Superpowers Handlers
+  const loadPurchases = async () => {
+    try {
+      const res = await api.get('/api/erp/purchases');
+      setPurchasesList(res || []);
+    } catch {}
+  };
+
+  const handleSavePurchase = async () => {
+    try {
+      const values = await purchaseForm.validateFields();
+      const selectedProd = products.find((p) => p.id === values.productId);
+      const qty = Number(values.quantity || 1);
+      const rate = Number(values.rate || selectedProd?.price || 100);
+      const total = qty * rate;
+
+      await api.post('/api/erp/purchases', {
+        vendorName: values.vendorName,
+        vendorPhone: values.vendorPhone,
+        status: 'received',
+        total,
+        items: [
+          {
+            productId: values.productId,
+            name: selectedProd?.name || 'Raw Material / Stock Item',
+            quantity: qty,
+            rate,
+          },
+        ],
+      });
+
+      message.success(`₹${total.toLocaleString('en-IN')} ka mal inward darj ho gaya aur stock badha diya gaya!`);
+      setPurchaseModalOpen(false);
+      purchaseForm.resetFields();
+      loadErpData();
+      loadPurchases();
+    } catch (err: any) {
+      message.error(err.message || 'Purchase entry save nahi ho saki.');
+    }
+  };
+
+  const loadBatches = async () => {
+    try {
+      const res = await api.get('/api/erp/batches');
+      setBatchesList(res || []);
+    } catch {}
+  };
+
+  const handleSaveBatch = async () => {
+    try {
+      const values = await batchForm.validateFields();
+      await api.post('/api/erp/batches', values);
+      message.success('Naya batch darj ho gaya!');
+      setBatchModalOpen(false);
+      batchForm.resetFields();
+      loadBatches();
+      loadErpData();
+    } catch (err: any) {
+      message.error(err.message || 'Batch save nahi ho saka.');
+    }
+  };
+
+  const loadJobCards = async () => {
+    try {
+      const res = await api.get('/api/erp/job-cards');
+      setJobCardsList(res || []);
+    } catch {}
+  };
+
+  const handleSaveJobCard = async () => {
+    try {
+      const values = await jobCardForm.validateFields();
+      await api.post('/api/erp/job-cards', {
+        ...values,
+        complaints: values.complaints ? [values.complaints] : ['General Service & Checkup'],
+      });
+      message.success('Job Card ban gaya!');
+      setJobCardModalOpen(false);
+      jobCardForm.resetFields();
+      loadJobCards();
+    } catch (err: any) {
+      message.error(err.message || 'Job card save nahi ho saka.');
+    }
+  };
+
+  const handleSendJobCardWa = async (id: string) => {
+    try {
+      const res = await api.post(`/api/erp/job-cards/${id}/send-whatsapp`);
+      if (res?.waClickUrl) {
+        window.open(res.waClickUrl, '_blank');
+      }
+      message.success('Job card update customer ko WhatsApp par bhej diya gaya!');
+    } catch (err: any) {
+      message.error('WhatsApp update send karne me error aaya.');
+    }
+  };
+
+  const loadPrescriptions = async () => {
+    try {
+      const res = await api.get('/api/erp/prescriptions');
+      setPrescriptionsList(res || []);
+    } catch {}
+  };
+
+  const handleSavePrescription = async () => {
+    try {
+      const values = await rxForm.validateFields();
+      const medList = [
+        {
+          name: values.med1_name || 'Paracetamol 650',
+          dosage: values.med1_dosage || '1-0-1',
+          days: Number(values.med1_days || 3),
+          notes: values.med1_notes || 'Khane ke baad',
+        },
+      ];
+      if (values.med2_name) {
+        medList.push({
+          name: values.med2_name,
+          dosage: values.med2_dosage || '1-0-1',
+          days: Number(values.med2_days || 3),
+          notes: values.med2_notes || '',
+        });
+      }
+
+      await api.post('/api/erp/prescriptions', {
+        patientName: values.patientName,
+        patientPhone: values.patientPhone,
+        patientAge: values.patientAge ? Number(values.patientAge) : undefined,
+        diagnosis: values.diagnosis,
+        medicines: medList,
+        testsAdvised: values.testsAdvised,
+        consultationFee: values.consultationFee ? Number(values.consultationFee) : 300,
+      });
+
+      message.success('Digital prescription tayyar ho gaya!');
+      setRxModalOpen(false);
+      rxForm.resetFields();
+      loadPrescriptions();
+    } catch (err: any) {
+      message.error(err.message || 'Prescription save nahi ho saka.');
+    }
+  };
+
+  const handleSendPrescriptionWa = async (id: string) => {
+    try {
+      const res = await api.post(`/api/erp/prescriptions/${id}/send-whatsapp`);
+      if (res?.waClickUrl) {
+        window.open(res.waClickUrl, '_blank');
+      }
+      message.success('Digital prescription patient ko WhatsApp par bhej diya gaya!');
+    } catch (err: any) {
+      message.error('WhatsApp send karne me error aaya.');
     }
   };
 
@@ -1196,56 +1367,108 @@ export default function ErpPage() {
         </Col>
       </Row>
 
-      {/* Staff & HR Quick Bar for Operations */}
+      {/* GINIE ERP Quick Operations Command Center */}
       <div
         style={{
-          background: 'linear-gradient(90deg, #eff6ff 0%, #f0fdf4 100%)',
-          borderRadius: 12,
-          padding: '12px 20px',
-          marginBottom: 20,
+          background: 'linear-gradient(90deg, #eff6ff 0%, #f8fafc 100%)',
+          borderRadius: 14,
+          padding: '16px 20px',
+          marginBottom: 24,
           border: '1px solid #bfdbfe',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: 12,
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 8,
-              background: '#2563eb',
-              color: '#fff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <TeamOutlined style={{ fontSize: 18 }} />
-          </div>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: 14, color: '#0f172a' }}>
-              Staff & Payroll OS (कर्मचारी, दैनिक हाज़िरी व वेतन)
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 10,
+                background: '#2563eb',
+                color: '#fff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 4px 10px rgba(37, 99, 235, 0.3)',
+              }}
+            >
+              <AppstoreOutlined style={{ fontSize: 20 }} />
             </div>
-            <div style={{ fontSize: 12, color: '#64748b' }}>
-              Factory wagers, kitchen chefs, sales floor staff ki daily haaziri, udhari khata aur WhatsApp salary slips
+            <div>
+              <div style={{ fontWeight: 800, fontSize: 15, color: '#0f172a' }}>
+                Business Operations & Khata Hub (व्यापार व संचालन केंद्र)
+              </div>
+              <div style={{ fontSize: 12, color: '#64748b' }}>
+                उधारी बही, स्टाफ हाज़िरी, सप्लायर माल आवक व एक्सपायरी ट्रैकर — 1-क्लिक एक्सेस
+              </div>
             </div>
           </div>
-        </div>
 
-        <Space>
-          <Button
-            type="primary"
-            icon={<TeamOutlined />}
-            href="/staff"
-            style={{ borderRadius: 8, fontWeight: 700, background: '#2563eb', borderColor: '#2563eb' }}
-          >
-            Open Staff & Haaziri ↗
-          </Button>
-        </Space>
+          <Space wrap size="small">
+            <Button
+              icon={<BookOutlined style={{ color: '#059669' }} />}
+              href="/khata"
+              style={{ borderRadius: 8, fontWeight: 700, borderColor: '#059669', color: '#059669' }}
+            >
+              📖 Udhari Khata ↗
+            </Button>
+            <Button
+              icon={<TeamOutlined style={{ color: '#2563eb' }} />}
+              href="/staff"
+              style={{ borderRadius: 8, fontWeight: 700, borderColor: '#2563eb', color: '#2563eb' }}
+            >
+              👥 Staff & Haaziri ↗
+            </Button>
+            <Button
+              icon={<PlusOutlined />}
+              onClick={() => {
+                purchaseForm.resetFields();
+                loadPurchases();
+                setPurchaseModalOpen(true);
+              }}
+              style={{ borderRadius: 8, fontWeight: 600, borderColor: '#d97706', color: '#d97706' }}
+            >
+              📦 Mal Inward (खरीद)
+            </Button>
+            <Button
+              icon={<ExperimentOutlined />}
+              onClick={() => {
+                loadBatches();
+                setBatchModalOpen(true);
+              }}
+              style={{ borderRadius: 8, fontWeight: 600, borderColor: '#7c3aed', color: '#7c3aed' }}
+            >
+              ⏳ Expiry Tracker
+            </Button>
+            {selectedIndustry === 'automobile' && (
+              <Button
+                type="primary"
+                icon={<CarOutlined />}
+                onClick={() => {
+                  loadJobCards();
+                  setJobCardModalOpen(true);
+                }}
+                style={{ borderRadius: 8, fontWeight: 700, background: '#ea580c', borderColor: '#ea580c' }}
+              >
+                🚗 Job Cards
+              </Button>
+            )}
+            {selectedIndustry === 'clinic' && (
+              <Button
+                type="primary"
+                icon={<MedicineBoxOutlined />}
+                onClick={() => {
+                  loadPrescriptions();
+                  setRxModalOpen(true);
+                }}
+                style={{ borderRadius: 8, fontWeight: 700, background: '#eb2f96', borderColor: '#eb2f96' }}
+              >
+                🩺 Digital Rx
+              </Button>
+            )}
+          </Space>
+        </div>
       </div>
 
       {/* DYNAMIC INDUSTRY MODULES */}
@@ -3018,6 +3241,427 @@ export default function ErpPage() {
           </Button>
         </div>
       )}
+      {/* 1. VENDOR PURCHASE INWARD MODAL */}
+      <Modal
+        title={
+          <Space>
+            <PlusOutlined style={{ color: '#d97706' }} />
+            <span>Stock Inward & Vendor Purchase (माल आवक दर्ज करें)</span>
+          </Space>
+        }
+        open={purchaseModalOpen}
+        onCancel={() => setPurchaseModalOpen(false)}
+        onOk={handleSavePurchase}
+        okText="Inward Mal & Add Stock"
+        width={560}
+      >
+        <Form form={purchaseForm} layout="vertical" style={{ marginTop: 16 }}>
+          <Row gutter={16}>
+            <Col span={14}>
+              <Form.Item name="vendorName" label="Supplier / Vendor Name" rules={[{ required: true, message: 'Vendor name is required' }]}>
+                <Input placeholder="e.g. Rameshwar Wholesale Traders" />
+              </Form.Item>
+            </Col>
+            <Col span={10}>
+              <Form.Item name="vendorPhone" label="Vendor Mobile">
+                <Input placeholder="9876543210" prefix="+91" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Form.Item name="productId" label="Select Stock Item to Inward" rules={[{ required: true, message: 'Please select item' }]}>
+            <Select placeholder="Choose item from catalog...">
+              {products.map((p) => (
+                <Option key={p.id} value={p.id}>
+                  {p.name} (Current Stock: {p.stockInHand || 0} {p.unit || 'pcs'})
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="quantity" label="Inward Quantity (मात्रा)" rules={[{ required: true }]}>
+                <InputNumber min={1} style={{ width: '100%' }} placeholder="e.g. 50" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="rate" label="Purchase Cost / Unit (खरीद मूल्य ₹)">
+                <InputNumber min={0} style={{ width: '100%' }} prefix="₹" placeholder="e.g. 120" />
+              </Form.Item>
+            </Col>
+          </Row>
+        </Form>
+
+        {purchasesList.length > 0 && (
+          <div style={{ marginTop: 16 }}>
+            <Divider style={{ margin: '12px 0' }} />
+            <Text strong style={{ fontSize: 13 }}>Recent Stock Inwards ({purchasesList.length}):</Text>
+            <div style={{ maxHeight: 150, overflowY: 'auto', marginTop: 8 }}>
+              {purchasesList.slice(0, 4).map((po) => (
+                <div key={po.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 8px', background: '#f8fafc', borderRadius: 6, marginBottom: 6, fontSize: 12 }}>
+                  <div>
+                    <Text strong>{po.vendorName}</Text> — <Tag color="green">{po.status}</Tag>
+                  </div>
+                  <div style={{ fontWeight: 800 }}>₹{po.total?.toLocaleString('en-IN')}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* 2. BATCH & EXPIRY TRACKER MODAL */}
+      <Modal
+        title={
+          <Space>
+            <ExperimentOutlined style={{ color: '#7c3aed' }} />
+            <span>Product Batches & Expiry Tracker (बैच व एक्सपायरी)</span>
+          </Space>
+        }
+        open={batchModalOpen}
+        onCancel={() => setBatchModalOpen(false)}
+        footer={[
+          <Button key="close" onClick={() => setBatchModalOpen(false)}>
+            Close
+          </Button>,
+        ]}
+        width={680}
+      >
+        <div style={{ marginTop: 12 }}>
+          {/* Add Batch Inline Accordion */}
+          <Card size="small" title={<span style={{ fontWeight: 700, fontSize: 13 }}>+ Add New Product Batch</span>} style={{ marginBottom: 16, background: '#fafafa' }}>
+            <Form form={batchForm} layout="vertical" onFinish={handleSaveBatch}>
+              <Row gutter={12}>
+                <Col span={10}>
+                  <Form.Item name="productId" label="Product" rules={[{ required: true }]}>
+                    <Select placeholder="Select product...">
+                      {products.map((p) => (
+                        <Option key={p.id} value={p.id}>{p.name}</Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                </Col>
+                <Col span={7}>
+                  <Form.Item name="batchNumber" label="Batch No." rules={[{ required: true }]}>
+                    <Input placeholder="e.g. B-2026-X" />
+                  </Form.Item>
+                </Col>
+                <Col span={7}>
+                  <Form.Item name="quantity" label="Quantity" rules={[{ required: true }]}>
+                    <InputNumber min={1} style={{ width: '100%' }} placeholder="50" />
+                  </Form.Item>
+                </Col>
+              </Row>
+
+              <Row gutter={12} align="bottom">
+                <Col span={8}>
+                  <Form.Item name="mfgDate" label="Mfg Date">
+                    <Input type="date" />
+                  </Form.Item>
+                </Col>
+                <Col span={8}>
+                  <Form.Item name="expDate" label="Expiry Date" rules={[{ required: true }]}>
+                    <Input type="date" />
+                  </Form.Item>
+                </Col>
+                <Col span={8}>
+                  <Button type="primary" htmlType="submit" style={{ width: '100%', fontWeight: 700, background: '#7c3aed', borderColor: '#7c3aed', marginBottom: 24 }}>
+                    Save Batch
+                  </Button>
+                </Col>
+              </Row>
+            </Form>
+          </Card>
+
+          {/* Batches Table */}
+          <Table
+            dataSource={batchesList}
+            rowKey="id"
+            size="small"
+            pagination={{ pageSize: 5 }}
+            scroll={{ x: 550 }}
+            locale={{ emptyText: 'No batches logged yet. Add your first batch above.' }}
+            columns={[
+              {
+                title: 'Product',
+                key: 'prod',
+                render: (_, r) => <Text strong>{r.product?.name || 'Stock Item'}</Text>,
+              },
+              {
+                title: 'Batch #',
+                dataIndex: 'batchNumber',
+                key: 'batchNumber',
+                render: (t) => <Tag color="blue">{t}</Tag>,
+              },
+              {
+                title: 'Qty',
+                dataIndex: 'quantity',
+                key: 'quantity',
+                render: (v) => <span style={{ fontWeight: 700 }}>{v}</span>,
+              },
+              {
+                title: 'Expiry Status',
+                key: 'exp',
+                render: (_, r) => {
+                  if (r.isExpired) {
+                    return <Tag color="error">EXPIRED ({r.daysUntilExpiry}d ago)</Tag>;
+                  } else if (r.isExpiringSoon) {
+                    return <Tag color="warning">Expiring in {r.daysUntilExpiry} days</Tag>;
+                  }
+                  return <Tag color="success">Good ({r.daysUntilExpiry} days)</Tag>;
+                },
+              },
+            ]}
+          />
+        </div>
+      </Modal>
+
+      {/* 3. AUTOMOBILE DIGITAL JOB CARD MODAL */}
+      <Modal
+        title={
+          <Space>
+            <CarOutlined style={{ color: '#ea580c' }} />
+            <span>Automobile Workshop Job Cards (वाहन सर्विस जॉब कार्ड)</span>
+          </Space>
+        }
+        open={jobCardModalOpen}
+        onCancel={() => setJobCardModalOpen(false)}
+        footer={[
+          <Button key="close" onClick={() => setJobCardModalOpen(false)}>
+            Close
+          </Button>,
+        ]}
+        width={720}
+      >
+        <div style={{ marginTop: 12 }}>
+          <Card size="small" title={<span style={{ fontWeight: 700, fontSize: 13 }}>+ Create New Job Card</span>} style={{ marginBottom: 16, background: '#fff7ed', borderColor: '#ffedd5' }}>
+            <Form form={jobCardForm} layout="vertical" onFinish={handleSaveJobCard}>
+              <Row gutter={12}>
+                <Col span={8}>
+                  <Form.Item name="customerName" label="Customer Name" rules={[{ required: true }]}>
+                    <Input placeholder="e.g. Sunil Sharma" />
+                  </Form.Item>
+                </Col>
+                <Col span={8}>
+                  <Form.Item name="customerPhone" label="Mobile (WhatsApp)" rules={[{ required: true }]}>
+                    <Input placeholder="9876543210" prefix="+91" />
+                  </Form.Item>
+                </Col>
+                <Col span={8}>
+                  <Form.Item name="vehicleNumber" label="Vehicle No." rules={[{ required: true }]}>
+                    <Input placeholder="DL-01-AB-1234" />
+                  </Form.Item>
+                </Col>
+              </Row>
+
+              <Row gutter={12}>
+                <Col span={8}>
+                  <Form.Item name="vehicleModel" label="Model" rules={[{ required: true }]}>
+                    <Input placeholder="e.g. Swift Dzire, Activa 6G" />
+                  </Form.Item>
+                </Col>
+                <Col span={8}>
+                  <Form.Item name="kmReading" label="KM Reading">
+                    <InputNumber style={{ width: '100%' }} placeholder="35000" />
+                  </Form.Item>
+                </Col>
+                <Col span={8}>
+                  <Form.Item name="estimatedCost" label="Estimated Cost (₹)">
+                    <InputNumber min={0} style={{ width: '100%' }} prefix="₹" placeholder="2500" />
+                  </Form.Item>
+                </Col>
+              </Row>
+
+              <Row gutter={12} align="bottom">
+                <Col span={16}>
+                  <Form.Item name="complaints" label="Reported Complaints / Work Needed">
+                    <Input placeholder="e.g. Engine oil change, brake pad noise, general wash" />
+                  </Form.Item>
+                </Col>
+                <Col span={8}>
+                  <Button type="primary" htmlType="submit" style={{ width: '100%', fontWeight: 700, background: '#ea580c', borderColor: '#ea580c', marginBottom: 24 }}>
+                    Create Job Card
+                  </Button>
+                </Col>
+              </Row>
+            </Form>
+          </Card>
+
+          <Table
+            dataSource={jobCardsList}
+            rowKey="id"
+            size="small"
+            pagination={{ pageSize: 4 }}
+            scroll={{ x: 600 }}
+            columns={[
+              {
+                title: 'Job # & Vehicle',
+                key: 'veh',
+                render: (_, r) => (
+                  <div>
+                    <Text strong>{r.vehicleNumber}</Text> ({r.vehicleModel})
+                    <br />
+                    <Text type="secondary" style={{ fontSize: 11 }}>{r.jobNumber} • {r.customerName}</Text>
+                  </div>
+                ),
+              },
+              {
+                title: 'Est. Cost',
+                dataIndex: 'estimatedCost',
+                key: 'cost',
+                render: (v) => <span style={{ fontWeight: 800 }}>₹{Number(v).toLocaleString('en-IN')}</span>,
+              },
+              {
+                title: 'Status',
+                dataIndex: 'status',
+                key: 'status',
+                render: (st) => (
+                  <Tag color={st === 'ready' ? 'green' : st === 'delivered' ? 'cyan' : 'orange'}>
+                    {st?.toUpperCase()}
+                  </Tag>
+                ),
+              },
+              {
+                title: 'WhatsApp Update',
+                key: 'action',
+                render: (_, r) => (
+                  <Button
+                    size="small"
+                    icon={<WhatsAppOutlined style={{ color: '#25D366' }} />}
+                    onClick={() => handleSendJobCardWa(r.id)}
+                  >
+                    Send Update
+                  </Button>
+                ),
+              },
+            ]}
+          />
+        </div>
+      </Modal>
+
+      {/* 4. DOCTOR DIGITAL PRESCRIPTION (Rx) MODAL */}
+      <Modal
+        title={
+          <Space>
+            <MedicineBoxOutlined style={{ color: '#eb2f96' }} />
+            <span>Doctor Digital Rx Prescription (डिजिटल पर्चा)</span>
+          </Space>
+        }
+        open={rxModalOpen}
+        onCancel={() => setRxModalOpen(false)}
+        footer={[
+          <Button key="close" onClick={() => setRxModalOpen(false)}>
+            Close
+          </Button>,
+        ]}
+        width={720}
+      >
+        <div style={{ marginTop: 12 }}>
+          <Card size="small" title={<span style={{ fontWeight: 700, fontSize: 13 }}>+ Write Patient Prescription</span>} style={{ marginBottom: 16, background: '#fdf2f8', borderColor: '#fce7f3' }}>
+            <Form form={rxForm} layout="vertical" onFinish={handleSavePrescription}>
+              <Row gutter={12}>
+                <Col span={10}>
+                  <Form.Item name="patientName" label="Patient Name" rules={[{ required: true }]}>
+                    <Input placeholder="e.g. Geeta Devi" />
+                  </Form.Item>
+                </Col>
+                <Col span={8}>
+                  <Form.Item name="patientPhone" label="WhatsApp Phone" rules={[{ required: true }]}>
+                    <Input placeholder="9876543210" prefix="+91" />
+                  </Form.Item>
+                </Col>
+                <Col span={6}>
+                  <Form.Item name="patientAge" label="Age">
+                    <InputNumber style={{ width: '100%' }} placeholder="34" />
+                  </Form.Item>
+                </Col>
+              </Row>
+
+              <Form.Item name="diagnosis" label="Symptoms & Diagnosis (रोग निदान)">
+                <Input placeholder="e.g. Acute viral fever, sore throat, mild cough" />
+              </Form.Item>
+
+              <Row gutter={12}>
+                <Col span={10}>
+                  <Form.Item name="med1_name" label="Medicine 1" initialValue="Tab Paracetamol 650mg">
+                    <Input placeholder="Medicine name..." />
+                  </Form.Item>
+                </Col>
+                <Col span={7}>
+                  <Form.Item name="med1_dosage" label="Dosage" initialValue="1-0-1 (सुबह-शाम)">
+                    <Input />
+                  </Form.Item>
+                </Col>
+                <Col span={7}>
+                  <Form.Item name="med1_days" label="Days" initialValue={3}>
+                    <InputNumber style={{ width: '100%' }} />
+                  </Form.Item>
+                </Col>
+              </Row>
+
+              <Row gutter={12} align="bottom">
+                <Col span={10}>
+                  <Form.Item name="med2_name" label="Medicine 2 (Optional)">
+                    <Input placeholder="e.g. Tab Cetirizine 10mg" />
+                  </Form.Item>
+                </Col>
+                <Col span={7}>
+                  <Form.Item name="med2_dosage" label="Dosage" initialValue="0-0-1 (रात को)">
+                    <Input />
+                  </Form.Item>
+                </Col>
+                <Col span={7}>
+                  <Button type="primary" htmlType="submit" style={{ width: '100%', fontWeight: 700, background: '#eb2f96', borderColor: '#eb2f96', marginBottom: 24 }}>
+                    Save & Generate Rx
+                  </Button>
+                </Col>
+              </Row>
+            </Form>
+          </Card>
+
+          <Table
+            dataSource={prescriptionsList}
+            rowKey="id"
+            size="small"
+            pagination={{ pageSize: 4 }}
+            scroll={{ x: 600 }}
+            columns={[
+              {
+                title: 'Rx # & Patient',
+                key: 'pt',
+                render: (_, r) => (
+                  <div>
+                    <Text strong>{r.patientName}</Text> ({r.patientAge || '—'} Yrs)
+                    <br />
+                    <Text type="secondary" style={{ fontSize: 11 }}>{r.rxNumber} • {r.patientPhone}</Text>
+                  </div>
+                ),
+              },
+              {
+                title: 'Diagnosis',
+                dataIndex: 'diagnosis',
+                key: 'diag',
+                render: (t) => t || 'General checkup',
+              },
+              {
+                title: 'WhatsApp Rx',
+                key: 'action',
+                render: (_, r) => (
+                  <Button
+                    size="small"
+                    icon={<WhatsAppOutlined style={{ color: '#25D366' }} />}
+                    onClick={() => handleSendPrescriptionWa(r.id)}
+                  >
+                    Send to Patient
+                  </Button>
+                ),
+              },
+            ]}
+          />
+        </div>
+      </Modal>
     </div>
   );
 }
+

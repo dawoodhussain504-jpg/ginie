@@ -79,6 +79,10 @@ model Tenant {
   employeeAttendances   EmployeeAttendance[]
   employeeAdvances      EmployeeAdvance[]
   payrollRecords        PayrollRecord[]
+  khataAccounts         KhataAccount[]
+  productBatches        ProductBatch[]
+  jobCards              JobCard[]
+  doctorPrescriptions   DoctorPrescription[]
 
   @@map("tenants")
 }
@@ -240,6 +244,7 @@ model Contact {
   invoices            Invoice[]
   loyaltyPoints       Int                  @default(0)
   loyaltyTransactions LoyaltyTransaction[]
+  khataAccounts       KhataAccount[]
 
   @@index([tenantId])
   @@map("contacts")
@@ -522,6 +527,8 @@ model Product {
   isActive           Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  batches     ProductBatch[]
 
   @@map("products")
 }
@@ -899,4 +906,120 @@ model PayrollRecord {
   @@unique([tenantId, employeeId, month, year])
   @@index([tenantId, month, year])
   @@map("payroll_records")
+}
+
+// ----------------------------------------------------
+// 23. Digital Udhari Khata & Party Ledger (खाता बही)
+// ----------------------------------------------------
+model KhataAccount {
+  id             String       @id @default(uuid())
+  tenantId       String
+  tenant         Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  partyType      String       @default("customer") // "customer" or "supplier"
+  contactId      String?
+  contact        Contact?     @relation(fields: [contactId], references: [id])
+  partyName      String
+  partyPhone     String
+  currentBalance Decimal      @default(0) @db.Decimal(12, 2) // positive = they owe us (उधार), negative = advance
+  creditLimit    Decimal      @default(50000) @db.Decimal(12, 2)
+  status         String       @default("active")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  entries        KhataEntry[]
+
+  @@index([tenantId, partyPhone])
+  @@map("khata_accounts")
+}
+
+model KhataEntry {
+  id                 String       @id @default(uuid())
+  tenantId           String
+  accountId          String
+  account            KhataAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  type               String       // "debit" (उधार दिया / Gave) or "credit" (जमा लिया / Received)
+  amount             Decimal      @db.Decimal(12, 2)
+  balanceAfter       Decimal      @db.Decimal(12, 2)
+  date               DateTime     @default(now())
+  invoiceId          String?
+  paymentMethod      String?      // "cash", "upi", "bank"
+  description        String?
+  billAttachmentUrl  String?
+  createdAt          DateTime     @default(now())
+
+  @@index([tenantId, accountId])
+  @@map("khata_entries")
+}
+
+// ----------------------------------------------------
+// 24. Batch No & Expiry Tracking (दवा व फूड एक्सपायरी)
+// ----------------------------------------------------
+model ProductBatch {
+  id             String    @id @default(uuid())
+  tenantId       String
+  tenant         Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  productId      String
+  product        Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  batchNumber    String
+  mfgDate        DateTime?
+  expDate        DateTime
+  quantity       Int       @default(0)
+  purchasePrice  Decimal?  @db.Decimal(12, 2)
+  mrp            Decimal?  @db.Decimal(12, 2)
+  sellingPrice   Decimal?  @db.Decimal(12, 2)
+  createdAt      DateTime  @default(now())
+
+  @@index([tenantId, productId])
+  @@map("product_batches")
+}
+
+// ----------------------------------------------------
+// 25. Trade Superpowers: Automobile Job Card (जॉब कार्ड)
+// ----------------------------------------------------
+model JobCard {
+  id                 String    @id @default(uuid())
+  tenantId           String
+  tenant             Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  jobNumber          String
+  customerName       String
+  customerPhone      String
+  vehicleNumber      String
+  vehicleModel       String
+  kmReading          Int?
+  fuelLevel          String?
+  complaints         Json      @default("[]")
+  estimatedCost      Decimal   @default(0) @db.Decimal(12, 2)
+  assignedTechnician String?
+  status             String    @default("pending") // pending, in_progress, ready, delivered
+  deliveredAt        DateTime?
+  invoiceId          String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([tenantId, vehicleNumber])
+  @@map("job_cards")
+}
+
+// ----------------------------------------------------
+// 26. Trade Superpowers: Doctor Digital Prescription (Rx)
+// ----------------------------------------------------
+model DoctorPrescription {
+  id                 String    @id @default(uuid())
+  tenantId           String
+  tenant             Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  rxNumber           String
+  patientName        String
+  patientPhone       String
+  patientAge         Int?
+  patientGender      String?
+  symptoms           String?
+  diagnosis          String?
+  medicines          Json      @default("[]")
+  testsAdvised       String?
+  nextVisitDate      DateTime?
+  consultationFee    Decimal   @default(0) @db.Decimal(12, 2)
+  createdAt          DateTime  @default(now())
+
+  @@index([tenantId, rxNumber])
+  @@map("doctor_prescriptions")
 }

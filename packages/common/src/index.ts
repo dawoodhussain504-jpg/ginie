@@ -553,5 +553,84 @@ export const SettlePayrollSchema = z.object({
 });
 export type SettlePayrollDto = z.infer<typeof SettlePayrollSchema>;
 
+// ========================================================
+// 18. Digital Udhari Khata & Party Ledger Schemas
+// ========================================================
+export const CreateKhataAccountSchema = z.object({
+  partyName: z.string().min(2, 'Party name is required'),
+  partyPhone: z.string().min(10, 'Valid 10-digit mobile number is required'),
+  partyType: z.enum(['customer', 'supplier']).default('customer'),
+  contactId: z.string().optional(),
+  openingBalance: z.number().default(0), // positive = they owe us (उधार)
+  creditLimit: z.number().default(50000),
+});
+export type CreateKhataAccountDto = z.infer<typeof CreateKhataAccountSchema>;
+
+export const CreateKhataEntrySchema = z.object({
+  accountId: z.string().min(1, 'Khata Account is required'),
+  type: z.enum(['debit', 'credit']), // debit = उधार दिया (gave), credit = जमा लिया (received)
+  amount: z.number().positive('Amount must be positive'),
+  date: z.string().optional(),
+  description: z.string().optional().or(z.literal('')),
+  paymentMethod: z.enum(['cash', 'upi', 'bank']).default('cash'),
+  invoiceId: z.string().optional(),
+});
+export type CreateKhataEntryDto = z.infer<typeof CreateKhataEntrySchema>;
+
+// ========================================================
+// 19. Product Batch & Expiry Schemas
+// ========================================================
+export const CreateProductBatchSchema = z.object({
+  productId: z.string().min(1, 'Product is required'),
+  batchNumber: z.string().min(1, 'Batch number is required'),
+  mfgDate: z.string().optional(),
+  expDate: z.string().min(10, 'Expiry date is required'),
+  quantity: z.number().int().min(1, 'Quantity must be at least 1'),
+  purchasePrice: z.number().optional(),
+  mrp: z.number().optional(),
+  sellingPrice: z.number().optional(),
+});
+export type CreateProductBatchDto = z.infer<typeof CreateProductBatchSchema>;
+
+// ========================================================
+// 20. Trade Superpower: Job Card (Garage / Automobile)
+// ========================================================
+export const CreateJobCardSchema = z.object({
+  customerName: z.string().min(2, 'Customer name is required'),
+  customerPhone: z.string().min(10, 'Valid 10-digit mobile is required'),
+  vehicleNumber: z.string().min(3, 'Vehicle number is required (e.g. DL-01-AB-1234)'),
+  vehicleModel: z.string().min(2, 'Vehicle model is required (e.g. Honda City, Splendor)'),
+  kmReading: z.number().optional(),
+  fuelLevel: z.string().optional(),
+  complaints: z.array(z.string()).default([]),
+  estimatedCost: z.number().default(0),
+  assignedTechnician: z.string().optional(),
+});
+export type CreateJobCardDto = z.infer<typeof CreateJobCardSchema>;
+
+// ========================================================
+// 21. Trade Superpower: Doctor Prescription (Clinic)
+// ========================================================
+export const CreateDoctorPrescriptionSchema = z.object({
+  patientName: z.string().min(2, 'Patient name is required'),
+  patientPhone: z.string().min(10, 'Valid mobile is required'),
+  patientAge: z.number().optional(),
+  patientGender: z.string().optional(),
+  symptoms: z.string().optional(),
+  diagnosis: z.string().optional(),
+  medicines: z.array(
+    z.object({
+      name: z.string(),
+      dosage: z.string(), // 1-0-1, 1-1-1
+      days: z.number().default(3),
+      notes: z.string().optional(),
+    }),
+  ).default([]),
+  testsAdvised: z.string().optional(),
+  nextVisitDate: z.string().optional(),
+  consultationFee: z.number().default(0),
+});
+export type CreateDoctorPrescriptionDto = z.infer<typeof CreateDoctorPrescriptionSchema>;
+
 export * from './templates/business-types.data';
 

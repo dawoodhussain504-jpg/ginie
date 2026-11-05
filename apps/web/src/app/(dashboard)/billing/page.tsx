@@ -40,6 +40,7 @@ import {
   SyncOutlined,
   CloudUploadOutlined,
   MoreOutlined,
+  BarcodeOutlined,
 } from '@ant-design/icons';
 import { useApp } from '@/context/AppContext';
 import { api } from '@/lib/api';
@@ -50,6 +51,7 @@ import { generateTallySalesXml, generateDaybookCsv, downloadFile } from '@/lib/t
 import { parseVoiceInvoiceText } from '@/lib/voiceInvoiceParser';
 
 const { Title, Text, Paragraph } = Typography;
+const { Option } = Select;
 
 export default function BillingPage() {
   const { t, brandColor } = useApp();
@@ -69,6 +71,10 @@ export default function BillingPage() {
   const [voiceModalVisible, setVoiceModalVisible] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<any | null>(null);
   const [adminUpiVpa, setAdminUpiVpa] = useState('merchant@upi');
+  const [thermalModalVisible, setThermalModalVisible] = useState(false);
+  const [barcodeModalVisible, setBarcodeModalVisible] = useState(false);
+  const [selectedBarcodeProduct, setSelectedBarcodeProduct] = useState<any>(null);
+  const [barcodeCopies, setBarcodeCopies] = useState<number>(8);
 
   // AI Voice & UPI Reconciliation states
   const [isListening, setIsListening] = useState(false);
@@ -652,6 +658,15 @@ export default function BillingPage() {
       render: (_: any, record: any) => {
         const moreItems = [
           {
+            key: 'thermal',
+            icon: <PrinterOutlined style={{ color: '#d97706' }} />,
+            label: 'Thermal POS Slip (58mm/80mm)',
+            onClick: () => {
+              setSelectedInvoice(record);
+              setThermalModalVisible(true);
+            },
+          },
+          {
             key: 'upi',
             icon: <QrcodeOutlined style={{ color: '#0ea5e9' }} />,
             label: 'View UPI QR Code',
@@ -695,6 +710,17 @@ export default function BillingPage() {
                   style={{ color: '#0ea5e9', borderColor: '#0ea5e9' }}
                 >
                   UPI QR
+                </Button>
+                <Button
+                  size="small"
+                  icon={<PrinterOutlined />}
+                  onClick={() => {
+                    setSelectedInvoice(record);
+                    setThermalModalVisible(true);
+                  }}
+                  style={{ color: '#d97706', borderColor: '#d97706', fontWeight: 600 }}
+                >
+                  Thermal
                 </Button>
                 {record.status !== 'paid' && (
                   <>
@@ -866,6 +892,16 @@ export default function BillingPage() {
               <span>Products, Items & Service Rates</span>
               <Space wrap>
                 <Button
+                  icon={<BarcodeOutlined />}
+                  onClick={() => {
+                    if (products.length > 0) setSelectedBarcodeProduct(products[0]);
+                    setBarcodeModalVisible(true);
+                  }}
+                  style={{ color: '#7c3aed', borderColor: '#7c3aed', fontWeight: 600 }}
+                >
+                  Print Barcodes
+                </Button>
+                <Button
                   icon={<ShopOutlined />}
                   onClick={() => window.open('/store/catalog', '_blank')}
                 >
@@ -905,7 +941,7 @@ export default function BillingPage() {
           body * {
             visibility: hidden;
           }
-          #gst-invoice-paper, #gst-invoice-paper * {
+          #gst-invoice-paper, #gst-invoice-paper *, #thermal-receipt-paper, #thermal-receipt-paper *, #barcode-sticker-sheet, #barcode-sticker-sheet * {
             visibility: visible;
           }
           #gst-invoice-paper {
@@ -917,6 +953,26 @@ export default function BillingPage() {
             padding: 20px !important;
             border: none !important;
             box-shadow: none !important;
+          }
+          #thermal-receipt-paper {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 78mm !important;
+            max-width: 80mm !important;
+            margin: 0 auto !important;
+            padding: 2mm !important;
+            border: none !important;
+            box-shadow: none !important;
+            color: #000000 !important;
+            font-family: 'Courier New', Courier, monospace !important;
+          }
+          #barcode-sticker-sheet {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100% !important;
+            padding: 0 !important;
           }
           .no-print {
             display: none !important;
@@ -1833,6 +1889,245 @@ export default function BillingPage() {
           </div>
         </div>
       </Modal>
+
+      {/* THERMAL POS RECEIPT MODAL (58mm / 80mm) */}
+      <Modal
+        title={
+          <Space>
+            <PrinterOutlined style={{ color: '#d97706' }} />
+            <span>Thermal POS Receipt (58mm / 80mm काउंटर पर्ची)</span>
+          </Space>
+        }
+        open={thermalModalVisible}
+        onCancel={() => setThermalModalVisible(false)}
+        width={420}
+        footer={[
+          <Button key="close" onClick={() => setThermalModalVisible(false)} className="no-print">
+            Close
+          </Button>,
+          <Button
+            key="print"
+            type="primary"
+            icon={<PrinterOutlined />}
+            onClick={() => window.print()}
+            style={{ background: '#d97706', borderColor: '#d97706', fontWeight: 700 }}
+            className="no-print"
+          >
+            Print Thermal Slip (प्रिंट निकालें)
+          </Button>,
+        ]}
+      >
+        {selectedInvoice && (
+          <div
+            id="thermal-receipt-paper"
+            style={{
+              fontFamily: "'Courier New', Courier, monospace",
+              fontSize: 12,
+              lineHeight: 1.4,
+              color: '#000',
+              padding: '10px 4px',
+              maxWidth: 300,
+              margin: '0 auto',
+              background: '#fff',
+            }}
+          >
+            {/* Header */}
+            <div style={{ textAlign: 'center', marginBottom: 8 }}>
+              <div style={{ fontSize: 16, fontWeight: 900, textTransform: 'uppercase' }}>
+                {company?.name || 'GINIE RETAIL STORE'}
+              </div>
+              <div style={{ fontSize: 11 }}>
+                {company?.settings?.address || 'Main Market, Commercial Hub'}
+              </div>
+              {company?.settings?.gstin && (
+                <div style={{ fontSize: 11, fontWeight: 700 }}>
+                  GSTIN: {company.settings.gstin}
+                </div>
+              )}
+              <div style={{ fontSize: 11 }}>
+                Phone: {company?.settings?.phone || '7870819862'}
+              </div>
+            </div>
+
+            <div style={{ borderTop: '1px dashed #000', borderBottom: '1px dashed #000', padding: '4px 0', margin: '6px 0', fontSize: 11 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span>Bill #: {selectedInvoice.invoiceNumber}</span>
+                <span>{new Date(selectedInvoice.createdAt).toLocaleDateString('en-IN')}</span>
+              </div>
+              <div>Cust: {getInvoiceCustomerInfo(selectedInvoice).name || 'Walk-in Customer'}</div>
+            </div>
+
+            {/* Items */}
+            <table style={{ width: '100%', fontSize: 11, borderCollapse: 'collapse', margin: '6px 0' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid #000' }}>
+                  <th style={{ textAlign: 'left', paddingBottom: 2 }}>Item</th>
+                  <th style={{ textAlign: 'center', paddingBottom: 2 }}>Qty</th>
+                  <th style={{ textAlign: 'right', paddingBottom: 2 }}>Rate</th>
+                  <th style={{ textAlign: 'right', paddingBottom: 2 }}>Amt</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(selectedInvoice.items || []).map((it: any, idx: number) => (
+                  <tr key={idx}>
+                    <td style={{ paddingTop: 3, verticalAlign: 'top' }}>{it.name}</td>
+                    <td style={{ textAlign: 'center', paddingTop: 3, verticalAlign: 'top' }}>{it.quantity}</td>
+                    <td style={{ textAlign: 'right', paddingTop: 3, verticalAlign: 'top' }}>₹{it.price}</td>
+                    <td style={{ textAlign: 'right', paddingTop: 3, verticalAlign: 'top', fontWeight: 700 }}>
+                      ₹{it.price * it.quantity}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {/* Calculations */}
+            <div style={{ borderTop: '1px dashed #000', paddingTop: 6, margin: '6px 0 8px', fontSize: 11 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span>Subtotal:</span>
+                <span>₹{Number(selectedInvoice.subtotal).toLocaleString('en-IN')}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span>GST Tax Total:</span>
+                <span>₹{Number(selectedInvoice.taxTotal).toLocaleString('en-IN')}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 900, marginTop: 4, borderTop: '1px solid #000', paddingTop: 4 }}>
+                <span>NET TOTAL:</span>
+                <span>₹{Number(selectedInvoice.total).toLocaleString('en-IN')}</span>
+              </div>
+            </div>
+
+            {/* UPI QR & Footer */}
+            <div style={{ textAlign: 'center', marginTop: 12, borderTop: '1px dashed #000', paddingTop: 8 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, marginBottom: 4 }}>SCAN TO PAY VIA UPI:</div>
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=${encodeURIComponent(
+                  `upi://pay?pa=${adminUpiVpa}&pn=${encodeURIComponent(
+                    company?.name || 'Retail Store'
+                  )}&am=${selectedInvoice.total}&cu=INR`
+                )}`}
+                alt="UPI QR"
+                style={{ width: 100, height: 100 }}
+              />
+              <div style={{ fontSize: 10, marginTop: 4 }}>UPI: {adminUpiVpa}</div>
+              <div style={{ fontSize: 11, fontWeight: 800, marginTop: 6 }}>*** THANK YOU! VISIT AGAIN ***</div>
+              <div style={{ fontSize: 9, color: '#555', marginTop: 2 }}>Powered by GINIE Business OS</div>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* BARCODE STICKER GENERATOR MODAL */}
+      <Modal
+        title={
+          <Space>
+            <BarcodeOutlined style={{ color: '#7c3aed' }} />
+            <span>Barcode Sticker Generator (बारकोड स्टीकर प्रिंट)</span>
+          </Space>
+        }
+        open={barcodeModalVisible}
+        onCancel={() => setBarcodeModalVisible(false)}
+        width={680}
+        footer={[
+          <Button key="close" onClick={() => setBarcodeModalVisible(false)} className="no-print">
+            Close
+          </Button>,
+          <Button
+            key="print"
+            type="primary"
+            icon={<PrinterOutlined />}
+            onClick={() => window.print()}
+            style={{ background: '#7c3aed', borderColor: '#7c3aed', fontWeight: 700 }}
+            className="no-print"
+          >
+            Print Barcode Stickers (प्रिंट स्टीकर)
+          </Button>,
+        ]}
+      >
+        <div className="no-print" style={{ marginBottom: 16, background: '#f8fafc', padding: 12, borderRadius: 8 }}>
+          <Row gutter={16} align="middle">
+            <Col span={14}>
+              <Text strong style={{ display: 'block', marginBottom: 4 }}>Select Item to Print:</Text>
+              <Select
+                style={{ width: '100%' }}
+                value={selectedBarcodeProduct?.id}
+                onChange={(val) => {
+                  const p = products.find((prod) => prod.id === val);
+                  if (p) setSelectedBarcodeProduct(p);
+                }}
+              >
+                {products.map((p) => (
+                  <Option key={p.id} value={p.id}>
+                    {p.name} — ₹{p.price} (SKU: {p.code || p.sku || 'SKU-001'})
+                  </Option>
+                ))}
+              </Select>
+            </Col>
+            <Col span={10}>
+              <Text strong style={{ display: 'block', marginBottom: 4 }}>Number of Stickers:</Text>
+              <Select
+                style={{ width: '100%' }}
+                value={barcodeCopies}
+                onChange={setBarcodeCopies}
+              >
+                <Option value={4}>4 Stickers (Preview)</Option>
+                <Option value={8}>8 Stickers (Standard)</Option>
+                <Option value={16}>16 Stickers (Sheet)</Option>
+                <Option value={24}>24 Stickers (Full Batch)</Option>
+              </Select>
+            </Col>
+          </Row>
+        </div>
+
+        {selectedBarcodeProduct && (
+          <div
+            id="barcode-sticker-sheet"
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
+              gap: 12,
+              padding: 10,
+              background: '#fff',
+            }}
+          >
+            {Array.from({ length: barcodeCopies }).map((_, idx) => (
+              <div
+                key={idx}
+                style={{
+                  border: '1px solid #cbd5e1',
+                  borderRadius: 6,
+                  padding: '8px 6px',
+                  textAlign: 'center',
+                  background: '#ffffff',
+                }}
+              >
+                <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {company?.name || 'GINIE RETAIL'}
+                </div>
+                <div style={{ fontSize: 11, fontWeight: 700, margin: '2px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {selectedBarcodeProduct.name}
+                </div>
+
+                {/* Simulated Barcode Stripes */}
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 26, gap: 2, margin: '4px 0' }}>
+                  {[3, 1, 2, 4, 1, 3, 2, 1, 4, 2, 1, 3, 2, 1, 3].map((w, i) => (
+                    <div key={i} style={{ width: w, height: '100%', background: '#000' }} />
+                  ))}
+                </div>
+
+                <div style={{ fontSize: 9, fontFamily: 'monospace', letterSpacing: 1 }}>
+                  {selectedBarcodeProduct.code || selectedBarcodeProduct.sku || 'SKU-001'}
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 900, color: '#0f172a', marginTop: 2 }}>
+                  MRP: ₹{selectedBarcodeProduct.price}
+                </div>
+                <div style={{ fontSize: 8, color: '#64748b' }}>Incl. of all taxes</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
+

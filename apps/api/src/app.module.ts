@@ -18,6 +18,7 @@ import { AdminModule } from './modules/admin/admin.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { StaffModule } from './modules/staff/staff.module';
+import { ErpModule } from './modules/erp/erp.module';
 import { TenantAuthGuard } from './common/tenant.guard';
 import { PlainLanguageExceptionFilter } from './common/plain-language-exception.filter';
 import { HealthController } from './health.controller';
@@ -43,6 +44,7 @@ import { KeepAliveService } from './common/keep-alive.service';
     AuditModule,
     NotificationsModule,
     StaffModule,
+    ErpModule,
   ],
   controllers: [HealthController],
   providers: [

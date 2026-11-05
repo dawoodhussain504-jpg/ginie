@@ -41,6 +41,7 @@ import {
   ShopOutlined,
   ThunderboltFilled,
   TeamOutlined,
+  BookOutlined,
 } from '@ant-design/icons';
 import { useApp } from '@/context/AppContext';
 import { usePathname, useRouter } from 'next/navigation';
@@ -214,6 +215,7 @@ export default function DashboardLayout({
     if (path.startsWith('/sales')) return 'Sales & Pipeline';
     if (path.startsWith('/find-customers')) return t.nav.findCustomers || 'Find Customers';
     if (path.startsWith('/erp')) return 'ERP & Operations';
+    if (path.startsWith('/khata')) return 'Udhari Khata & Ledger (खाता बही)';
     if (path.startsWith('/staff')) return 'Staff & Payroll (कर्मचारी व वेतन)';
     if (path.startsWith('/digital-store')) return 'Digital Storefront';
     if (path.startsWith('/whatsapp')) return 'Messages & WhatsApp';
@@ -274,6 +276,15 @@ export default function DashboardLayout({
           label: (
             <Link href="/erp">
               <span style={{ fontWeight: 600 }}>ERP & Operations</span>
+            </Link>
+          ),
+        },
+        {
+          key: '/khata',
+          icon: <BookOutlined style={{ color: '#059669' }} />,
+          label: (
+            <Link href="/khata">
+              <span style={{ fontWeight: 600 }}>Khata & Ledger</span>
             </Link>
           ),
         },
@@ -468,6 +479,7 @@ export default function DashboardLayout({
     if (pathname.startsWith('/sales') || pathname === '/tasks') return '/sales';
     if (pathname.startsWith('/find-customers')) return '/find-customers';
     if (pathname.startsWith('/erp')) return '/erp';
+    if (pathname.startsWith('/khata')) return '/khata';
     if (pathname.startsWith('/staff')) return '/staff';
     if (pathname.startsWith('/digital-store')) return '/digital-store';
     if (pathname.startsWith('/whatsapp')) return '/whatsapp';
@@ -976,6 +988,28 @@ export default function DashboardLayout({
                 <FileTextOutlined style={{ fontSize: 22, color: '#2563eb' }} />
               </div>
               <span style={{ fontSize: 12, fontWeight: 600 }}>Invoices & GST</span>
+            </Link>
+
+            <Link
+              href="/khata"
+              onClick={() => setMoreDrawerOpen(false)}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 6,
+                padding: '12px 6px',
+                borderRadius: 12,
+                background: '#f8fafc',
+                border: '1px solid #f1f5f9',
+                color: '#1e293b',
+                textAlign: 'center',
+              }}
+            >
+              <div style={{ width: 44, height: 44, borderRadius: 10, background: '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <BookOutlined style={{ fontSize: 22, color: '#059669' }} />
+              </div>
+              <span style={{ fontSize: 12, fontWeight: 600 }}>Khata Book</span>
             </Link>
 
             <Link
