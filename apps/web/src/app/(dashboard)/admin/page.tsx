@@ -112,7 +112,7 @@ export default function AdminMasterConsolePage() {
 
   // Discovery & UPI Settings State
   const [platformUpi, setPlatformUpi] = useState({
-    upiId: '8797186001@paytm',
+    upiId: '7870819862@paytm',
     payeeName: 'GINIE Space Platform Admin',
     qrCodeUrl: '',
     amount: 599,
@@ -126,6 +126,12 @@ export default function AdminMasterConsolePage() {
   const [rejectingTenantId, setRejectingTenantId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [rejecting, setRejecting] = useState(false);
+
+  // Plans & Pricing Manager State
+  const [editPlanModalOpen, setEditPlanModalOpen] = useState(false);
+  const [selectedPlanForEdit, setSelectedPlanForEdit] = useState<any>(null);
+  const [editPlanPrice, setEditPlanPrice] = useState<number>(0);
+  const [savingPlanPrice, setSavingPlanPrice] = useState(false);
 
   useEffect(() => {
     if (user && user.isSuperAdmin) {
@@ -189,7 +195,7 @@ export default function AdminMasterConsolePage() {
 
   const handleSaveUpiSettings = async () => {
     if (!platformUpi.upiId.trim()) {
-      message.error('UPI ID zaroori hai (e.g. 8797186001@paytm)');
+      message.error('UPI ID zaroori hai (e.g. 7870819862@paytm)');
       return;
     }
     setSavingUpi(true);
@@ -425,6 +431,45 @@ export default function AdminMasterConsolePage() {
     }
   };
 
+  // 8. Grant / Revoke Discovery Access Directly
+  const handleGrantDiscovery = async (tenantId: string, days = 30) => {
+    try {
+      const res = await api.post(`/api/admin/tenants/${tenantId}/grant-discovery`, { days });
+      message.success(res.message || `Discovery access granted for ${days} days!`);
+      loadAdminData();
+      loadUpiAndDiscovery();
+    } catch (err: any) {
+      message.error(err.message || 'Failed to grant discovery access');
+    }
+  };
+
+  const handleRevokeDiscovery = async (tenantId: string) => {
+    try {
+      const res = await api.post(`/api/admin/tenants/${tenantId}/revoke-discovery`);
+      message.success(res.message || 'Discovery access revoked.');
+      loadAdminData();
+      loadUpiAndDiscovery();
+    } catch (err: any) {
+      message.error(err.message || 'Failed to revoke discovery access');
+    }
+  };
+
+  // 9. Update Plan Monthly Pricing
+  const handleSavePlanPrice = async () => {
+    if (!selectedPlanForEdit) return;
+    setSavingPlanPrice(true);
+    try {
+      await api.patch(`/api/admin/plans/${selectedPlanForEdit.id}`, { monthlyPrice: Number(editPlanPrice) });
+      message.success(`Plan "${selectedPlanForEdit.name}" pricing updated to ₹${editPlanPrice}/month!`);
+      setEditPlanModalOpen(false);
+      loadAdminData();
+    } catch (err: any) {
+      message.error(err.message || 'Failed to update plan pricing');
+    } finally {
+      setSavingPlanPrice(false);
+    }
+  };
+
   // Access Guard
   if (user && !user.isSuperAdmin) {
     const isImpersonated = !!(
@@ -521,85 +566,223 @@ export default function AdminMasterConsolePage() {
     );
   }
 
+  const TRADE_CONFIG: Record<string, { label: string; icon: string; color: string }> = {
+    grocery: { label: 'Kirana & Grocery', icon: '🛒', color: 'green' },
+    medical: { label: 'Pharmacy & Health', icon: '💊', color: 'blue' },
+    garments: { label: 'Garments & Fashion', icon: '👔', color: 'purple' },
+    electronics: { label: 'Mobile & Tech', icon: '📱', color: 'cyan' },
+    restaurant: { label: 'Restaurant & Cafe', icon: '🍽️', color: 'orange' },
+    automobile: { label: 'Auto & Garage', icon: '🔧', color: 'volcano' },
+    hardware: { label: 'Hardware & Tools', icon: '⚡', color: 'gold' },
+    salon: { label: 'Salon & Beauty', icon: '✂️', color: 'magenta' },
+    services: { label: 'Services & B2B', icon: '💼', color: 'geekblue' },
+    retail: { label: 'General Retail', icon: '🏪', color: 'default' },
+    other: { label: 'General Trade', icon: '🏪', color: 'default' },
+  };
+
   const filteredTenants = tenants.filter((t) => {
     const matchesSearch =
       !searchFilter ||
       t.name.toLowerCase().includes(searchFilter.toLowerCase()) ||
-      t.slug.toLowerCase().includes(searchFilter.toLowerCase());
+      t.slug.toLowerCase().includes(searchFilter.toLowerCase()) ||
+      (t.owner?.name && t.owner.name.toLowerCase().includes(searchFilter.toLowerCase())) ||
+      (t.owner?.phone && t.owner.phone.includes(searchFilter));
 
     const matchesStatus = statusFilter === 'all' || t.status === statusFilter;
-    const matchesPlan = planFilter === 'all' || t.planName.toLowerCase() === planFilter.toLowerCase();
+    const matchesPlan =
+      planFilter === 'all' ||
+      (planFilter === 'free' && t.planName.toLowerCase().includes('free')) ||
+      (planFilter === 'discovery' && (t.planName.toLowerCase().includes('discovery') || t.discoveryPlan?.active)) ||
+      (planFilter === 'enterprise' && t.planName.toLowerCase().includes('enterprise'));
 
     return matchesSearch && matchesStatus && matchesPlan;
   });
 
   const tenantColumns = [
     {
-      title: 'Business Name',
+      title: 'Business & Storefront',
       key: 'name',
-      render: (_: any, record: any) => (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div
-            style={{
-              width: 38,
-              height: 38,
-              borderRadius: 8,
-              background: record.brandColor || brandColor,
-              color: '#fff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 700,
-              fontSize: 16,
-            }}
-          >
-            {record.name.charAt(0).toUpperCase()}
+      render: (_: any, record: any) => {
+        const trade = TRADE_CONFIG[record.businessType] || TRADE_CONFIG.services;
+        return (
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+            <div
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 8,
+                background: record.brandColor || brandColor,
+                color: '#fff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: 700,
+                fontSize: 16,
+                flexShrink: 0,
+              }}
+            >
+              {record.name.charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                <Text strong style={{ fontSize: 14 }}>{record.name}</Text>
+                <Tag color={trade.color} style={{ fontSize: 11, padding: '0 6px', borderRadius: 4 }}>
+                  {trade.icon} {trade.label}
+                </Tag>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                <Text type="secondary" style={{ fontSize: 11 }}>slug: {record.slug}</Text>
+                <a
+                  href={`https://ginie.space/store/${record.slug}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    fontSize: 11,
+                    color: '#2563eb',
+                    background: '#eff6ff',
+                    padding: '1px 6px',
+                    borderRadius: 4,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 3,
+                    textDecoration: 'none',
+                    fontWeight: 600,
+                  }}
+                >
+                  <ShopOutlined /> Storefront ↗
+                </a>
+              </div>
+            </div>
           </div>
+        );
+      },
+    },
+    {
+      title: 'Owner & WhatsApp',
+      key: 'owner',
+      render: (_: any, record: any) => {
+        const phone = record.owner?.phone ? record.owner.phone.replace(/\D/g, '') : '';
+        const clean10 = phone.slice(-10);
+        return (
           <div>
-            <Text strong style={{ fontSize: 14 }}>{record.name}</Text>
-            <br />
-            <Text type="secondary" style={{ fontSize: 12 }}>slug: {record.slug}</Text>
+            <Text strong style={{ fontSize: 13 }}>{record.owner?.name || 'Owner'}</Text>
+            <div style={{ fontSize: 11, color: '#64748b' }}>{record.owner?.email || 'No email'}</div>
+            {clean10 ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                <Text code style={{ fontSize: 11 }}>+91 {clean10}</Text>
+                <Tooltip title="Send Direct WhatsApp Message to Owner">
+                  <Button
+                    type="link"
+                    size="small"
+                    icon={<WhatsAppOutlined style={{ color: '#25D366', fontSize: 15 }} />}
+                    href={`https://wa.me/91${clean10}?text=Namaste%20${encodeURIComponent(record.owner?.name || '')},%20GINIE%20Master%20Admin%20Support`}
+                    target="_blank"
+                    style={{ padding: 0, height: 'auto', fontWeight: 600 }}
+                  >
+                    Chat
+                  </Button>
+                </Tooltip>
+              </div>
+            ) : (
+              <Text type="secondary" style={{ fontSize: 11 }}>No mobile</Text>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      title: 'WhatsApp Session',
+      key: 'whatsApp',
+      render: (_: any, record: any) =>
+        record.whatsApp?.connected ? (
+          <Tag color="success" icon={<WhatsAppOutlined />} style={{ fontWeight: 600 }}>
+            Linked (+{record.whatsApp.phone})
+          </Tag>
+        ) : (
+          <Tag color="default">Not Linked</Tag>
+        ),
+    },
+    {
+      title: 'Discovery Add-on',
+      key: 'discoveryPlan',
+      render: (_: any, record: any) => {
+        const disc = record.discoveryPlan;
+        const isActive = disc?.active;
+        return (
+          <Space direction="vertical" size={2}>
+            {isActive ? (
+              <Tag color="green" style={{ fontWeight: 600 }}>
+                ● Active ({disc.remainingDays}d left)
+              </Tag>
+            ) : (
+              <Tag color="default">⚪ Inactive</Tag>
+            )}
+            <Dropdown
+              menu={{
+                items: [
+                  { key: '30', label: 'Grant 30 Days Access' },
+                  { key: '90', label: 'Grant 90 Days (Quarterly)' },
+                  { key: '365', label: 'Grant 1 Year Access' },
+                  { key: '9999', label: 'Grant Lifetime Access' },
+                  ...(isActive ? [{ type: 'divider' as const }, { key: 'revoke', label: 'Revoke Access', danger: true }] : []),
+                ],
+                onClick: ({ key }) => {
+                  if (key === 'revoke') handleRevokeDiscovery(record.id);
+                  else handleGrantDiscovery(record.id, Number(key));
+                },
+              }}
+            >
+              <Button size="small" type="link" style={{ fontSize: 11, padding: 0, height: 'auto', fontWeight: 600 }}>
+                {isActive ? 'Manage / Extend ▾' : '+ Grant Access ▾'}
+              </Button>
+            </Dropdown>
+          </Space>
+        );
+      },
+    },
+    {
+      title: 'Subscription Tier',
+      dataIndex: 'planName',
+      key: 'planName',
+      render: (plan: string, record: any) => {
+        const isFree = plan.toLowerCase().includes('free');
+        const isDisc = plan.toLowerCase().includes('discovery');
+        const isEnt = plan.toLowerCase().includes('enterprise');
+        const color = isEnt ? 'gold' : isDisc ? 'blue' : 'green';
+        return (
+          <Space direction="vertical" size={2}>
+            <Tag color={color} style={{ fontWeight: 700 }}>
+              {plan.toUpperCase()}
+            </Tag>
+            <Tooltip title="Change Plan Tier">
+              <Button
+                size="small"
+                type="link"
+                style={{ fontSize: 11, padding: 0, height: 'auto', color: '#2563eb' }}
+                onClick={() => {
+                  setSelectedTenant(record);
+                  setTargetPlan(record.planName || 'Free Core');
+                  setPlanModalOpen(true);
+                }}
+              >
+                Change Tier ▾
+              </Button>
+            </Tooltip>
+          </Space>
+        );
+      },
+    },
+    {
+      title: 'Activity & Data',
+      key: 'activity',
+      render: (_: any, record: any) => (
+        <div style={{ fontSize: 12 }}>
+          <div><b>{record.leadCount || 0}</b> leads • <b>{record.dealCount || 0}</b> deals</div>
+          <div style={{ color: '#64748b', fontSize: 11, marginTop: 2 }}>
+            <b>{record.productCount || 0}</b> items • <b>{record.invoiceCount || 0}</b> bills
           </div>
         </div>
       ),
-    },
-    {
-      title: 'Subscription Plan',
-      dataIndex: 'planName',
-      key: 'planName',
-      render: (plan: string, record: any) => (
-        <Space>
-          <Tag color={plan === 'Enterprise' ? 'gold' : plan === 'Pro' ? 'blue' : 'default'} style={{ fontWeight: 600 }}>
-            {plan.toUpperCase()}
-          </Tag>
-          <Tooltip title="Change Plan">
-            <Button size="small" type="link" onClick={() => { setSelectedTenant(record); setTargetPlan(record.planName || 'Pro'); setPlanModalOpen(true); }}>
-              Change
-            </Button>
-          </Tooltip>
-        </Space>
-      ),
-    },
-    {
-      title: 'Team Size',
-      dataIndex: 'userCount',
-      key: 'userCount',
-      render: (count: number) => <Tag color="cyan">{count || 1} staff</Tag>,
-    },
-    {
-      title: 'CRM Data Volume',
-      key: 'dataCount',
-      render: (_: any, record: any) => (
-        <Text style={{ fontSize: 12 }}>
-          {record.leadCount || 0} leads • {record.dealCount || 0} deals
-        </Text>
-      ),
-    },
-    {
-      title: 'Registered On',
-      dataIndex: 'createdAt',
-      key: 'createdAt',
-      render: (date: string) => (date ? formatDateIndian(date) : 'N/A'),
     },
     {
       title: 'Status',
@@ -620,7 +803,7 @@ export default function AdminMasterConsolePage() {
       title: 'Actions',
       key: 'actions',
       render: (_: any, record: any) => (
-        <Space>
+        <Space wrap>
           <Button
             size="small"
             type="primary"
@@ -975,7 +1158,7 @@ export default function AdminMasterConsolePage() {
                       <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
                         <Input
                           addonBefore="+91"
-                          placeholder="8797186001"
+                          placeholder="7870819862"
                           value={pairingPhone}
                           onChange={(e) => setPairingPhone(e.target.value)}
                           maxLength={15}
@@ -1041,7 +1224,7 @@ export default function AdminMasterConsolePage() {
                     <Col xs={24} md={8}>
                       <Input
                         addonBefore="+91"
-                        placeholder="8797186001"
+                        placeholder="7870819862"
                         value={testRecipient}
                         onChange={(e) => setTestRecipient(e.target.value)}
                         style={{ marginBottom: 10 }}
@@ -1426,6 +1609,147 @@ export default function AdminMasterConsolePage() {
             ),
             children: (
               <div>
+                {/* ─── Platform Subscription Tiers & Pricing Architecture ──── */}
+                <Card
+                  style={{
+                    borderRadius: 14,
+                    marginBottom: 20,
+                    background: '#f8fafc',
+                    border: '1px solid #e2e8f0',
+                  }}
+                  bodyStyle={{ padding: '16px 20px' }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+                    <div>
+                      <Title level={5} style={{ margin: 0, fontWeight: 700, color: '#0f172a' }}>
+                        Platform SaaS Architecture & Active Subscription Tiers
+                      </Title>
+                      <Text type="secondary" style={{ fontSize: 12 }}>
+                        App ke actual pricing model ke mutabiq configured tiers. Aap yahan se live pricing customize kar sakte hain.
+                      </Text>
+                    </div>
+                  </div>
+
+                  <Row gutter={[16, 16]}>
+                    {/* Tier 1: Free Core Suite */}
+                    <Col xs={24} md={8}>
+                      <Card
+                        size="small"
+                        style={{
+                          borderRadius: 10,
+                          border: '1px solid #bbf7d0',
+                          background: '#f0fdf4',
+                          height: '100%',
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <Tag color="green" style={{ fontWeight: 800 }}>LIFETIME FREE CORE</Tag>
+                          <span style={{ fontSize: 20, fontWeight: 900, color: '#16a34a' }}>₹0</span>
+                        </div>
+                        <Title level={5} style={{ margin: '8px 0 4px', color: '#15803d' }}>
+                          Free Core Suite
+                        </Title>
+                        <Text type="secondary" style={{ fontSize: 12, display: 'block', lineHeight: 1.4 }}>
+                          • Unlimited Leads & Deals CRM<br />
+                          • 11-Trade POS & ERP Inventory<br />
+                          • 0% Fee Digital Storefront<br />
+                          • GST Invoicing & WhatsApp Outreach
+                        </Text>
+                        <Tag color="default" style={{ marginTop: 8, fontSize: 11 }}>Permanent Free for Tenants</Tag>
+                      </Card>
+                    </Col>
+
+                    {/* Tier 2: Discovery Growth Add-on */}
+                    <Col xs={24} md={8}>
+                      <Card
+                        size="small"
+                        style={{
+                          borderRadius: 10,
+                          border: '2px solid #3b82f6',
+                          background: '#eff6ff',
+                          height: '100%',
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <Tag color="blue" style={{ fontWeight: 800 }}>ON-DEMAND ADD-ON</Tag>
+                          <div>
+                            <span style={{ fontSize: 20, fontWeight: 900, color: '#2563eb' }}>
+                              ₹{plans.find((p) => p.name?.toLowerCase().includes('discovery'))?.monthlyPrice || 599}
+                            </span>
+                            <span style={{ fontSize: 11, color: '#64748b' }}>/mo</span>
+                          </div>
+                        </div>
+                        <Title level={5} style={{ margin: '8px 0 4px', color: '#1d4ed8' }}>
+                          Discovery Growth Plan
+                        </Title>
+                        <Text type="secondary" style={{ fontSize: 12, display: 'block', lineHeight: 1.4 }}>
+                          • Google Maps B2B Lead Generator<br />
+                          • Verified WhatsApp Mobile Extractor<br />
+                          • 1-Click CRM Import & Pitch Script<br />
+                          • One-time UPI QR Payment (No Auto-debit)
+                        </Text>
+                        <Button
+                          size="small"
+                          type="primary"
+                          style={{ marginTop: 8, fontSize: 11, background: '#2563eb', borderColor: '#2563eb' }}
+                          onClick={() => {
+                            const discPlan = plans.find((p) => p.name?.toLowerCase().includes('discovery')) || { id: 'disc-plan', name: 'Discovery Growth', monthlyPrice: 599 };
+                            setSelectedPlanForEdit(discPlan);
+                            setEditPlanPrice(Number(discPlan.monthlyPrice || 599));
+                            setEditPlanModalOpen(true);
+                          }}
+                        >
+                          Edit Add-on Price
+                        </Button>
+                      </Card>
+                    </Col>
+
+                    {/* Tier 3: Enterprise VIP */}
+                    <Col xs={24} md={8}>
+                      <Card
+                        size="small"
+                        style={{
+                          borderRadius: 10,
+                          border: '1px solid #fde68a',
+                          background: '#fffbeb',
+                          height: '100%',
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <Tag color="gold" style={{ fontWeight: 800 }}>ENTERPRISE VIP</Tag>
+                          <div>
+                            <span style={{ fontSize: 20, fontWeight: 900, color: '#d97706' }}>
+                              ₹{plans.find((p) => p.name?.toLowerCase().includes('enterprise'))?.monthlyPrice || 4999}
+                            </span>
+                            <span style={{ fontSize: 11, color: '#64748b' }}>/mo</span>
+                          </div>
+                        </div>
+                        <Title level={5} style={{ margin: '8px 0 4px', color: '#b45309' }}>
+                          Enterprise Sovereign
+                        </Title>
+                        <Text type="secondary" style={{ fontSize: 12, display: 'block', lineHeight: 1.4 }}>
+                          • Dedicated Server & Custom Domain<br />
+                          • White-label Custom Branding<br />
+                          • High-Throughput WhatsApp Engine<br />
+                          • Multi-branch ERP Architecture
+                        </Text>
+                        <Button
+                          size="small"
+                          style={{ marginTop: 8, fontSize: 11 }}
+                          onClick={() => {
+                            const entPlan = plans.find((p) => p.name?.toLowerCase().includes('enterprise')) || { id: 'ent-plan', name: 'Enterprise VIP', monthlyPrice: 4999 };
+                            setSelectedPlanForEdit(entPlan);
+                            setEditPlanPrice(Number(entPlan.monthlyPrice || 4999));
+                            setEditPlanModalOpen(true);
+                          }}
+                        >
+                          Edit VIP Price
+                        </Button>
+                      </Card>
+                    </Col>
+                  </Row>
+                </Card>
+
                 {/* Search & Actions Bar */}
                 <div
                   style={{
@@ -1439,10 +1763,10 @@ export default function AdminMasterConsolePage() {
                 >
                   <Space wrap>
                     <Input.Search
-                      placeholder="Search business name or slug..."
+                      placeholder="Search business, owner, phone, or slug..."
                       value={searchFilter}
                       onChange={(e) => setSearchFilter(e.target.value)}
-                      style={{ width: 260 }}
+                      style={{ width: 280 }}
                       allowClear
                     />
 
@@ -1460,12 +1784,12 @@ export default function AdminMasterConsolePage() {
                     <Select
                       value={planFilter}
                       onChange={setPlanFilter}
-                      style={{ width: 140 }}
+                      style={{ width: 160 }}
                       options={[
-                        { value: 'all', label: 'All Plans' },
-                        { value: 'free', label: 'Free' },
-                        { value: 'pro', label: 'Pro' },
-                        { value: 'enterprise', label: 'Enterprise' },
+                        { value: 'all', label: 'All Plan Tiers' },
+                        { value: 'free', label: 'Free Core Tier' },
+                        { value: 'discovery', label: 'Discovery Active' },
+                        { value: 'enterprise', label: 'Enterprise VIP' },
                       ]}
                     />
                   </Space>
@@ -1474,7 +1798,7 @@ export default function AdminMasterConsolePage() {
                     type="primary"
                     icon={<PlusOutlined />}
                     onClick={() => setCreateTenantModalOpen(true)}
-                    style={{ fontWeight: 600 }}
+                    style={{ fontWeight: 600, background: '#2563eb', borderColor: '#2563eb' }}
                   >
                     + Onboard New Business
                   </Button>
@@ -1613,9 +1937,9 @@ export default function AdminMasterConsolePage() {
           onChange={setTargetPlan}
           style={{ width: '100%', marginTop: 8 }}
           options={[
-            { value: 'Free', label: 'Free (Starter Limits)' },
-            { value: 'Pro', label: 'Pro Growth (Unlimited Features)' },
-            { value: 'Enterprise', label: 'Enterprise (VIP Support & Dedicated Quota)' },
+            { value: 'Free Core', label: 'Free Core Suite (Lifetime Free - ₹0)' },
+            { value: 'Discovery Growth', label: 'Discovery Growth Plan (₹599/mo - Lead Generator)' },
+            { value: 'Enterprise VIP', label: 'Enterprise VIP (Custom / ₹4,999/mo - Dedicated Instance)' },
           ]}
         />
       </Modal>
@@ -1630,7 +1954,7 @@ export default function AdminMasterConsolePage() {
         okText="Create Business & Account"
       >
         <Paragraph type="secondary" style={{ fontSize: 13 }}>
-          Naye client ka business name aur owner credentials enter karein. Unka dedicated CRM workspace turant activate ho jayega:
+          Naye client ka business name, trade category aur owner credentials enter karein. Unka dedicated CRM workspace turant activate ho jayega:
         </Paragraph>
         <Form form={createForm} layout="vertical" onFinish={handleCreateTenant}>
           <Form.Item
@@ -1639,6 +1963,28 @@ export default function AdminMasterConsolePage() {
             rules={[{ required: true, message: 'Please enter company name' }]}
           >
             <Input placeholder="e.g. Royal Auto Spares" />
+          </Form.Item>
+
+          <Form.Item
+            name="businessType"
+            label="Business Trade Category"
+            initialValue="services"
+            rules={[{ required: true, message: 'Select trade category' }]}
+          >
+            <Select
+              options={[
+                { value: 'grocery', label: '🛒 Kirana & Supermarket' },
+                { value: 'medical', label: '💊 Pharmacy & Healthcare' },
+                { value: 'garments', label: '👔 Garments & Fashion Apparel' },
+                { value: 'electronics', label: '📱 Mobile, Laptop & Electronics' },
+                { value: 'restaurant', label: '🍽️ Restaurant, Cafe & Bakery' },
+                { value: 'automobile', label: '🔧 Automobile, Garage & Spares' },
+                { value: 'hardware', label: '⚡ Hardware, Electrical & Sanitary' },
+                { value: 'salon', label: '✂️ Salon, Spa & Beauty' },
+                { value: 'services', label: '💼 Professional Services & B2B' },
+                { value: 'retail', label: '🏪 General Retail Store' },
+              ]}
+            />
           </Form.Item>
 
           <Form.Item
@@ -1661,23 +2007,56 @@ export default function AdminMasterConsolePage() {
           </Form.Item>
 
           <Form.Item name="ownerPhone" label="WhatsApp Mobile Number">
-            <Input addonBefore="+91" placeholder="98765 43210" maxLength={15} />
+            <Input addonBefore="+91" placeholder="7870819862" maxLength={15} />
           </Form.Item>
 
-          <Form.Item name="planName" label="Subscription Plan" initialValue="Pro">
+          <Form.Item name="planName" label="Subscription Plan" initialValue="Free Core">
             <Select
               options={[
-                { value: 'Free', label: 'Free Plan' },
-                { value: 'Pro', label: 'Pro Growth (Recommended)' },
-                { value: 'Enterprise', label: 'Enterprise VIP' },
+                { value: 'Free Core', label: 'Free Core Suite (Lifetime Free - ₹0)' },
+                { value: 'Discovery Growth', label: 'Discovery Growth Plan (₹599/mo - Lead Generator)' },
+                { value: 'Enterprise VIP', label: 'Enterprise VIP (Dedicated Instance)' },
               ]}
             />
+          </Form.Item>
+
+          <Form.Item name="grantDiscovery" valuePropName="checked" style={{ marginBottom: 12 }}>
+            <Space>
+              <input type="checkbox" id="grantDiscovery" />
+              <label htmlFor="grantDiscovery" style={{ cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#16a34a' }}>
+                Activate 30-Day Google Maps Lead Discovery instantly
+              </label>
+            </Space>
           </Form.Item>
 
           <Form.Item name="password" label="Initial Login Password" initialValue="Ginie@123">
             <Input placeholder="Default: Ginie@123" />
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* ─── Modal 4: Edit Plan Pricing ───────────────────────────────────── */}
+      <Modal
+        title={`Edit Monthly Pricing for "${selectedPlanForEdit?.name}"`}
+        open={editPlanModalOpen}
+        onOk={handleSavePlanPrice}
+        confirmLoading={savingPlanPrice}
+        onCancel={() => setEditPlanModalOpen(false)}
+        okText="Save New Pricing"
+      >
+        <Paragraph type="secondary" style={{ fontSize: 13, marginTop: 10 }}>
+          Enter the new monthly price in INR for this subscription tier. This will reflect across the entire platform and checkout.
+        </Paragraph>
+        <div style={{ marginTop: 12 }}>
+          <Text strong style={{ display: 'block', marginBottom: 6 }}>Monthly Price (₹ INR):</Text>
+          <Input
+            prefix="₹"
+            type="number"
+            value={editPlanPrice}
+            onChange={(e) => setEditPlanPrice(Number(e.target.value))}
+            style={{ fontSize: 18, fontWeight: 700 }}
+          />
+        </div>
       </Modal>
 
       {/* ─── Modal 3: Reject Discovery Payment ────────────────────────────── */}

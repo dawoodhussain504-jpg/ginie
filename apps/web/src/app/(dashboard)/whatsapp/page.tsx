@@ -602,7 +602,6 @@ function WhatsAppContent() {
                                   overflowWrap: 'anywhere',
                                   wordWrap: 'break-word',
                                   boxSizing: 'border-box',
-                                  minWidth: 0,
                                   display: 'flex',
                                   flexDirection: 'column',
                                 }}

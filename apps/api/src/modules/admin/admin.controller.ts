@@ -53,6 +53,27 @@ export class AdminController {
     return this.adminService.listPlans();
   }
 
+  @Patch('plans/:id')
+  async updatePlan(
+    @Param('id') id: string,
+    @Body() body: { name?: string; monthlyPrice?: number; limits?: any },
+  ) {
+    return this.adminService.updatePlan(id, body);
+  }
+
+  @Post('tenants/:id/grant-discovery')
+  async grantDiscoveryPlan(
+    @Param('id') id: string,
+    @Body() body: { days?: number },
+  ) {
+    return this.adminService.grantDiscoveryPlan(id, body.days || 30);
+  }
+
+  @Post('tenants/:id/revoke-discovery')
+  async revokeDiscoveryPlan(@Param('id') id: string) {
+    return this.adminService.revokeDiscoveryPlan(id);
+  }
+
   @Patch('tenants/:id/status')
   @UsePipes(new ZodValidationPipe(UpdateTenantStatusSchema))
   async updateTenantStatus(

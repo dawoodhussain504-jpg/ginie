@@ -39,28 +39,95 @@ export class AdminService {
       orderBy: { createdAt: 'desc' },
       include: {
         plan: true,
+        users: {
+          where: { deletedAt: null },
+          orderBy: { createdAt: 'asc' },
+          take: 1,
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+          },
+        },
+        whatsAppSessions: {
+          where: { status: 'connected' },
+          take: 1,
+          select: {
+            status: true,
+            phone: true,
+          },
+        },
         _count: {
           select: {
             users: true,
             leads: true,
             deals: true,
+            products: true,
+            quotations: true,
           },
         },
       },
     });
 
-    return tenants.map((t) => ({
-      id: t.id,
-      name: t.name,
-      slug: t.slug,
-      status: t.status,
-      planName: t.plan?.name || 'Free',
-      brandColor: t.brandColor,
-      createdAt: t.createdAt,
-      userCount: t._count.users,
-      leadCount: t._count.leads,
-      dealCount: t._count.deals,
-    }));
+    return tenants.map((t) => {
+      const owner = t.users[0] || null;
+      const settings = (t.settings as any) || {};
+      const disc = settings.discoveryPlan || {};
+      const isDiscActive =
+        disc.status === 'active' &&
+        (!disc.expiresAt || new Date(disc.expiresAt).getTime() > Date.now());
+
+      let remainingDays = 0;
+      if (isDiscActive && disc.expiresAt) {
+        remainingDays = Math.max(
+          0,
+          Math.ceil((new Date(disc.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)),
+        );
+      }
+
+      const activeWhatsApp = t.whatsAppSessions[0] || null;
+
+      return {
+        id: t.id,
+        name: t.name,
+        slug: t.slug,
+        status: t.status,
+        businessType: t.businessType || 'services',
+        onboardingCompleted: t.onboardingCompleted,
+        planName: t.plan?.name || 'Free Core',
+        brandColor: t.brandColor || '#1677ff',
+        createdAt: t.createdAt,
+        owner: owner
+          ? {
+              id: owner.id,
+              name: owner.name,
+              email: owner.email,
+              phone: owner.phone,
+            }
+          : null,
+        whatsApp: activeWhatsApp
+          ? {
+              connected: true,
+              phone: activeWhatsApp.phone,
+            }
+          : {
+              connected: false,
+              phone: null,
+            },
+        discoveryPlan: {
+          active: isDiscActive,
+          remainingDays,
+          expiresAt: disc.expiresAt || null,
+          status: isDiscActive ? 'active' : (disc.status || 'inactive'),
+        },
+        userCount: t._count.users,
+        leadCount: t._count.leads,
+        dealCount: t._count.deals,
+        productCount: t._count.products,
+        invoiceCount: t._count.quotations,
+      };
+    });
   }
 
   async createTenant(data: {
@@ -69,6 +136,8 @@ export class AdminService {
     ownerEmail: string;
     ownerPhone?: string;
     planName?: string;
+    businessType?: string;
+    grantDiscovery?: boolean;
     password?: string;
   }) {
     const email = data.ownerEmail.toLowerCase().trim();
@@ -83,15 +152,46 @@ export class AdminService {
       .replace(/-+/g, '-')
       .replace(/^-|-$/g, '') || `biz-${Date.now()}`;
 
-    const plan = (await prisma.plan.findFirst({ where: { name: data.planName || 'Pro' } })) || (await prisma.plan.findFirst());
+    const requestedPlanName = data.planName || 'Free Core';
+    let plan = await prisma.plan.findFirst({
+      where: {
+        OR: [
+          { name: { equals: requestedPlanName, mode: 'insensitive' } },
+          { name: { contains: requestedPlanName, mode: 'insensitive' } },
+        ],
+      },
+    });
+
+    if (!plan) {
+      plan = (await prisma.plan.findFirst({ where: { name: 'Free Core' } })) || (await prisma.plan.findFirst());
+    }
+
+    const settings: any = {
+      currency: 'INR',
+      timezone: 'Asia/Kolkata',
+    };
+
+    if (data.grantDiscovery || (data.planName && data.planName.toLowerCase().includes('discovery'))) {
+      const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+      settings.discoveryPlan = {
+        status: 'active',
+        expiresAt: expiresAt.toISOString(),
+        approvedAt: new Date().toISOString(),
+        grantedBy: 'Super Admin Onboarding',
+        amount: 599,
+      };
+    }
 
     const tenant = await prisma.tenant.create({
       data: {
         name: data.name.trim(),
         slug,
         brandColor: '#1677ff',
+        businessType: data.businessType || 'services',
+        onboardingCompleted: true,
         status: 'active',
         planId: plan?.id,
+        settings,
       },
     });
 
@@ -156,15 +256,59 @@ export class AdminService {
   }
 
   async listPlans() {
+    // Ensure standard App-aligned plans exist
+    const count = await prisma.plan.count();
+    if (count === 0) {
+      await prisma.plan.createMany({
+        data: [
+          {
+            name: 'Free Core',
+            monthlyPrice: 0,
+            limits: { maxUsers: 9999, maxLeads: 99999, erp: true, store: true },
+          },
+          {
+            name: 'Discovery Growth',
+            monthlyPrice: 599,
+            limits: { maxUsers: 9999, maxLeads: 99999, discovery: true, erp: true, store: true },
+          },
+          {
+            name: 'Enterprise VIP',
+            monthlyPrice: 4999,
+            limits: { maxUsers: 9999, maxLeads: 99999, dedicated: true, prioritySupport: true },
+          },
+        ],
+      });
+    }
+
     return prisma.plan.findMany({
       orderBy: { monthlyPrice: 'asc' },
     });
   }
 
   async updateTenantPlan(tenantId: string, planName: string) {
-    const plan = await prisma.plan.findFirst({ where: { name: planName } });
+    let plan = await prisma.plan.findFirst({
+      where: {
+        OR: [
+          { name: { equals: planName, mode: 'insensitive' } },
+          { name: { contains: planName, mode: 'insensitive' } },
+        ],
+      },
+    });
+
     if (!plan) {
-      throw new NotFoundException('Plan not found.');
+      const price = planName.toLowerCase().includes('discovery')
+        ? 599
+        : planName.toLowerCase().includes('enterprise')
+        ? 4999
+        : 0;
+
+      plan = await prisma.plan.create({
+        data: {
+          name: planName,
+          monthlyPrice: price,
+          limits: {},
+        },
+      });
     }
 
     return prisma.tenant.update({
@@ -172,6 +316,85 @@ export class AdminService {
       data: { planId: plan.id },
       include: { plan: true },
     });
+  }
+
+  async updatePlan(planId: string, data: { name?: string; monthlyPrice?: number; limits?: any }) {
+    const plan = await prisma.plan.findUnique({ where: { id: planId } });
+    if (!plan) throw new NotFoundException('Plan not found.');
+
+    return prisma.plan.update({
+      where: { id: planId },
+      data: {
+        ...(data.name ? { name: data.name } : {}),
+        ...(data.monthlyPrice !== undefined ? { monthlyPrice: data.monthlyPrice } : {}),
+        ...(data.limits ? { limits: data.limits } : {}),
+      },
+    });
+  }
+
+  async grantDiscoveryPlan(tenantId: string, days = 30) {
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+      include: { users: { where: { deletedAt: null }, take: 1 } },
+    });
+    if (!tenant) throw new NotFoundException('Business not found.');
+
+    const currentSettings = (tenant.settings as any) || {};
+    const currentDisc = currentSettings.discoveryPlan || {};
+    const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+
+    const updatedDisc = {
+      ...currentDisc,
+      status: 'active',
+      expiresAt: expiresAt.toISOString(),
+      approvedAt: new Date().toISOString(),
+      grantedBy: 'Super Admin Direct',
+      amount: 599,
+    };
+
+    await prisma.tenant.update({
+      where: { id: tenantId },
+      data: {
+        settings: {
+          ...currentSettings,
+          discoveryPlan: updatedDisc,
+        },
+      },
+    });
+
+    return {
+      success: true,
+      message: `Discovery Plan successfully activated for ${days} days till ${expiresAt.toLocaleDateString('en-IN')}`,
+      discoveryPlan: updatedDisc,
+    };
+  }
+
+  async revokeDiscoveryPlan(tenantId: string) {
+    const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
+    if (!tenant) throw new NotFoundException('Business not found.');
+
+    const currentSettings = (tenant.settings as any) || {};
+    const updatedDisc = {
+      ...currentSettings.discoveryPlan,
+      status: 'inactive',
+      expiresAt: new Date().toISOString(),
+      revokedAt: new Date().toISOString(),
+    };
+
+    await prisma.tenant.update({
+      where: { id: tenantId },
+      data: {
+        settings: {
+          ...currentSettings,
+          discoveryPlan: updatedDisc,
+        },
+      },
+    });
+
+    return {
+      success: true,
+      message: 'Discovery access revoked successfully.',
+    };
   }
 
   async impersonateTenant(tenantId: string) {
@@ -361,7 +584,7 @@ export class AdminService {
 
     const settings: any = superAdminTenant?.settings || {};
     return {
-      upiId: settings.platformUpi?.upiId || '8797186001@paytm',
+      upiId: settings.platformUpi?.upiId || '7870819862@paytm',
       payeeName: settings.platformUpi?.payeeName || 'GINIE Space Platform Admin',
       qrCodeUrl: settings.platformUpi?.qrCodeUrl || '',
       amount: settings.platformUpi?.amount || 599,
