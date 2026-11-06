@@ -49,6 +49,7 @@ import Link from 'next/link';
 import { api } from '@/lib/api';
 import OnboardingWizardModal from '@/components/OnboardingWizardModal';
 import GinieAiAssistantDrawer from '@/components/GinieAiAssistantDrawer';
+import SupportModal from '@/components/SupportModal';
 import GinieLogo from '@/components/GinieLogo';
 
 const { Header, Sider, Content } = Layout;
@@ -69,6 +70,7 @@ export default function DashboardLayout({
   const [isInstallable, setIsInstallable] = useState(false);
   const [isImpersonating, setIsImpersonating] = useState(false);
   const [aiDrawerOpen, setAiDrawerOpen] = useState(false);
+  const [supportModalOpen, setSupportModalOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
 
   useEffect(() => {
@@ -458,6 +460,11 @@ export default function DashboardLayout({
           ]
         : []),
       {
+        key: 'whatsapp-support',
+        icon: <WhatsAppOutlined style={{ color: '#25D366' }} />,
+        label: <a onClick={() => setSupportModalOpen(true)}>Help & WhatsApp Support</a>,
+      },
+      {
         key: 'settings',
         icon: <SettingOutlined />,
         label: <Link href="/settings">{t.nav.settings}</Link>,
@@ -646,6 +653,24 @@ export default function DashboardLayout({
               </Button>
             </div>
 
+            {/* WhatsApp Support Button - Desktop */}
+            <div className="hide-on-mobile">
+              <Button
+                icon={<WhatsAppOutlined style={{ color: '#25D366', fontSize: 16 }} />}
+                onClick={() => setSupportModalOpen(true)}
+                style={{
+                  borderRadius: 8,
+                  background: isDark ? 'rgba(37, 211, 102, 0.12)' : '#f0fdf4',
+                  borderColor: isDark ? 'rgba(37, 211, 102, 0.3)' : '#bbf7d0',
+                  color: isDark ? '#4ade80' : '#15803d',
+                  fontWeight: 700,
+                  height: 36,
+                }}
+              >
+                Support
+              </Button>
+            </div>
+
             {/* AI Assistant Button - Mobile Compact */}
             <div className="show-on-mobile">
               <Button
@@ -658,6 +683,21 @@ export default function DashboardLayout({
                   background: 'linear-gradient(135deg, #1677ff 0%, #722ed1 100%)',
                   borderColor: 'transparent',
                   boxShadow: '0 2px 6px rgba(114, 46, 209, 0.3)',
+                }}
+              />
+            </div>
+
+            {/* WhatsApp Support Button - Mobile Compact */}
+            <div className="show-on-mobile">
+              <Button
+                shape="circle"
+                size="middle"
+                icon={<WhatsAppOutlined style={{ color: '#25D366', fontSize: 18 }} />}
+                onClick={() => setSupportModalOpen(true)}
+                style={{
+                  background: isDark ? '#1e293b' : '#ffffff',
+                  borderColor: isDark ? 'rgba(37, 211, 102, 0.3)' : '#bbf7d0',
+                  boxShadow: '0 2px 6px rgba(37, 211, 102, 0.25)',
                 }}
               />
             </div>
@@ -831,26 +871,49 @@ export default function DashboardLayout({
           open={moreDrawerOpen}
           bodyStyle={{ padding: '16px 16px 28px' }}
         >
-          {/* Quick AI & PWA Action Bar */}
-          <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-            <Button
-              type="primary"
-              block
-              icon={<ThunderboltFilled />}
-              onClick={() => {
-                setMoreDrawerOpen(false);
-                setAiDrawerOpen(true);
-              }}
-              style={{
-                height: 42,
-                borderRadius: 10,
-                background: 'linear-gradient(135deg, #1677ff 0%, #722ed1 100%)',
-                borderColor: 'transparent',
-                fontWeight: 700,
-              }}
-            >
-              Ask GINIE AI Assistant
-            </Button>
+          {/* Quick AI & Support Action Bar */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <Button
+                type="primary"
+                block
+                icon={<ThunderboltFilled />}
+                onClick={() => {
+                  setMoreDrawerOpen(false);
+                  setAiDrawerOpen(true);
+                }}
+                style={{
+                  height: 42,
+                  borderRadius: 10,
+                  background: 'linear-gradient(135deg, #1677ff 0%, #722ed1 100%)',
+                  borderColor: 'transparent',
+                  fontWeight: 700,
+                  fontSize: 13,
+                }}
+              >
+                GINIE AI
+              </Button>
+              <Button
+                type="primary"
+                block
+                icon={<WhatsAppOutlined />}
+                onClick={() => {
+                  setMoreDrawerOpen(false);
+                  setSupportModalOpen(true);
+                }}
+                style={{
+                  height: 42,
+                  borderRadius: 10,
+                  background: '#25D366',
+                  borderColor: '#25D366',
+                  fontWeight: 700,
+                  fontSize: 13,
+                  color: '#ffffff',
+                }}
+              >
+                WhatsApp Help
+              </Button>
+            </div>
             {isInstallable && (
               <Button
                 block
@@ -860,7 +923,7 @@ export default function DashboardLayout({
                   handleInstallApp();
                 }}
                 style={{
-                  height: 42,
+                  height: 38,
                   borderRadius: 10,
                   borderColor: '#4f46e5',
                   color: '#4f46e5',
@@ -1098,6 +1161,46 @@ export default function DashboardLayout({
         open={aiDrawerOpen}
         onClose={() => setAiDrawerOpen(false)}
       />
+      <SupportModal
+        open={supportModalOpen}
+        onClose={() => setSupportModalOpen(false)}
+      />
+
+      {/* Floating WhatsApp Support Trigger (Desktop) */}
+      <div
+        className="hide-on-mobile"
+        style={{
+          position: 'fixed',
+          bottom: 24,
+          right: 24,
+          zIndex: 990,
+        }}
+      >
+        <Tooltip title="Direct WhatsApp Support (+91 7870819862)" placement="left">
+          <Button
+            type="primary"
+            icon={<WhatsAppOutlined style={{ fontSize: 22 }} />}
+            onClick={() => setSupportModalOpen(true)}
+            style={{
+              height: 46,
+              borderRadius: 24,
+              background: '#25D366',
+              borderColor: '#25D366',
+              color: '#ffffff',
+              fontWeight: 700,
+              fontSize: 13,
+              boxShadow: '0 4px 18px rgba(37, 211, 102, 0.45)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '0 18px',
+              transition: 'all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
+            }}
+          >
+            <span>Need Help?</span>
+          </Button>
+        </Tooltip>
+      </div>
     </Layout>
   );
 }
