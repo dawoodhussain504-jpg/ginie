@@ -240,6 +240,18 @@ html, body {
   background: rgba(255, 255, 255, 0.08);
 }
 
+/* Sticky Sidebar custom scrollbar */
+.ginie-desktop-sider::-webkit-scrollbar {
+  width: 4px;
+}
+.ginie-desktop-sider::-webkit-scrollbar-track {
+  background: transparent;
+}
+.ginie-desktop-sider::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 4px;
+}
+
 @media (max-width: 768px) {
   .hide-on-mobile {
     display: none !important;

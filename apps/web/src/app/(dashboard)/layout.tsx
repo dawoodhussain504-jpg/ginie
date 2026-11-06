@@ -520,6 +520,11 @@ export default function DashboardLayout({
         style={{
           borderRight: isDark ? '1px solid #1e293b' : '1px solid #e2e8f0',
           background: isDark ? '#0f172a' : '#ffffff',
+          position: 'sticky',
+          top: 0,
+          height: '100vh',
+          overflowY: 'auto',
+          zIndex: 110,
         }}
         width={250}
       >

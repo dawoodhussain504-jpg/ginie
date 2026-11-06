@@ -72,7 +72,6 @@ export default function GinieLogo({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          filter: 'drop-shadow(0 4px 10px rgba(79, 70, 229, 0.35))',
         }}
       >
         <Image
