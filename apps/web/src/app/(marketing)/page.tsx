@@ -416,6 +416,7 @@ export default function MarketingLandingPage() {
 
       {/* Main Navigation Header */}
       <header
+        className="ginie-sticky-header"
         style={{
           background: scrolled ? 'rgba(9, 13, 22, 0.96)' : 'rgba(9, 13, 22, 0.78)',
           borderBottom: scrolled ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(255, 255, 255, 0.06)',

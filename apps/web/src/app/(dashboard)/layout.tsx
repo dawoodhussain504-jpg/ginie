@@ -565,10 +565,10 @@ export default function DashboardLayout({
         />
       </Sider>
 
-      <Layout style={{ background: isDark ? '#0b0f17' : '#f8fafc' }}>
+      <Layout style={{ background: isDark ? '#0b0f17' : '#f8fafc', overflow: 'visible' }}>
         {/* Top Header */}
         <Header
-          className="ginie-mobile-header"
+          className="ginie-mobile-header ginie-sticky-header"
           style={{
             background: isDark ? '#0f172a' : '#ffffff',
             padding: '0 24px',

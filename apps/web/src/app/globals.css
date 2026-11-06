@@ -12,16 +12,45 @@
   --slate-900: #0f172a;
 }
 
-html, body {
+html {
   margin: 0;
   padding: 0;
   width: 100%;
-  overflow-x: hidden;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  overflow-x: clip;
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: var(--slate-50);
   color: var(--slate-900);
+}
+
+/* Rock-Solid Frozen Sticky Header & Sider Rules */
+.ant-layout {
+  overflow: visible !important;
+}
+
+.ant-layout-header,
+.ginie-mobile-header,
+.ginie-sticky-header {
+  position: -webkit-sticky !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 1000 !important;
+}
+
+.ginie-desktop-sider {
+  position: -webkit-sticky !important;
+  position: sticky !important;
+  top: 0 !important;
+  height: 100vh !important;
+  overflow-y: auto !important;
+  z-index: 1001 !important;
 }
 
 * {
