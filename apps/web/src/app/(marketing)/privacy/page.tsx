@@ -108,7 +108,7 @@ export default function PrivacyPolicyPage() {
               4. WhatsApp Integration & Third-Party APIs
             </Title>
             <Paragraph style={{ fontSize: 15, lineHeight: 1.8, color: '#475569' }}>
-              GINIE provides direct WhatsApp Web click-to-chat links and multi-device connection bridges. We do not store raw end-to-end encrypted chat histories of your private WhatsApp personal conversations. When utilizing the Google Maps Lead Discovery module, public business metadata is retrieved directly via Google Places APIs solely for your designated prospecting search.
+              GINIE provides direct WhatsApp Web click-to-chat links and multi-device connection bridges. We do not store raw end-to-end encrypted chat histories of your private WhatsApp personal conversations. When utilizing the GINIE Maps Lead Discovery module, public business metadata is retrieved directly via standard places data sources solely for your designated prospecting search.
             </Paragraph>
           </section>
 

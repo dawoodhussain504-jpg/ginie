@@ -32,7 +32,7 @@ const SUPPORT_CATEGORIES = [
   { id: 'erp', label: 'Inventory & ERP Items', icon: '📦', detail: 'Stock quantity, multi-trade items, batch/expiry, barcode' },
   { id: 'store', label: 'Digital Store & Orders', icon: '🛍️', detail: 'Online storefront catalog, customer checkout, order sync' },
   { id: 'upi', label: 'UPI QR & Payments', icon: '💳', detail: 'UPI QR scan setup, settlement, invoice payment status' },
-  { id: 'leads', label: 'Lead Discovery Add-on', icon: '📍', detail: 'Google Maps business lead search, phone number exports' },
+  { id: 'leads', label: 'GINIE Maps Lead Discovery', icon: '📍', detail: 'GINIE Maps business lead search, phone number exports' },
   { id: 'whatsapp', label: 'WhatsApp Inbox & Alerts', icon: '💬', detail: 'WhatsApp bot, automated greetings, broadcast campaigns' },
   { id: 'technical', label: 'Bug / Technical Error', icon: '⚠️', detail: 'Screen not loading, error message, sync failure' },
   { id: 'general', label: 'General Query & Setup', icon: '💡', detail: 'Account onboarding, business customization, feedback' },

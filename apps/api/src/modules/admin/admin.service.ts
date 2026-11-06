@@ -798,7 +798,7 @@ export class AdminService {
         const bridge = new BridgeProvider('admin-master');
         await bridge.sendText(
           fullNumber,
-          `🎉 *GINIE Lead Discovery Activated!*\n\nNamaste ${owner.name || 'Partner'},\n\nYour payment of *₹599* has been verified and approved!\n\n✨ *Plan Details:*\n• Service: Google Maps Lead Discovery\n• Status: *Active (30 Days)*\n• Valid Till: *${expiresAt.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric' })}*\n\nAap ab apne GINIE Cockpit me *Find Customers* tab use karke unlimited verified leads nikaal sakte hain!\n\n🚀 Dashboard: https://ginie.space/find-customers`,
+          `🎉 *GINIE Lead Discovery Activated!*\n\nNamaste ${owner.name || 'Partner'},\n\nYour payment of *₹599* has been verified and approved!\n\n✨ *Plan Details:*\n• Service: GINIE Maps Lead Discovery\n• Status: *Active (30 Days)*\n• Valid Till: *${expiresAt.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric' })}*\n\nAap ab apne GINIE Cockpit me *Find Customers* tab use karke unlimited verified leads nikaal sakte hain!\n\n🚀 Dashboard: https://ginie.space/find-customers`,
         );
       } catch (err: any) {
         this.logger.warn(`Could not send discovery approval WhatsApp: ${err.message}`);

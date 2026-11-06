@@ -1026,7 +1026,7 @@ export default function AdminMasterConsolePage() {
                   </Card>
 
                   <Card style={{ borderRadius: 12, borderTop: '4px solid #722ed1' }}>
-                    <Text type="secondary">Google Maps Searches</Text>
+                    <Text type="secondary">GINIE Maps Searches</Text>
                     <Title level={2} style={{ margin: '8px 0 0', color: '#722ed1' }}>
                       {metrics?.totalSearches || 0}
                     </Title>
@@ -1397,7 +1397,7 @@ export default function AdminMasterConsolePage() {
                       style={{ borderRadius: 12 }}
                     >
                       <Paragraph type="secondary" style={{ fontSize: 13, marginBottom: 16 }}>
-                        Jab bhi koi client Google Maps discovery tab me UPI paywall dekhega, ye QR code aur UPI details dikhengi:
+                        Jab bhi koi client GINIE Maps discovery tab me UPI paywall dekhega, ye QR code aur UPI details dikhengi:
                       </Paragraph>
 
                       <div style={{ textAlign: 'center', marginBottom: 20 }}>
@@ -1797,7 +1797,7 @@ export default function AdminMasterConsolePage() {
                           Discovery Growth Plan
                         </Title>
                         <Text type="secondary" style={{ fontSize: 12, display: 'block', lineHeight: 1.4 }}>
-                          • Google Maps B2B Lead Generator<br />
+                          • GINIE Maps B2B Lead Generator<br />
                           • Verified WhatsApp Mobile Extractor<br />
                           • 1-Click CRM Import & Pitch Script<br />
                           • One-time UPI QR Payment (No Auto-debit)
@@ -2369,7 +2369,7 @@ export default function AdminMasterConsolePage() {
             <Space>
               <input type="checkbox" id="grantDiscovery" />
               <label htmlFor="grantDiscovery" style={{ cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#16a34a' }}>
-                Activate 30-Day Google Maps Lead Discovery instantly
+                Activate 30-Day GINIE Maps Lead Discovery instantly
               </label>
             </Space>
           </Form.Item>

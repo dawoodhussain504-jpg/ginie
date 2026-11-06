@@ -84,10 +84,10 @@ export default function TermsOfServicePage() {
 
           <section style={{ marginBottom: 32 }}>
             <Title level={3} style={{ fontSize: 20, fontWeight: 700, color: '#1e293b' }}>
-              3. On-Demand Add-on: Lead Discovery (₹599/Mo)
+              3. On-Demand Add-on: GINIE Maps Lead Discovery (₹599/Mo)
             </Title>
             <Paragraph style={{ fontSize: 15, lineHeight: 1.8, color: '#475569' }}>
-              Users who wish to extract local business leads with direct phone numbers from Google Maps may activate the Discovery Add-on for ₹599 per month:
+              Users who wish to extract local business leads with direct phone numbers from GINIE Maps may activate the Discovery Add-on for ₹599 per month:
             </Paragraph>
             <ul style={{ fontSize: 15, lineHeight: 1.8, color: '#475569', paddingLeft: 24 }}>
               <li><strong>Zero Auto-Debit:</strong> Payments are processed solely via one-time UPI QR scans. GINIE will never mandate recurring debit (e-mandate) on your bank account.</li>

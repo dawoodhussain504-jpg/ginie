@@ -129,15 +129,15 @@ export default function MarketingLandingPage() {
     },
     {
       id: 'discovery' as const,
-      name: 'Google Maps Lead Discovery',
+      name: 'GINIE Maps Lead Discovery',
       badge: '₹599 / Mo Add-on',
       badgeColor: '#2563eb',
       icon: <CompassOutlined style={{ fontSize: 22, color: '#2563eb' }} />,
       headline: 'Find Verified Local Business Leads Across Any City or Pincode',
-      description: 'Search any niche like dental clinics, wholesalers, manufacturers, or fitness clubs. Extract verified mobile numbers, Google star ratings, addresses, and save them straight to your sales pipeline with one click.',
+      description: 'Search any niche like dental clinics, wholesalers, manufacturers, or fitness clubs. Extract verified mobile numbers, ratings, addresses, and save them straight to your sales pipeline with one click.',
       points: [
-        'Live Google Places search across 500+ Indian cities and pin codes',
-        'Verified direct mobile numbers, addresses, and Google review counts',
+        'Live GINIE Maps search across 500+ Indian cities and pin codes',
+        'Verified direct mobile numbers, addresses, and review ratings',
         'One-click import into your CRM sales leads and deal stages',
         'Instant WhatsApp outreach with tailored sales pitch scripts',
         'Pay ₹599 once via UPI QR when you need fresh leads — zero auto-debit',
@@ -349,7 +349,7 @@ export default function MarketingLandingPage() {
       label: 'What is the ₹599 / month Find Customers add-on?',
       children: (
         <Paragraph style={{ color: '#475569', fontSize: 15, lineHeight: 1.7, margin: 0 }}>
-          Find Customers is an optional lead discovery feature built into GINIE. It connects to live Google Maps Places data to search and extract local business leads, verified mobile phone numbers, addresses, and Google star ratings for any city or pin code in India. You only pay ₹599 if you wish to use this prospecting tool to discover and import new leads.
+          Find Customers is an optional lead discovery feature built into GINIE. It connects to live GINIE Maps intelligence to search and extract local business leads, verified mobile phone numbers, addresses, and ratings for any city or pin code in India. You only pay ₹599 if you wish to use this prospecting tool to discover and import new leads.
         </Paragraph>
       ),
     },
@@ -404,7 +404,7 @@ export default function MarketingLandingPage() {
           <span style={{ opacity: 0.3 }}>&bull;</span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#60a5fa' }}>
             <CompassOutlined />
-            Google Maps Lead Discovery: Flat ₹599 / Month
+            GINIE Maps Lead Discovery: Flat ₹599 / Month
           </span>
           <span style={{ opacity: 0.3 }}>&bull;</span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#25D366' }}>
@@ -800,7 +800,7 @@ export default function MarketingLandingPage() {
               margin: '0 auto 36px',
             }}
           >
-            Manage customer leads, visual deal stages, daily team follow-ups, multi-trade ERP with camera & gun barcode POS, and your own 0% commission digital storefront — completely free forever. Need fresh local clients? Unlock live Google Maps verified lead discovery anytime for just ₹599/month.
+            Manage customer leads, visual deal stages, daily team follow-ups, multi-trade ERP with camera & gun barcode POS, and your own 0% commission digital storefront — completely free forever. Need fresh local clients? Unlock live GINIE Maps verified lead discovery anytime for just ₹599/month.
           </Paragraph>
 
           {/* Call to Actions */}
@@ -891,7 +891,7 @@ export default function MarketingLandingPage() {
             </span>
             <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <CheckCircleFilled style={{ color: '#10b981' }} />
-              Google Maps Discovery: ₹599 / Month
+              GINIE Maps Discovery: ₹599 / Month
             </span>
             <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <CheckCircleFilled style={{ color: '#10b981' }} />
@@ -1137,7 +1137,7 @@ export default function MarketingLandingPage() {
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                         <div>
-                          <Text strong style={{ fontSize: 16, color: '#0f172a' }}>Google Maps Places Search</Text>
+                          <Text strong style={{ fontSize: 16, color: '#0f172a' }}>GINIE Maps Places Search</Text>
                           <div style={{ fontSize: 12, color: '#64748b' }}>Search live businesses in any city or pin code</div>
                         </div>
                         <Tag color="blue" style={{ fontWeight: 700 }}>₹599 / Mo Add-on</Tag>
@@ -1264,7 +1264,7 @@ export default function MarketingLandingPage() {
                           </div>
                         </div>
                         <div style={{ background: '#f0fdf4', padding: 10, borderRadius: 6, border: '1px solid #bbf7d0', fontSize: 12, color: '#166534', lineHeight: 1.5, marginBottom: 12 }}>
-                          &quot;Namaste Dr. Mehta, we noticed your stellar 4.8 rating on Google Maps in Andheri East. We help healthcare clinics reduce patient appointment no-shows by 75% via automated WhatsApp reminders. Can we share a 2-minute demo?&quot;
+                          &quot;Namaste Dr. Mehta, we noticed your stellar 4.8 rating on GINIE Maps in Andheri East. We help healthcare clinics reduce patient appointment no-shows by 75% via automated WhatsApp reminders. Can we share a 2-minute demo?&quot;
                         </div>
                         <Button type="primary" block icon={<WhatsAppOutlined />} style={{ background: '#25D366', borderColor: '#25D366', fontWeight: 700 }}>
                           Launch WhatsApp Web Chat
@@ -1594,7 +1594,7 @@ export default function MarketingLandingPage() {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                     <CheckCircleFilled style={{ color: '#10b981', fontSize: 16, marginTop: 2, flexShrink: 0 }} />
-                    <span style={{ fontSize: 14, color: '#14532d', fontWeight: 600 }}>Google Maps Lead Discovery: Search verified local buyers anytime for flat ₹599/month via UPI</span>
+                    <span style={{ fontSize: 14, color: '#14532d', fontWeight: 600 }}>GINIE Maps Lead Discovery: Search verified local buyers anytime for flat ₹599/month via UPI</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                     <CheckCircleFilled style={{ color: '#10b981', fontSize: 16, marginTop: 2, flexShrink: 0 }} />
@@ -1617,7 +1617,7 @@ export default function MarketingLandingPage() {
             Simple Pricing. No Credit Card. No Surprises.
           </Title>
           <Paragraph style={{ color: '#64748b', fontSize: 16, maxWidth: 650, margin: '0 auto' }}>
-            The entire core CRM, ERP operations hub, and digital storefront are 100% free forever for all your team members. When you need fresh local business leads from Google Maps, activate Discovery anytime via UPI for just ₹599/month.
+            The entire core CRM, ERP operations hub, and digital storefront are 100% free forever for all your team members. When you need fresh local business leads from GINIE Maps, activate Discovery anytime via UPI for just ₹599/month.
           </Paragraph>
         </div>
 
@@ -1732,7 +1732,7 @@ export default function MarketingLandingPage() {
                     Find Customers (Lead Discovery)
                   </Title>
                   <Paragraph style={{ color: '#64748b', fontSize: 14, margin: 0 }}>
-                    Extract verified local business leads with mobile numbers directly from Google Maps in any city or pin code.
+                    Extract verified local business leads with mobile numbers directly from GINIE Maps in any city or pin code.
                   </Paragraph>
                 </div>
 
@@ -1744,11 +1744,11 @@ export default function MarketingLandingPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flexGrow: 1, marginBottom: 28 }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                     <CheckOutlined style={{ color: '#2563eb', fontSize: 15, marginTop: 3, flexShrink: 0 }} />
-                    <span style={{ fontSize: 14, color: '#334155' }}>Live Google Maps Places Search in Any City or Pincode</span>
+                    <span style={{ fontSize: 14, color: '#334155' }}>Live GINIE Maps Places Search in Any City or Pincode</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                     <CheckOutlined style={{ color: '#2563eb', fontSize: 15, marginTop: 3, flexShrink: 0 }} />
-                    <span style={{ fontSize: 14, color: '#334155' }}>Verified Business Mobile Numbers, Addresses & Google Ratings</span>
+                    <span style={{ fontSize: 14, color: '#334155' }}>Verified Business Mobile Numbers, Addresses & Star Ratings</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                     <CheckOutlined style={{ color: '#2563eb', fontSize: 15, marginTop: 3, flexShrink: 0 }} />
@@ -1912,7 +1912,7 @@ export default function MarketingLandingPage() {
                 </span>
               </div>
               <Paragraph style={{ color: '#64748b', fontSize: 14, lineHeight: 1.6, maxWidth: 360, marginBottom: 16 }}>
-                India&apos;s dedicated sales CRM, multi-trade ERP, and commission-free digital storefront for local businesses, clinics, manufacturers, and agencies. 100% Free Core with on-demand Google Maps lead discovery via UPI.
+                India&apos;s dedicated sales CRM, multi-trade ERP, and commission-free digital storefront for local businesses, clinics, manufacturers, and agencies. 100% Free Core with on-demand GINIE Maps lead discovery via UPI.
               </Paragraph>
               <div style={{ fontSize: 13, color: '#94a3b8' }}>
                 GINIE WhatsApp Support:{' '}

@@ -755,7 +755,7 @@ function SalesAndTasksContent() {
             rel="noreferrer"
             style={{ fontSize: 11, color: '#0284c7', textDecoration: 'underline' }}
           >
-            Open in Google Maps to Verify Location
+            Open in Maps to Verify Location
           </a>
         </div>
 

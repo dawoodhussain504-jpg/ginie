@@ -75,7 +75,7 @@ export default function RefundPolicyPage() {
 
           <section style={{ marginBottom: 32 }}>
             <Title level={3} style={{ fontSize: 20, fontWeight: 700, color: '#1e293b' }}>
-              2. Google Maps Discovery Add-on (₹599 / Month)
+              2. GINIE Maps Discovery Add-on (₹599 / Month)
             </Title>
             <Paragraph style={{ fontSize: 15, lineHeight: 1.8, color: '#475569' }}>
               For our paid add-on (₹599/month for verified local business lead extraction):

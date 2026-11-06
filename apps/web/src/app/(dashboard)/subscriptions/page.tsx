@@ -175,10 +175,10 @@ export default function SubscriptionsPage() {
                 )}
               </div>
               <Title level={4} style={{ margin: 0, color: '#0f172a', fontWeight: 800 }}>
-                Google Maps Lead Discovery (Find Customers)
+                GINIE Maps Lead Discovery (Find Customers)
               </Title>
               <Paragraph style={{ color: '#475569', fontSize: 14, margin: '6px 0 0' }}>
-                Extract verified local business mobile numbers, addresses, and Google star ratings directly into your CRM sales pipeline. One-time ₹599 UPI QR payment — zero auto-debit lock-in.
+                Extract verified local business mobile numbers, addresses, and verified star ratings directly into your CRM sales pipeline. One-time ₹599 UPI QR payment — zero auto-debit lock-in.
               </Paragraph>
             </Col>
             <Col xs={24} md={8} style={{ textAlign: 'right' }}>
@@ -213,7 +213,7 @@ export default function SubscriptionsPage() {
             <Space direction="vertical" size={4}>
               <Space>
                 <CompassOutlined style={{ color: brandColor, fontSize: 18 }} />
-                <Text type="secondary" style={{ fontSize: 13 }}>Google Places Searches</Text>
+                <Text type="secondary" style={{ fontSize: 13 }}>GINIE Maps Searches</Text>
               </Space>
               <div style={{ fontSize: 24, fontWeight: 700, color: '#1677ff' }}>
                 {isSuperAdmin ? 'Unlimited' : (stats.hasDiscoveryActive ? 'Active' : 'On-Demand')}
