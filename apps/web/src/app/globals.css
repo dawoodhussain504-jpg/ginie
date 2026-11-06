@@ -216,6 +216,30 @@ html, body {
   display: none;
 }
 
+/* Responsive Tablet Breakpoint & Header Utilities */
+@media (max-width: 1180px) {
+  .hide-on-tablet {
+    display: none !important;
+  }
+}
+
+.ginie-nav-link {
+  color: #cbd5e1 !important;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 6px 14px;
+  border-radius: 8px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+}
+
+.ginie-nav-link:hover {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.08);
+}
+
 @media (max-width: 768px) {
   .hide-on-mobile {
     display: none !important;

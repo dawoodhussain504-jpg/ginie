@@ -33,6 +33,8 @@ import {
   GlobalOutlined,
   MobileOutlined,
   MenuOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
   AppstoreOutlined,
   SafetyCertificateOutlined,
   SwapOutlined,
@@ -465,6 +467,15 @@ export default function DashboardLayout({
         label: <a onClick={() => setSupportModalOpen(true)}>Help & WhatsApp Support</a>,
       },
       {
+        key: 'switch-language',
+        icon: <GlobalOutlined style={{ color: '#2563eb' }} />,
+        label: (
+          <span onClick={() => setLocale(locale === 'hi' ? 'en' : 'hi')}>
+            {locale === 'hi' ? 'Switch to English' : 'हिंदी में बदलें (Switch to HI)'}
+          </span>
+        ),
+      },
+      {
         key: 'settings',
         icon: <SettingOutlined />,
         label: <Link href="/settings">{t.nav.settings}</Link>,
@@ -567,18 +578,56 @@ export default function DashboardLayout({
             boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03)',
           }}
         >
-          {/* Left: Breadcrumb & Workspace badge (Desktop) + Mobile Brand Pill */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            {/* Show GINIE brand logo & title on mobile */}
-            <div className="show-on-mobile" style={{ alignItems: 'center' }}>
-              <GinieLogo size={30} showText={true} textSize={16} isDark={isDark} />
+          {/* Left: Mobile Hamburger + Desktop Sider Toggle + Breadcrumb + Workspace badge */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+            {/* Show Mobile Hamburger to open All Navigation Drawer */}
+            <div className="show-on-mobile" style={{ alignItems: 'center', marginRight: 2 }}>
+              <Button
+                type="text"
+                icon={<MenuOutlined style={{ fontSize: 18, color: isDark ? '#f8fafc' : '#0f172a' }} />}
+                onClick={() => setMoreDrawerOpen(true)}
+                style={{ padding: 0, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                aria-label="Open Navigation Menu"
+              />
             </div>
 
+            {/* Show GINIE brand logo & title on mobile */}
+            <div className="show-on-mobile" style={{ alignItems: 'center' }}>
+              <GinieLogo size={28} showText={true} textSize={15} isDark={isDark} />
+            </div>
+
+            {/* Desktop Sider Collapse / Expand Toggle */}
+            <Button
+              type="text"
+              className="hide-on-mobile"
+              icon={collapsed ? <MenuUnfoldOutlined style={{ fontSize: 16 }} /> : <MenuFoldOutlined style={{ fontSize: 16 }} />}
+              onClick={() => setCollapsed(!collapsed)}
+              title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              style={{
+                color: isDark ? '#94a3b8' : '#64748b',
+                width: 32,
+                height: 32,
+                borderRadius: 6,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginRight: 2,
+              }}
+            />
+
             {/* Desktop breadcrumb */}
-            <div className="hide-on-mobile" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 13, fontWeight: 500, color: isDark ? '#94a3b8' : '#64748b' }}>
+            <div className="hide-on-mobile" style={{ display: 'flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap' }}>
+              <Link
+                href="/dashboard"
+                style={{
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: isDark ? '#94a3b8' : '#64748b',
+                  textDecoration: 'none',
+                }}
+              >
                 GINIE
-              </span>
+              </Link>
               <span style={{ color: isDark ? '#475569' : '#cbd5e1', fontSize: 12 }}>/</span>
               <span style={{ fontSize: 14, fontWeight: 700, color: isDark ? '#f8fafc' : '#0f172a' }}>
                 {getPageTitle(pathname)}
@@ -586,7 +635,8 @@ export default function DashboardLayout({
             </div>
 
             <Tag
-              className="hide-on-mobile"
+              className="hide-on-mobile hide-on-tablet"
+              title={user?.companyName || 'Business Cockpit'}
               style={{
                 borderRadius: 999,
                 margin: 0,
@@ -596,6 +646,10 @@ export default function DashboardLayout({
                 background: isDark ? 'rgba(56, 189, 248, 0.1)' : '#f0f9ff',
                 color: isDark ? '#38bdf8' : '#0284c7',
                 padding: '2px 10px',
+                maxWidth: 170,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
               }}
             >
               {user?.companyName || 'Business Cockpit'}
@@ -603,7 +657,7 @@ export default function DashboardLayout({
           </div>
 
           {/* Right: Controls & User Profile */}
-          <Space size="middle" align="center">
+          <Space size={8} align="center">
             {/* Sync status - Desktop */}
             <div className="hide-on-mobile" style={{ display: 'flex', alignItems: 'center', gap: 6, marginRight: 4 }}>
               <span
@@ -616,7 +670,7 @@ export default function DashboardLayout({
                   boxShadow: isOnline ? '0 0 8px rgba(16, 185, 129, 0.6)' : 'none',
                 }}
               />
-              <span style={{ fontSize: 12, color: isDark ? '#94a3b8' : '#64748b', fontWeight: 500 }}>
+              <span className="hide-on-tablet" style={{ fontSize: 12, color: isDark ? '#94a3b8' : '#64748b', fontWeight: 500 }}>
                 {isOnline ? 'Cloud Synced' : 'Offline'}
               </span>
             </div>
@@ -635,7 +689,7 @@ export default function DashboardLayout({
                   height: 36,
                 }}
               >
-                Ask GINIE AI
+                <span className="hide-on-tablet">Ask GINIE AI</span>
               </Button>
             </div>
 
@@ -653,7 +707,7 @@ export default function DashboardLayout({
                   height: 36,
                 }}
               >
-                Support
+                <span className="hide-on-tablet">Support</span>
               </Button>
             </div>
 
@@ -702,18 +756,40 @@ export default function DashboardLayout({
               </Button>
             )}
 
-            {/* Language Selector */}
-            <Select
-              size="middle"
-              value={locale}
-              onChange={setLocale}
-              options={[
-                { value: 'en', label: 'English' },
-                { value: 'hi', label: 'हिंदी (HI)' },
-              ]}
-              prefix={<GlobalOutlined style={{ color: isDark ? '#94a3b8' : '#64748b' }} />}
-              style={{ width: 110 }}
-            />
+            {/* Language Selector - Desktop */}
+            <div className="hide-on-mobile">
+              <Select
+                size="middle"
+                value={locale}
+                onChange={setLocale}
+                options={[
+                  { value: 'en', label: 'English' },
+                  { value: 'hi', label: 'हिंदी (HI)' },
+                ]}
+                prefix={<GlobalOutlined style={{ color: isDark ? '#94a3b8' : '#64748b' }} />}
+                style={{ width: 110 }}
+              />
+            </div>
+
+            {/* Language Toggle - Mobile Compact Pill (Save ~75px space!) */}
+            <div className="show-on-mobile">
+              <Button
+                size="small"
+                onClick={() => setLocale(locale === 'hi' ? 'en' : 'hi')}
+                style={{
+                  fontWeight: 700,
+                  fontSize: 11,
+                  height: 30,
+                  padding: '0 8px',
+                  borderRadius: 6,
+                  background: isDark ? 'rgba(255,255,255,0.08)' : '#f1f5f9',
+                  borderColor: isDark ? 'rgba(255,255,255,0.15)' : '#cbd5e1',
+                  color: isDark ? '#38bdf8' : '#0284c7',
+                }}
+              >
+                {locale === 'hi' ? 'EN' : 'हि'}
+              </Button>
+            </div>
 
             {/* Theme Toggle */}
             <Button
@@ -731,7 +807,7 @@ export default function DashboardLayout({
                   alignItems: 'center',
                   gap: 8,
                   cursor: 'pointer',
-                  padding: '4px 8px',
+                  padding: '4px 6px',
                   borderRadius: 8,
                   transition: 'background 0.2s ease',
                 }}

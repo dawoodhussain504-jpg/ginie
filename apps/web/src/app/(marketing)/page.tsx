@@ -65,6 +65,16 @@ export default function MarketingLandingPage() {
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [activeTab, setActiveTab] = useState<'erp' | 'storefront' | 'discovery' | 'pipeline' | 'whatsapp' | 'billing' | 'cockpit'>('erp');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -407,12 +417,14 @@ export default function MarketingLandingPage() {
       {/* Main Navigation Header */}
       <header
         style={{
-          background: 'rgba(9, 13, 22, 0.85)',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+          background: scrolled ? 'rgba(9, 13, 22, 0.96)' : 'rgba(9, 13, 22, 0.78)',
+          borderBottom: scrolled ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(255, 255, 255, 0.06)',
+          boxShadow: scrolled ? '0 4px 24px -2px rgba(0, 0, 0, 0.5)' : 'none',
           position: 'sticky',
           top: 0,
           zIndex: 1000,
-          backdropFilter: 'blur(16px)',
+          backdropFilter: 'blur(20px)',
+          transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
         }}
       >
         <div
@@ -449,7 +461,7 @@ export default function MarketingLandingPage() {
                   CRM &bull; ERP &bull; Store
                 </span>
               </div>
-              <div style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1 }}>India&apos;s Local Business Operating System</div>
+              <div className="hide-on-tablet" style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1 }}>India&apos;s Local Business Operating System</div>
             </div>
           </Link>
 
@@ -458,32 +470,48 @@ export default function MarketingLandingPage() {
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 24,
+              gap: 4,
             }}
             className="marketing-nav-links"
           >
-            <a href="#features" style={{ color: '#cbd5e1', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
+            <a href="#features" className="ginie-nav-link">
               Features
             </a>
-            <a href="#industries" style={{ color: '#cbd5e1', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
+            <a href="#industries" className="ginie-nav-link">
               11 Trades
             </a>
-            <a href="#erp" style={{ color: '#cbd5e1', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
+            <a href="#erp" className="ginie-nav-link">
               ERP & POS
             </a>
-            <a href="#discovery" style={{ color: '#cbd5e1', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
+            <a href="#discovery" className="ginie-nav-link">
               Find Customers
             </a>
-            <a href="#pricing" style={{ color: '#cbd5e1', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
+            <a href="#pricing" className="ginie-nav-link">
               Pricing
             </a>
-            <a href="#faqs" style={{ color: '#cbd5e1', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
+            <a href="#faqs" className="ginie-nav-link">
               FAQs
             </a>
           </nav>
 
           {/* Mobile Menu & Quick Action */}
           <div className="show-on-mobile" style={{ alignItems: 'center', gap: 8 }}>
+            <a
+              href="https://wa.me/917870819862?text=Hello%20GINIE%20Team%2C%20mujhe%20apne%20business%20ke%20liye%20demo%20aur%20setup%20chahiye"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ textDecoration: 'none', display: 'flex' }}
+            >
+              <Button
+                shape="circle"
+                size="middle"
+                icon={<WhatsAppOutlined style={{ color: '#25D366', fontSize: 18 }} />}
+                style={{
+                  background: 'rgba(37, 211, 102, 0.15)',
+                  borderColor: 'rgba(37, 211, 102, 0.35)',
+                }}
+              />
+            </a>
             <Button
               type="primary"
               size="middle"
@@ -513,6 +541,28 @@ export default function MarketingLandingPage() {
           {/* Desktop Right Action Buttons */}
           <div className="hide-on-mobile">
           <Space size="middle">
+            <a
+              href="https://wa.me/917870819862?text=Hello%20GINIE%20Team%2C%20mujhe%20apne%20business%20ke%20liye%20demo%20aur%20setup%20chahiye"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ textDecoration: 'none' }}
+              className="hide-on-tablet"
+            >
+              <Button
+                icon={<WhatsAppOutlined style={{ color: '#25D366', fontSize: 16 }} />}
+                style={{
+                  borderRadius: 8,
+                  borderColor: 'rgba(37, 211, 102, 0.35)',
+                  background: 'rgba(37, 211, 102, 0.12)',
+                  color: '#4ade80',
+                  fontWeight: 600,
+                  height: 38,
+                }}
+              >
+                WhatsApp Support
+              </Button>
+            </a>
+
             {isLoggedIn ? (
               <>
                 {isSuperAdmin && (
@@ -605,18 +655,51 @@ export default function MarketingLandingPage() {
         open={mobileMenuOpen}
         width={300}
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, fontSize: 16, fontWeight: 600 }}>
-          <a href="#features" onClick={() => setMobileMenuOpen(false)} style={{ color: '#0f172a', textDecoration: 'none', padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>Features</a>
-          <a href="#industries" onClick={() => setMobileMenuOpen(false)} style={{ color: '#0f172a', textDecoration: 'none', padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>11 Indian Trades</a>
-          <a href="#erp" onClick={() => setMobileMenuOpen(false)} style={{ color: '#0f172a', textDecoration: 'none', padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>ERP & Barcode POS</a>
-          <a href="#discovery" onClick={() => setMobileMenuOpen(false)} style={{ color: '#0f172a', textDecoration: 'none', padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>Find Customers (₹599)</a>
-          <a href="#pricing" onClick={() => setMobileMenuOpen(false)} style={{ color: '#0f172a', textDecoration: 'none', padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>Pricing & Plans</a>
-          <a href="#faqs" onClick={() => setMobileMenuOpen(false)} style={{ color: '#0f172a', textDecoration: 'none', padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>FAQs</a>
-          <Link href="/contact" onClick={() => setMobileMenuOpen(false)} style={{ color: '#0f172a', textDecoration: 'none', padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>Contact & Helpdesk</Link>
-          <Link href="/privacy" onClick={() => setMobileMenuOpen(false)} style={{ color: '#64748b', fontSize: 14, textDecoration: 'none' }}>Privacy Policy</Link>
-          <Link href="/terms" onClick={() => setMobileMenuOpen(false)} style={{ color: '#64748b', fontSize: 14, textDecoration: 'none' }}>Terms of Service</Link>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 15, fontWeight: 600 }}>
+          <a href="#features" onClick={() => setMobileMenuOpen(false)} style={{ color: '#0f172a', textDecoration: 'none', padding: '10px 12px', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 10, background: '#f8fafc' }}>
+            <ThunderboltFilled style={{ color: '#2563eb' }} /> Features
+          </a>
+          <a href="#industries" onClick={() => setMobileMenuOpen(false)} style={{ color: '#0f172a', textDecoration: 'none', padding: '10px 12px', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 10, background: '#f8fafc' }}>
+            <ShopOutlined style={{ color: '#7c3aed' }} /> 11 Indian Trades
+          </a>
+          <a href="#erp" onClick={() => setMobileMenuOpen(false)} style={{ color: '#0f172a', textDecoration: 'none', padding: '10px 12px', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 10, background: '#f8fafc' }}>
+            <BarcodeOutlined style={{ color: '#f59e0b' }} /> ERP & Barcode POS
+          </a>
+          <a href="#discovery" onClick={() => setMobileMenuOpen(false)} style={{ color: '#0f172a', textDecoration: 'none', padding: '10px 12px', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 10, background: '#f8fafc' }}>
+            <CompassOutlined style={{ color: '#0ea5e9' }} /> Find Customers (₹599)
+          </a>
+          <a href="#pricing" onClick={() => setMobileMenuOpen(false)} style={{ color: '#0f172a', textDecoration: 'none', padding: '10px 12px', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 10, background: '#f8fafc' }}>
+            <DollarCircleOutlined style={{ color: '#16a34a' }} /> Pricing & Plans
+          </a>
+          <a href="#faqs" onClick={() => setMobileMenuOpen(false)} style={{ color: '#0f172a', textDecoration: 'none', padding: '10px 12px', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 10, background: '#f8fafc' }}>
+            <CustomerServiceOutlined style={{ color: '#64748b' }} /> FAQs
+          </a>
+          <Link href="/contact" onClick={() => setMobileMenuOpen(false)} style={{ color: '#0f172a', textDecoration: 'none', padding: '10px 12px', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 10, background: '#f8fafc' }}>
+            <PhoneOutlined style={{ color: '#2563eb' }} /> Contact & Helpdesk
+          </Link>
 
-          <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <a
+            href="https://wa.me/917870819862?text=Hello%20GINIE%20Team%2C%20mujhe%20apne%20business%20ke%20liye%20demo%20aur%20setup%20chahiye"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              textDecoration: 'none',
+              marginTop: 10,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              padding: '12px 14px',
+              borderRadius: 10,
+              background: '#25D366',
+              color: '#ffffff',
+              fontWeight: 700,
+            }}
+          >
+            <WhatsAppOutlined style={{ fontSize: 18 }} /> Chat on WhatsApp (+91 7870819862)
+          </a>
+
+          <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
             <Button
               block
               size="large"
