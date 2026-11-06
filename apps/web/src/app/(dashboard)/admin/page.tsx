@@ -29,6 +29,7 @@ import {
   Col,
   Image,
   QRCode,
+  Radio,
 } from 'antd';
 import {
   SafetyCertificateOutlined,
@@ -62,6 +63,8 @@ import {
   DollarCircleOutlined,
   ArrowLeftOutlined,
   LoginOutlined,
+  CustomerServiceOutlined,
+  SearchOutlined,
 } from '@ant-design/icons';
 import { useApp } from '@/context/AppContext';
 import { useRouter } from 'next/navigation';
@@ -134,12 +137,19 @@ export default function AdminMasterConsolePage() {
   const [editPlanPrice, setEditPlanPrice] = useState<number>(0);
   const [savingPlanPrice, setSavingPlanPrice] = useState(false);
 
+  // Support Tickets Helpdesk State
+  const [supportTickets, setSupportTickets] = useState<any[]>([]);
+  const [loadingTickets, setLoadingTickets] = useState(false);
+  const [ticketStatusFilter, setTicketStatusFilter] = useState<string>('all');
+  const [ticketSearch, setTicketSearch] = useState<string>('');
+
   useEffect(() => {
     if (user && user.isSuperAdmin) {
       loadAdminData();
       loadBridgeStatus();
       loadHealthAndAudit();
       loadUpiAndDiscovery();
+      loadSupportTickets();
     }
   }, [user]);
 
@@ -152,6 +162,9 @@ export default function AdminMasterConsolePage() {
     }
     if (activeTab === 'discovery') {
       loadUpiAndDiscovery();
+    }
+    if (activeTab === 'support') {
+      loadSupportTickets();
     }
   }, [activeTab]);
 
@@ -258,6 +271,57 @@ export default function AdminMasterConsolePage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadSupportTickets = async () => {
+    setLoadingTickets(true);
+    try {
+      const res = await api.get('/api/admin/support-tickets?limit=100').catch(() => []);
+      if (Array.isArray(res)) {
+        setSupportTickets(res);
+      }
+    } catch (err) {
+      console.error('Failed to load support tickets:', err);
+    } finally {
+      setLoadingTickets(false);
+    }
+  };
+
+  const handleUpdateTicketStatus = async (ticketId: string, newStatus: string) => {
+    try {
+      await api.patch(`/api/admin/support-tickets/${ticketId}/status`, { status: newStatus });
+      message.success(`Ticket status updated to ${newStatus}`);
+      setSupportTickets((prev) =>
+        prev.map((t) => (t.id === ticketId ? { ...t, status: newStatus } : t))
+      );
+    } catch (err: any) {
+      message.error(err.message || 'Failed to update ticket status');
+    }
+  };
+
+  const handleReplyViaWhatsApp = (ticket: any) => {
+    let contact = (ticket.contact || '').replace(/[^0-9]/g, '');
+    if (contact.length === 10) {
+      contact = `91${contact}`;
+    }
+    if (!contact) {
+      message.warning('User contact phone number not available for this ticket.');
+      return;
+    }
+    const replyText = `👋 Namaste ${ticket.userName || 'Partner'}!\n\nMain GINIE Master Support Desk se aapke Ticket #${ticket.ticketId} (${ticket.category}) ke regard me connect kar raha hoon.\n\n*Business:* ${ticket.businessName}\n*Screen:* ${ticket.screen}\n${ticket.note ? `*Issue Note:* ${ticket.note}\n` : ''}\nAapko kya issue aa raha hai? Main abhi help kar deta hoon.`;
+
+    const nativeUrl = `whatsapp://send?phone=${contact}&text=${encodeURIComponent(replyText)}`;
+    const link = document.createElement('a');
+    link.href = nativeUrl;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(() => {
+      try {
+        document.body.removeChild(link);
+      } catch {}
+    }, 1000);
+    message.success(`Opening WhatsApp chat with ${ticket.userName || contact}...`);
   };
 
   const loadBridgeStatus = async () => {
@@ -597,6 +661,22 @@ export default function AdminMasterConsolePage() {
       (planFilter === 'enterprise' && t.planName.toLowerCase().includes('enterprise'));
 
     return matchesSearch && matchesStatus && matchesPlan;
+  });
+
+  const openTicketsCount = supportTickets.filter((t) => (t.status || 'OPEN') === 'OPEN').length;
+
+  const filteredTickets = supportTickets.filter((t) => {
+    const matchesStatus =
+      ticketStatusFilter === 'all' ? true : (t.status || 'OPEN') === ticketStatusFilter;
+    const q = ticketSearch.toLowerCase().trim();
+    const matchesSearch =
+      !q ||
+      (t.ticketId && t.ticketId.toLowerCase().includes(q)) ||
+      (t.businessName && t.businessName.toLowerCase().includes(q)) ||
+      (t.userName && t.userName.toLowerCase().includes(q)) ||
+      (t.note && t.note.toLowerCase().includes(q)) ||
+      (t.category && t.category.toLowerCase().includes(q));
+    return matchesStatus && matchesSearch;
   });
 
   const tenantColumns = [
@@ -953,48 +1033,48 @@ export default function AdminMasterConsolePage() {
                   </Card>
                 </div>
 
-                {/* 3 Quick Launch Action Cards */}
+                {/* 4 Quick Launch Action Cards */}
                 <Row gutter={[16, 16]}>
-                  <Col xs={24} md={8}>
+                  <Col xs={24} sm={12} lg={6}>
                     <Card
                       hoverable
                       onClick={() => setActiveTab('whatsapp')}
-                      style={{ borderRadius: 12, border: '1px solid #bbf7d0', background: '#f0fdf4' }}
+                      style={{ borderRadius: 12, border: '1px solid #bbf7d0', background: '#f0fdf4', height: '100%' }}
                     >
                       <Space align="center" style={{ marginBottom: 12 }}>
-                        <WhatsAppOutlined style={{ fontSize: 28, color: '#16a34a' }} />
+                        <WhatsAppOutlined style={{ fontSize: 26, color: '#16a34a' }} />
                         <Title level={5} style={{ margin: 0, color: '#15803d' }}>
-                          WhatsApp Master Bridge
+                          WhatsApp Bridge
                         </Title>
                       </Space>
                       <Paragraph type="secondary" style={{ fontSize: 13, marginBottom: 12 }}>
                         Status:{' '}
                         <b>{bridgeStatus?.status === 'connected' ? `Connected (+${bridgeStatus?.phone})` : 'Disconnected / QR Ready'}</b>
                         <br />
-                        PostgreSQL Session Persistence: <b>Active</b>
+                        PostgreSQL Session: <b>Active</b>
                       </Paragraph>
                       <Button type="primary" size="small" style={{ background: '#16a34a', borderColor: '#16a34a' }}>
-                        Manage Bridge & QR &rarr;
+                        Manage Bridge &rarr;
                       </Button>
                     </Card>
                   </Col>
 
-                  <Col xs={24} md={8}>
+                  <Col xs={24} sm={12} lg={6}>
                     <Card
                       hoverable
                       onClick={() => setActiveTab('tenants')}
-                      style={{ borderRadius: 12, border: '1px solid #bfdbfe', background: '#eff6ff' }}
+                      style={{ borderRadius: 12, border: '1px solid #bfdbfe', background: '#eff6ff', height: '100%' }}
                     >
                       <Space align="center" style={{ marginBottom: 12 }}>
-                        <ShopOutlined style={{ fontSize: 28, color: '#2563eb' }} />
+                        <ShopOutlined style={{ fontSize: 26, color: '#2563eb' }} />
                         <Title level={5} style={{ margin: 0, color: '#1d4ed8' }}>
-                          Client Businesses & Plans
+                          Client Businesses
                         </Title>
                       </Space>
                       <Paragraph type="secondary" style={{ fontSize: 13, marginBottom: 12 }}>
                         Total Onboarded: <b>{tenants.length} Companies</b>
                         <br />
-                        Manage subscriptions, suspend/activate, or login as client.
+                        Manage subscriptions & accounts.
                       </Paragraph>
                       <Button type="primary" size="small" style={{ background: '#2563eb', borderColor: '#2563eb' }}>
                         View Businesses &rarr;
@@ -1002,25 +1082,48 @@ export default function AdminMasterConsolePage() {
                     </Card>
                   </Col>
 
-                  <Col xs={24} md={8}>
+                  <Col xs={24} sm={12} lg={6}>
+                    <Card
+                      hoverable
+                      onClick={() => setActiveTab('support')}
+                      style={{ borderRadius: 12, border: '1px solid #fbcfe8', background: '#fdf2f8', height: '100%' }}
+                    >
+                      <Space align="center" style={{ marginBottom: 12 }}>
+                        <CustomerServiceOutlined style={{ fontSize: 26, color: '#db2777' }} />
+                        <Title level={5} style={{ margin: 0, color: '#be185d' }}>
+                          Support Helpdesk
+                        </Title>
+                      </Space>
+                      <Paragraph type="secondary" style={{ fontSize: 13, marginBottom: 12 }}>
+                        Open Issues: <b style={{ color: openTicketsCount > 0 ? '#ef4444' : '#10b981' }}>{openTicketsCount} Pending</b>
+                        <br />
+                        Total Tickets: <b>{supportTickets.length} Logged</b>
+                      </Paragraph>
+                      <Button type="primary" size="small" style={{ background: '#db2777', borderColor: '#db2777' }}>
+                        Open Support Desk &rarr;
+                      </Button>
+                    </Card>
+                  </Col>
+
+                  <Col xs={24} sm={12} lg={6}>
                     <Card
                       hoverable
                       onClick={() => setActiveTab('health')}
-                      style={{ borderRadius: 12, border: '1px solid #e2e8f0', background: '#f8fafc' }}
+                      style={{ borderRadius: 12, border: '1px solid #e2e8f0', background: '#f8fafc', height: '100%' }}
                     >
                       <Space align="center" style={{ marginBottom: 12 }}>
-                        <CloudServerOutlined style={{ fontSize: 28, color: '#475569' }} />
+                        <CloudServerOutlined style={{ fontSize: 26, color: '#475569' }} />
                         <Title level={5} style={{ margin: 0, color: '#334155' }}>
-                          System Health & Security
+                          Server Health
                         </Title>
                       </Space>
                       <Paragraph type="secondary" style={{ fontSize: 13, marginBottom: 12 }}>
                         DB Latency: <b>{systemHealth?.database?.latencyMs || 0}ms</b>
                         <br />
-                        Places API & AI Engine status monitoring.
+                        Places API & AI Engine status.
                       </Paragraph>
                       <Button size="small">
-                        View Server Diagnostics &rarr;
+                        Diagnostics &rarr;
                       </Button>
                     </Card>
                   </Col>
@@ -1911,6 +2014,224 @@ export default function AdminMasterConsolePage() {
                         dataIndex: 'entityType',
                         key: 'entityType',
                         render: (e: string) => <Tag>{e}</Tag>,
+                      },
+                    ]}
+                  />
+                </Card>
+              </div>
+            ),
+          },
+          {
+            key: 'support',
+            label: (
+              <Space>
+                <CustomerServiceOutlined style={{ color: '#ec4899' }} />
+                <span style={{ fontWeight: 600 }}>Support Helpdesk</span>
+                {openTicketsCount > 0 && (
+                  <Badge count={openTicketsCount} style={{ backgroundColor: '#ef4444' }} />
+                )}
+              </Space>
+            ),
+            children: (
+              <div>
+                {/* 3 KPI Summary Cards */}
+                <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
+                  <Col xs={24} sm={8}>
+                    <Card style={{ borderRadius: 12, borderTop: '4px solid #3b82f6' }}>
+                      <Text type="secondary">Total Logged Tickets</Text>
+                      <Title level={2} style={{ margin: '4px 0 0', color: '#1d4ed8' }}>
+                        {supportTickets.length}
+                      </Title>
+                      <Text type="secondary" style={{ fontSize: 12 }}>All merchant requests received</Text>
+                    </Card>
+                  </Col>
+                  <Col xs={24} sm={8}>
+                    <Card style={{ borderRadius: 12, borderTop: '4px solid #ef4444' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Text type="secondary">Open & Pending Issues</Text>
+                        {openTicketsCount > 0 && <Tag color="error">Action Needed</Tag>}
+                      </div>
+                      <Title level={2} style={{ margin: '4px 0 0', color: '#dc2626' }}>
+                        {openTicketsCount}
+                      </Title>
+                      <Text type="secondary" style={{ fontSize: 12 }}>Awaiting resolution by team</Text>
+                    </Card>
+                  </Col>
+                  <Col xs={24} sm={8}>
+                    <Card style={{ borderRadius: 12, borderTop: '4px solid #10b981' }}>
+                      <Text type="secondary">Resolved Tickets</Text>
+                      <Title level={2} style={{ margin: '4px 0 0', color: '#059669' }}>
+                        {supportTickets.filter((t) => t.status === 'RESOLVED').length}
+                      </Title>
+                      <Text type="secondary" style={{ fontSize: 12 }}>Successfully closed issues</Text>
+                    </Card>
+                  </Col>
+                </Row>
+
+                {/* Filter & Search Card */}
+                <Card style={{ borderRadius: 12, marginBottom: 16 }} bodyStyle={{ padding: '16px 20px' }}>
+                  <Row gutter={[16, 16]} justify="space-between" align="middle">
+                    <Col xs={24} sm={12} md={8}>
+                      <Input
+                        placeholder="Search by Ticket ID, Business, User or Note..."
+                        prefix={<SearchOutlined style={{ color: '#94a3b8' }} />}
+                        value={ticketSearch}
+                        onChange={(e) => setTicketSearch(e.target.value)}
+                        allowClear
+                        style={{ borderRadius: 8 }}
+                      />
+                    </Col>
+                    <Col xs={24} sm={12} md={14} style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                      <Radio.Group
+                        value={ticketStatusFilter}
+                        onChange={(e) => setTicketStatusFilter(e.target.value)}
+                        buttonStyle="solid"
+                      >
+                        <Radio.Button value="all">All ({supportTickets.length})</Radio.Button>
+                        <Radio.Button value="OPEN">Open ({openTicketsCount})</Radio.Button>
+                        <Radio.Button value="IN_PROGRESS">
+                          In Progress ({supportTickets.filter((t) => t.status === 'IN_PROGRESS').length})
+                        </Radio.Button>
+                        <Radio.Button value="RESOLVED">
+                          Resolved ({supportTickets.filter((t) => t.status === 'RESOLVED').length})
+                        </Radio.Button>
+                      </Radio.Group>
+                      <Button icon={<SyncOutlined spin={loadingTickets} />} onClick={loadSupportTickets}>
+                        Refresh
+                      </Button>
+                    </Col>
+                  </Row>
+                </Card>
+
+                {/* Tickets Table */}
+                <Card style={{ borderRadius: 12 }} bodyStyle={{ padding: 0 }}>
+                  <Table
+                    dataSource={filteredTickets}
+                    rowKey="id"
+                    loading={loadingTickets}
+                    pagination={{ pageSize: 15, showSizeChanger: true }}
+                    columns={[
+                      {
+                        title: 'Ticket ID',
+                        dataIndex: 'ticketId',
+                        key: 'ticketId',
+                        width: 130,
+                        render: (tid: string) => (
+                          <Tag color="purple" style={{ fontWeight: 800, fontSize: 12, borderRadius: 6 }}>
+                            #{tid}
+                          </Tag>
+                        ),
+                      },
+                      {
+                        title: 'Business & Merchant',
+                        key: 'business',
+                        render: (_: any, r: any) => (
+                          <div>
+                            <Text strong style={{ fontSize: 13, display: 'block' }}>
+                              {r.businessName}
+                            </Text>
+                            <span style={{ fontSize: 12, color: '#64748b' }}>
+                              👤 {r.userName} {r.contact ? `• ${r.contact}` : ''}
+                            </span>
+                          </div>
+                        ),
+                      },
+                      {
+                        title: 'Category',
+                        dataIndex: 'category',
+                        key: 'category',
+                        width: 180,
+                        render: (cat: string) => (
+                          <Tag color="blue" style={{ borderRadius: 6, fontWeight: 600 }}>
+                            {cat}
+                          </Tag>
+                        ),
+                      },
+                      {
+                        title: 'Screen / Module',
+                        dataIndex: 'screen',
+                        key: 'screen',
+                        width: 140,
+                        render: (scr: string) => (
+                          <Tag color="cyan" style={{ borderRadius: 6 }}>
+                            {scr || '/dashboard'}
+                          </Tag>
+                        ),
+                      },
+                      {
+                        title: 'User Issue Note',
+                        dataIndex: 'note',
+                        key: 'note',
+                        ellipsis: true,
+                        render: (note: string) =>
+                          note ? (
+                            <Tooltip title={note}>
+                              <Text style={{ fontSize: 12, color: '#334155' }}>{note}</Text>
+                            </Tooltip>
+                          ) : (
+                            <Text type="secondary" italic style={{ fontSize: 12 }}>
+                              No additional note
+                            </Text>
+                          ),
+                      },
+                      {
+                        title: 'Reported At',
+                        dataIndex: 'createdAt',
+                        key: 'createdAt',
+                        width: 150,
+                        render: (dt: string) => (
+                          <span style={{ fontSize: 12, color: '#64748b' }}>
+                            {dt
+                              ? new Date(dt).toLocaleString('en-IN', {
+                                  dateStyle: 'short',
+                                  timeStyle: 'short',
+                                })
+                              : 'Just now'}
+                          </span>
+                        ),
+                      },
+                      {
+                        title: 'Status',
+                        dataIndex: 'status',
+                        key: 'status',
+                        width: 140,
+                        render: (st: string, r: any) => {
+                          const currentStatus = st || 'OPEN';
+                          return (
+                            <Select
+                              value={currentStatus}
+                              size="small"
+                              style={{ width: 124 }}
+                              onChange={(val) => handleUpdateTicketStatus(r.id, val)}
+                              options={[
+                                { value: 'OPEN', label: '🟡 Open' },
+                                { value: 'IN_PROGRESS', label: '🔵 In Progress' },
+                                { value: 'RESOLVED', label: '🟢 Resolved' },
+                              ]}
+                            />
+                          );
+                        },
+                      },
+                      {
+                        title: 'Direct Action',
+                        key: 'actions',
+                        width: 180,
+                        render: (_: any, r: any) => (
+                          <Button
+                            type="primary"
+                            size="small"
+                            icon={<WhatsAppOutlined />}
+                            onClick={() => handleReplyViaWhatsApp(r)}
+                            style={{
+                              background: '#25D366',
+                              borderColor: '#25D366',
+                              fontWeight: 600,
+                              borderRadius: 6,
+                            }}
+                          >
+                            Reply on WhatsApp
+                          </Button>
+                        ),
                       },
                     ]}
                   />

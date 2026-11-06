@@ -5,6 +5,7 @@ import {
   Patch,
   Param,
   Body,
+  Query,
   UseGuards,
   UsePipes,
 } from '@nestjs/common';
@@ -129,6 +130,20 @@ export class AdminController {
   @Get('audit-logs')
   async getAuditLogs() {
     return this.adminService.getAuditLogs();
+  }
+
+  @Get('support-tickets')
+  async getSupportTickets(@Query('limit') limit?: string) {
+    const parsedLimit = limit ? parseInt(limit, 10) : 100;
+    return this.adminService.getSupportTickets(parsedLimit);
+  }
+
+  @Patch('support-tickets/:id/status')
+  async updateTicketStatus(
+    @Param('id') id: string,
+    @Body('status') status: string,
+  ) {
+    return this.adminService.updateTicketStatus(id, status);
   }
 
   // ─── Platform UPI & Discovery Subscriptions ──────────────────────────────

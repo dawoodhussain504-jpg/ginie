@@ -572,6 +572,73 @@ export class AdminService {
     }
   }
 
+  async getSupportTickets(limit = 100) {
+    try {
+      const tickets = await prisma.auditLog.findMany({
+        where: {
+          action: 'SUPPORT_TICKET_CREATED',
+        },
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          user: { select: { name: true, email: true } },
+          tenant: { select: { name: true } },
+        },
+      });
+
+      return tickets.map((t) => {
+        const after: any = t.after || {};
+        return {
+          id: t.id,
+          ticketId: t.entityId || after.ticketId || `TK-${t.id.slice(0, 6)}`,
+          tenantId: t.tenantId,
+          businessName: after.businessName || t.tenant?.name || 'Business Account',
+          userName: after.userName || t.user?.name || 'User',
+          contact: after.contact || t.user?.email || '',
+          screen: after.screen || '/dashboard',
+          category: after.category || 'General Query',
+          note: after.note || '',
+          status: after.status || 'OPEN',
+          createdAt: t.createdAt,
+        };
+      });
+    } catch (err: any) {
+      console.error('Error fetching support tickets:', err);
+      return [];
+    }
+  }
+
+  async updateTicketStatus(id: string, status: string) {
+    try {
+      const ticket = await prisma.auditLog.findUnique({
+        where: { id },
+      });
+      if (!ticket) {
+        throw new Error('Ticket not found');
+      }
+
+      const existingAfter: any = ticket.after || {};
+      const updated = await prisma.auditLog.update({
+        where: { id },
+        data: {
+          after: {
+            ...existingAfter,
+            status,
+            updatedAt: new Date().toISOString(),
+          },
+        },
+      });
+      return {
+        success: true,
+        id: updated.id,
+        status,
+      };
+    } catch (err: any) {
+      console.error('Error updating ticket status:', err);
+      throw err;
+    }
+  }
+
   // ─── Platform UPI & Discovery Subscription Management ────────────────────
 
   async getPlatformUpiSettings() {

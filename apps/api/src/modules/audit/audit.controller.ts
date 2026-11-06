@@ -28,6 +28,7 @@ export class AuditController {
         contact: body?.contact || '',
         userName: body?.userName || '',
         businessName: body?.businessName || '',
+        status: 'OPEN',
         createdAt: new Date().toISOString(),
       },
     });
