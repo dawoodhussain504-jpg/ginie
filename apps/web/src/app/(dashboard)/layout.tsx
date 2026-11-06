@@ -49,6 +49,7 @@ import Link from 'next/link';
 import { api } from '@/lib/api';
 import OnboardingWizardModal from '@/components/OnboardingWizardModal';
 import GinieAiAssistantDrawer from '@/components/GinieAiAssistantDrawer';
+import GinieLogo from '@/components/GinieLogo';
 
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
@@ -514,28 +515,11 @@ export default function DashboardLayout({
             borderBottom: isDark ? '1px solid #1e293b' : '1px solid #e2e8f0',
           }}
         >
-          <div
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 10,
-              background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-              color: '#fff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 900,
-              fontSize: 18,
-              boxShadow: '0 4px 12px rgba(37, 99, 235, 0.35)',
-              flexShrink: 0,
-            }}
-          >
-            G
-          </div>
+          <GinieLogo size={36} isDark={isDark} />
           {!collapsed && (
             <div style={{ overflow: 'hidden' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Text strong style={{ fontSize: 16, lineHeight: 1.2, letterSpacing: '-0.02em', color: isDark ? '#f8fafc' : '#0f172a' }}>
+                <Text strong style={{ fontSize: 17, lineHeight: 1.2, letterSpacing: '-0.02em', color: isDark ? '#f8fafc' : '#0f172a' }}>
                   GINIE
                 </Text>
                 <span
@@ -593,24 +577,8 @@ export default function DashboardLayout({
           {/* Left: Breadcrumb & Workspace badge (Desktop) + Mobile Brand Pill */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             {/* Show GINIE brand logo & title on mobile */}
-            <div className="show-on-mobile" style={{ alignItems: 'center', gap: 8 }}>
-              <div
-                style={{
-                  width: 30,
-                  height: 30,
-                  borderRadius: 8,
-                  background: brandColor || '#2563eb',
-                  color: '#fff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 800,
-                  fontSize: 15,
-                }}
-              >
-                G
-              </div>
-              <span style={{ fontWeight: 800, fontSize: 16, letterSpacing: -0.5 }}>GINIE</span>
+            <div className="show-on-mobile" style={{ alignItems: 'center' }}>
+              <GinieLogo size={30} showText={true} textSize={16} isDark={isDark} />
             </div>
 
             {/* Desktop breadcrumb */}
@@ -851,7 +819,10 @@ export default function DashboardLayout({
           title={
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: 8 }}>
               <span style={{ fontWeight: 700, fontSize: 16 }}>All Business Modules</span>
-              <Tag color="blue" style={{ borderRadius: 10, margin: 0 }}>GINIE Cockpit</Tag>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <GinieLogo size={22} />
+                <Tag color="purple" style={{ borderRadius: 10, margin: 0, fontWeight: 700 }}>GINIE</Tag>
+              </div>
             </div>
           }
           placement="bottom"

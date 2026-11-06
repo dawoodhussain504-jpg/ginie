@@ -1000,7 +1000,7 @@ export default function FindCustomersPage() {
             ) : (
               <QRCode
                 value={`upi://pay?pa=${planStatus?.platformUpi?.upiId || '8797186001@paytm'}&pn=${encodeURIComponent(
-                  planStatus?.platformUpi?.payeeName || 'GINIE Space',
+                  planStatus?.platformUpi?.payeeName || 'GINIE',
                 )}&am=${planStatus?.platformUpi?.amount || 599}&cu=INR`}
                 size={220}
               />
@@ -1025,7 +1025,7 @@ export default function FindCustomersPage() {
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
               <Text type="secondary" style={{ fontSize: 13 }}>Payee Name:</Text>
-              <Text strong style={{ fontSize: 14 }}>{planStatus?.platformUpi?.payeeName || 'GINIE Space Platform Admin'}</Text>
+              <Text strong style={{ fontSize: 14 }}>{planStatus?.platformUpi?.payeeName || 'GINIE'}</Text>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Text type="secondary" style={{ fontSize: 13 }}>Amount to Pay:</Text>

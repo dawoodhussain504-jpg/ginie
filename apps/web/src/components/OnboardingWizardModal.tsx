@@ -169,7 +169,7 @@ export default function OnboardingWizardModal({
           <Space align="center" style={{ marginBottom: 4 }}>
             <RocketOutlined style={{ fontSize: 24, color: brandColor || '#1677ff' }} />
             <Title level={3} style={{ margin: 0, fontSize: 22 }}>
-              Welcome to GINIE Cockpit
+              Welcome to GINIE
             </Title>
           </Space>
           <div>

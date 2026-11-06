@@ -772,7 +772,7 @@ export default function BillingPage() {
   const currentUpiUri = selectedInvoice
     ? buildUpiUri({
         vpa: adminUpiVpa,
-        payeeName: company?.settings?.upiName || company?.name || 'Ginie Space',
+        payeeName: company?.settings?.upiName || company?.name || 'GINIE',
         amount: Number(selectedInvoice.total || 0),
         transactionNote: `Invoice ${selectedInvoice.invoiceNumber}`,
       })

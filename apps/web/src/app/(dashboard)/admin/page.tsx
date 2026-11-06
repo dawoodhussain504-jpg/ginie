@@ -3,6 +3,7 @@
 export const dynamic = 'force-dynamic';
 
 import React, { useState, useEffect } from 'react';
+import GinieLogo from '@/components/GinieLogo';
 import {
   Card,
   Typography,
@@ -113,7 +114,7 @@ export default function AdminMasterConsolePage() {
   // Discovery & UPI Settings State
   const [platformUpi, setPlatformUpi] = useState({
     upiId: '7870819862@paytm',
-    payeeName: 'GINIE Space Platform Admin',
+    payeeName: 'GINIE',
     qrCodeUrl: '',
     amount: 599,
     instructions: 'Scan UPI QR code, pay ₹599, and upload payment screenshot with 12-digit UTR number.',
@@ -852,13 +853,13 @@ export default function AdminMasterConsolePage() {
         }}
       >
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <SafetyCertificateOutlined style={{ color: '#faad14', fontSize: 24 }} />
-            <Title level={3} style={{ color: '#fff', margin: 0, fontWeight: 700 }}>
-              GINIE Master Console
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <GinieLogo size={36} isDark={true} />
+            <Title level={3} style={{ color: '#fff', margin: 0, fontWeight: 800 }}>
+              GINIE
             </Title>
             <Tag color="gold" style={{ fontWeight: 800, padding: '2px 8px' }}>
-              SUPER ADMIN
+              MASTER ADMIN
             </Tag>
           </div>
           <Text style={{ color: '#94a3b8', fontSize: 13, marginTop: 4, display: 'block' }}>
@@ -1365,7 +1366,7 @@ export default function AdminMasterConsolePage() {
 
                         <Form.Item label="Payee Name">
                           <Input
-                            placeholder="e.g. GINIE Space Platform Admin"
+                            placeholder="e.g. GINIE"
                             value={platformUpi.payeeName}
                             onChange={(e) => setPlatformUpi((p) => ({ ...p, payeeName: e.target.value }))}
                           />

@@ -15,11 +15,11 @@ import {
 import {
   RobotOutlined,
   SendOutlined,
-  ThunderboltFilled,
   BulbOutlined,
   WhatsAppOutlined,
   UserOutlined,
 } from '@ant-design/icons';
+import GinieLogo from '@/components/GinieLogo';
 
 const { Text, Paragraph } = Typography;
 
@@ -99,19 +99,7 @@ export default function GinieAiAssistantDrawer({
     <Drawer
       title={
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 8,
-              background: 'linear-gradient(135deg, #1677ff 0%, #722ed1 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <ThunderboltFilled style={{ color: '#ffffff', fontSize: 16 }} />
-          </div>
+          <GinieLogo size={32} />
           <div>
             <Text strong style={{ fontSize: 16 }}>GINIE Autonomous AI Assistant</Text>
             <br />

@@ -3,7 +3,8 @@
 import React from 'react';
 import Link from 'next/link';
 import { Card, Typography, Breadcrumb, Divider, Tag } from 'antd';
-import { ThunderboltFilled, ArrowLeftOutlined, FileTextOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { ArrowLeftOutlined, FileTextOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import GinieLogo from '@/components/GinieLogo';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -19,25 +20,12 @@ export default function TermsOfServicePage() {
         }}
       >
         <div style={{ maxWidth: 1080, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-            <div
-              style={{
-                width: 34,
-                height: 34,
-                borderRadius: 8,
-                background: '#2563eb',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <ThunderboltFilled style={{ color: '#ffffff', fontSize: 18 }} />
-            </div>
-            <span style={{ fontSize: 22, fontWeight: 900, color: '#ffffff', letterSpacing: '0.04em' }}>GINIE</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <GinieLogo size={34} isDark={true} />
             <span style={{ fontSize: 11, fontWeight: 700, color: '#38bdf8', background: 'rgba(56, 189, 248, 0.12)', padding: '2px 8px', borderRadius: 999 }}>
               Terms of Service
             </span>
-          </Link>
+          </div>
           <Link href="/" style={{ color: '#94a3b8', fontSize: 14, fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
             <ArrowLeftOutlined /> Back to Home
           </Link>
@@ -81,7 +69,7 @@ export default function TermsOfServicePage() {
               1. Acceptance of Terms
             </Title>
             <Paragraph style={{ fontSize: 15, lineHeight: 1.8, color: '#475569' }}>
-              By creating an account, accessing, or utilizing any services provided by GINIE Space (including the web platform, POS counter, digital storefront, and API services), you agree to be legally bound by these Terms of Service. If you are registering on behalf of a business entity, you warrant that you have full authorization to bind that entity.
+              By creating an account, accessing, or utilizing any services provided by GINIE (including the web platform, POS counter, digital storefront, and API services), you agree to be legally bound by these Terms of Service. If you are registering on behalf of a business entity, you warrant that you have full authorization to bind that entity.
             </Paragraph>
           </section>
 
@@ -127,7 +115,7 @@ export default function TermsOfServicePage() {
               5. Limitation of Liability
             </Title>
             <Paragraph style={{ fontSize: 15, lineHeight: 1.8, color: '#475569' }}>
-              GINIE Space provides the service on an &quot;as is&quot; and &quot;as available&quot; basis. While we strive for 99.9% uptime and implement continuous backups, GINIE shall not be held liable for indirect commercial losses, internet connectivity outages at the merchant counter, or WhatsApp account bans resulting from aggressive user spamming.
+              GINIE provides the service on an &quot;as is&quot; and &quot;as available&quot; basis. While we strive for 99.9% uptime and implement continuous backups, GINIE shall not be held liable for indirect commercial losses, internet connectivity outages at the merchant counter, or WhatsApp account bans resulting from aggressive user spamming.
             </Paragraph>
           </section>
 
@@ -144,7 +132,7 @@ export default function TermsOfServicePage() {
 
       {/* Footer */}
       <footer style={{ background: '#0B0F19', color: '#64748b', padding: '24px', textAlign: 'center', fontSize: 13, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-        &copy; {new Date().getFullYear()} GINIE Space. All rights reserved. Built with pride for Indian Businesses.
+        &copy; {new Date().getFullYear()} GINIE. All rights reserved. Built with pride for Indian Businesses.
       </footer>
     </div>
   );

@@ -3,7 +3,8 @@
 import React from 'react';
 import Link from 'next/link';
 import { Card, Typography, Breadcrumb, Divider, Tag } from 'antd';
-import { ThunderboltFilled, ArrowLeftOutlined, DollarCircleOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
+import { ArrowLeftOutlined, DollarCircleOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
+import GinieLogo from '@/components/GinieLogo';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -19,25 +20,12 @@ export default function RefundPolicyPage() {
         }}
       >
         <div style={{ maxWidth: 1080, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-            <div
-              style={{
-                width: 34,
-                height: 34,
-                borderRadius: 8,
-                background: '#2563eb',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <ThunderboltFilled style={{ color: '#ffffff', fontSize: 18 }} />
-            </div>
-            <span style={{ fontSize: 22, fontWeight: 900, color: '#ffffff', letterSpacing: '0.04em' }}>GINIE</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <GinieLogo size={34} isDark={true} />
             <span style={{ fontSize: 11, fontWeight: 700, color: '#38bdf8', background: 'rgba(56, 189, 248, 0.12)', padding: '2px 8px', borderRadius: 999 }}>
               Refund & Cancellation
             </span>
-          </Link>
+          </div>
           <Link href="/" style={{ color: '#94a3b8', fontSize: 14, fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
             <ArrowLeftOutlined /> Back to Home
           </Link>
@@ -117,7 +105,7 @@ export default function RefundPolicyPage() {
 
       {/* Footer */}
       <footer style={{ background: '#0B0F19', color: '#64748b', padding: '24px', textAlign: 'center', fontSize: 13, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-        &copy; {new Date().getFullYear()} GINIE Space. All rights reserved. Built with pride for Indian Businesses.
+        &copy; {new Date().getFullYear()} GINIE. All rights reserved. Built with pride for Indian Businesses.
       </footer>
     </div>
   );

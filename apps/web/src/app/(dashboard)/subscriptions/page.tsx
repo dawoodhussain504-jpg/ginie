@@ -83,7 +83,7 @@ export default function SubscriptionsPage() {
           )}
           <div>
             <Title level={3} style={{ margin: 0 }}>
-              {isSuperAdmin ? 'Master Admin Sovereign License' : 'GINIE Business Suite & Add-ons'}
+              {isSuperAdmin ? 'Master Admin Sovereign License' : 'GINIE & Add-ons'}
             </Title>
             <Text type="secondary">
               {isSuperAdmin

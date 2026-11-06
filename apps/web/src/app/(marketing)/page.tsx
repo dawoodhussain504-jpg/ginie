@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import GinieLogo from '@/components/GinieLogo';
 import {
   Button,
   Card,
@@ -425,21 +426,8 @@ export default function MarketingLandingPage() {
           }}
         >
           {/* Logo & Tagline */}
-          <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 10,
-                background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)',
-              }}
-            >
-              <ThunderboltFilled style={{ color: '#ffffff', fontSize: 18 }} />
-            </div>
+          <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <GinieLogo size={38} isDark={true} />
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ fontSize: 20, fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em' }}>
@@ -1820,21 +1808,9 @@ export default function MarketingLandingPage() {
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <Row gutter={[40, 32]}>
             <Col xs={24} md={10}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-                <div
-                  style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 8,
-                    background: '#2563eb',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <ThunderboltFilled style={{ color: '#ffffff', fontSize: 16 }} />
-                </div>
-                <span style={{ fontSize: 20, fontWeight: 900, color: '#ffffff', letterSpacing: '0.04em' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+                <GinieLogo size={36} isDark={true} />
+                <span style={{ fontSize: 22, fontWeight: 900, color: '#ffffff', letterSpacing: '0.04em' }}>
                   GINIE
                 </span>
                 <span
@@ -1925,7 +1901,7 @@ export default function MarketingLandingPage() {
               color: '#64748b',
             }}
           >
-            <div>&copy; {new Date().getFullYear()} GINIE Space. All rights reserved. Built with pride for Indian Businesses.</div>
+            <div>&copy; {new Date().getFullYear()} GINIE. All rights reserved. Built with pride for Indian Businesses.</div>
             <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
               <Link href="/privacy" style={{ color: '#64748b', textDecoration: 'none' }}>Privacy</Link>
               <Link href="/terms" style={{ color: '#64748b', textDecoration: 'none' }}>Terms</Link>
