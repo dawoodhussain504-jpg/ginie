@@ -97,11 +97,20 @@ html, body {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
-/* Universal Table Horizontal Scrolling on Mobile */
+/* Universal Table Quality: Prevent vertical letter wrapping and squishing */
 .ant-table-wrapper {
   width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+}
+
+.ant-table-thead > tr > th {
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+}
+
+.ant-table-cell {
+  word-break: normal;
 }
 
 /* Mobile responsive utility helpers */

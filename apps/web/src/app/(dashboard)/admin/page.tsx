@@ -683,6 +683,7 @@ export default function AdminMasterConsolePage() {
     {
       title: 'Business & Storefront',
       key: 'name',
+      width: 260,
       render: (_: any, record: any) => {
         const trade = TRADE_CONFIG[record.businessType] || TRADE_CONFIG.services;
         return (
@@ -741,6 +742,7 @@ export default function AdminMasterConsolePage() {
     {
       title: 'Owner & WhatsApp',
       key: 'owner',
+      width: 220,
       render: (_: any, record: any) => {
         const phone = record.owner?.phone ? record.owner.phone.replace(/\D/g, '') : '';
         const clean10 = phone.slice(-10);
@@ -774,6 +776,7 @@ export default function AdminMasterConsolePage() {
     {
       title: 'WhatsApp Session',
       key: 'whatsApp',
+      width: 170,
       render: (_: any, record: any) =>
         record.whatsApp?.connected ? (
           <Tag color="success" icon={<WhatsAppOutlined />} style={{ fontWeight: 600 }}>
@@ -786,6 +789,7 @@ export default function AdminMasterConsolePage() {
     {
       title: 'Discovery Add-on',
       key: 'discoveryPlan',
+      width: 190,
       render: (_: any, record: any) => {
         const disc = record.discoveryPlan;
         const isActive = disc?.active;
@@ -825,6 +829,7 @@ export default function AdminMasterConsolePage() {
       title: 'Subscription Tier',
       dataIndex: 'planName',
       key: 'planName',
+      width: 160,
       render: (plan: string, record: any) => {
         const isFree = plan.toLowerCase().includes('free');
         const isDisc = plan.toLowerCase().includes('discovery');
@@ -856,6 +861,7 @@ export default function AdminMasterConsolePage() {
     {
       title: 'Activity & Data',
       key: 'activity',
+      width: 180,
       render: (_: any, record: any) => (
         <div style={{ fontSize: 12 }}>
           <div><b>{record.leadCount || 0}</b> leads • <b>{record.dealCount || 0}</b> deals</div>
@@ -869,6 +875,7 @@ export default function AdminMasterConsolePage() {
       title: 'Status',
       dataIndex: 'status',
       key: 'status',
+      width: 120,
       render: (status: string) => (
         <Badge
           status={status === 'active' ? 'success' : 'error'}
@@ -883,6 +890,8 @@ export default function AdminMasterConsolePage() {
     {
       title: 'Actions',
       key: 'actions',
+      width: 220,
+      fixed: 'right' as const,
       render: (_: any, record: any) => (
         <Space wrap>
           <Button
@@ -1694,6 +1703,7 @@ export default function AdminMasterConsolePage() {
                         dataSource={discoveryRequests}
                         rowKey="id"
                         loading={loadingDiscovery}
+                        scroll={{ x: 950 }}
                         pagination={{ pageSize: 8 }}
                       />
                     </Card>
@@ -1915,6 +1925,7 @@ export default function AdminMasterConsolePage() {
                     dataSource={filteredTenants}
                     rowKey="id"
                     loading={loading}
+                    scroll={{ x: 1350 }}
                     pagination={{ pageSize: 10, showTotal: (total) => `Total ${total} client businesses` }}
                   />
                 </Card>
@@ -1996,26 +2007,31 @@ export default function AdminMasterConsolePage() {
                         title: 'Timestamp',
                         dataIndex: 'createdAt',
                         key: 'createdAt',
+                        width: 160,
                         render: (t: string) => formatDateIndian(t),
                       },
                       {
                         title: 'User',
                         key: 'user',
+                        width: 150,
                         render: (_: any, r: any) => r.user?.name || 'System / Admin',
                       },
                       {
                         title: 'Action',
                         dataIndex: 'action',
                         key: 'action',
+                        width: 220,
                         render: (act: string) => <Tag color="blue">{act}</Tag>,
                       },
                       {
                         title: 'Target Entity',
                         dataIndex: 'entityType',
                         key: 'entityType',
+                        width: 150,
                         render: (e: string) => <Tag>{e}</Tag>,
                       },
                     ]}
+                    scroll={{ x: 750 }}
                   />
                 </Card>
               </div>
@@ -2109,15 +2125,16 @@ export default function AdminMasterConsolePage() {
                     dataSource={filteredTickets}
                     rowKey="id"
                     loading={loadingTickets}
+                    scroll={{ x: 1350 }}
                     pagination={{ pageSize: 15, showSizeChanger: true }}
                     columns={[
                       {
                         title: 'Ticket ID',
                         dataIndex: 'ticketId',
                         key: 'ticketId',
-                        width: 130,
+                        width: 120,
                         render: (tid: string) => (
-                          <Tag color="purple" style={{ fontWeight: 800, fontSize: 12, borderRadius: 6 }}>
+                          <Tag color="purple" style={{ fontWeight: 800, fontSize: 12, borderRadius: 6, margin: 0 }}>
                             #{tid}
                           </Tag>
                         ),
@@ -2125,14 +2142,16 @@ export default function AdminMasterConsolePage() {
                       {
                         title: 'Business & Merchant',
                         key: 'business',
+                        width: 260,
                         render: (_: any, r: any) => (
-                          <div>
-                            <Text strong style={{ fontSize: 13, display: 'block' }}>
+                          <div style={{ minWidth: 220 }}>
+                            <Text strong style={{ fontSize: 13, display: 'block', color: '#0f172a' }}>
                               {r.businessName}
                             </Text>
-                            <span style={{ fontSize: 12, color: '#64748b' }}>
-                              👤 {r.userName} {r.contact ? `• ${r.contact}` : ''}
-                            </span>
+                            <div style={{ fontSize: 12, color: '#64748b', marginTop: 2, display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+                              <span>👤 {r.userName}</span>
+                              {r.contact && <span>&bull; {r.contact}</span>}
+                            </div>
                           </div>
                         ),
                       },
@@ -2140,9 +2159,9 @@ export default function AdminMasterConsolePage() {
                         title: 'Category',
                         dataIndex: 'category',
                         key: 'category',
-                        width: 180,
+                        width: 200,
                         render: (cat: string) => (
-                          <Tag color="blue" style={{ borderRadius: 6, fontWeight: 600 }}>
+                          <Tag color="blue" style={{ borderRadius: 6, fontWeight: 600, padding: '2px 8px' }}>
                             {cat}
                           </Tag>
                         ),
@@ -2162,11 +2181,13 @@ export default function AdminMasterConsolePage() {
                         title: 'User Issue Note',
                         dataIndex: 'note',
                         key: 'note',
-                        ellipsis: true,
+                        width: 240,
                         render: (note: string) =>
                           note ? (
-                            <Tooltip title={note}>
-                              <Text style={{ fontSize: 12, color: '#334155' }}>{note}</Text>
+                            <Tooltip title={note} placement="topLeft">
+                              <div style={{ maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 12, color: '#334155' }}>
+                                {note}
+                              </div>
                             </Tooltip>
                           ) : (
                             <Text type="secondary" italic style={{ fontSize: 12 }}>
@@ -2178,9 +2199,9 @@ export default function AdminMasterConsolePage() {
                         title: 'Reported At',
                         dataIndex: 'createdAt',
                         key: 'createdAt',
-                        width: 150,
+                        width: 160,
                         render: (dt: string) => (
-                          <span style={{ fontSize: 12, color: '#64748b' }}>
+                          <span style={{ fontSize: 12, color: '#64748b', whiteSpace: 'nowrap' }}>
                             {dt
                               ? new Date(dt).toLocaleString('en-IN', {
                                   dateStyle: 'short',
@@ -2215,7 +2236,8 @@ export default function AdminMasterConsolePage() {
                       {
                         title: 'Direct Action',
                         key: 'actions',
-                        width: 180,
+                        width: 190,
+                        fixed: 'right' as const,
                         render: (_: any, r: any) => (
                           <Button
                             type="primary"
@@ -2227,6 +2249,7 @@ export default function AdminMasterConsolePage() {
                               borderColor: '#25D366',
                               fontWeight: 600,
                               borderRadius: 6,
+                              whiteSpace: 'nowrap',
                             }}
                           >
                             Reply on WhatsApp
