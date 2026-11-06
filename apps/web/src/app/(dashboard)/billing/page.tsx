@@ -1011,7 +1011,7 @@ export default function BillingPage() {
         </Space>
       </div>
 
-      <Tabs items={tabItems} size="large" defaultActiveKey="invoices" />
+      <Tabs items={tabItems} size="middle" defaultActiveKey="invoices" />
 
       {/* FULL PROFESSIONAL INDIAN GST TAX INVOICE MODAL */}
       <Modal

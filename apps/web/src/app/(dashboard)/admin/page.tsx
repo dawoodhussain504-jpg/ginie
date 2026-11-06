@@ -982,20 +982,20 @@ export default function AdminMasterConsolePage() {
         </Space>
       </div>
 
-      {/* ─── 4 Professional Master Tabs ───────────────────────────────────── */}
+      {/* ─── 6 Master Control Tabs ───────────────────────────────────────── */}
       <Tabs
         activeKey={activeTab}
         onChange={setActiveTab}
-        size="large"
+        size="middle"
         type="card"
         style={{ marginBottom: 20 }}
         items={[
           {
             key: 'overview',
             label: (
-              <Space>
+              <Space size={6}>
                 <DashboardOutlined />
-                <span style={{ fontWeight: 600 }}>Cockpit Overview</span>
+                <span style={{ fontWeight: 600 }}>Overview</span>
               </Space>
             ),
             children: (
@@ -1143,9 +1143,9 @@ export default function AdminMasterConsolePage() {
           {
             key: 'whatsapp',
             label: (
-              <Space>
+              <Space size={6}>
                 <WhatsAppOutlined style={{ color: '#25D366' }} />
-                <span style={{ fontWeight: 600 }}>WhatsApp Master Hub</span>
+                <span style={{ fontWeight: 600 }}>WhatsApp Bridge</span>
                 {bridgeStatus?.status === 'connected' && <Badge status="success" />}
               </Space>
             ),
@@ -1371,9 +1371,9 @@ export default function AdminMasterConsolePage() {
           {
             key: 'discovery',
             label: (
-              <Space>
+              <Space size={6}>
                 <QrcodeOutlined style={{ color: '#2563eb' }} />
-                <span style={{ fontWeight: 600 }}>Discovery Plans & UPI</span>
+                <span style={{ fontWeight: 600 }}>UPI & Discovery</span>
                 {discoveryRequests.filter((r) => r.plan?.status === 'pending').length > 0 && (
                   <Badge
                     count={discoveryRequests.filter((r) => r.plan?.status === 'pending').length}
@@ -1715,9 +1715,9 @@ export default function AdminMasterConsolePage() {
           {
             key: 'tenants',
             label: (
-              <Space>
+              <Space size={6}>
                 <ShopOutlined />
-                <span style={{ fontWeight: 600 }}>Businesses & Plans</span>
+                <span style={{ fontWeight: 600 }}>Businesses</span>
                 <Badge count={tenants.length} overflowCount={999} style={{ backgroundColor: '#2563eb' }} />
               </Space>
             ),
@@ -1935,9 +1935,9 @@ export default function AdminMasterConsolePage() {
           {
             key: 'health',
             label: (
-              <Space>
+              <Space size={6}>
                 <CloudServerOutlined />
-                <span style={{ fontWeight: 600 }}>System & Server Health</span>
+                <span style={{ fontWeight: 600 }}>Server Health</span>
               </Space>
             ),
             children: (
@@ -2040,9 +2040,9 @@ export default function AdminMasterConsolePage() {
           {
             key: 'support',
             label: (
-              <Space>
+              <Space size={6}>
                 <CustomerServiceOutlined style={{ color: '#ec4899' }} />
-                <span style={{ fontWeight: 600 }}>Support Helpdesk</span>
+                <span style={{ fontWeight: 600 }}>Support Desk</span>
                 {openTicketsCount > 0 && (
                   <Badge count={openTicketsCount} style={{ backgroundColor: '#ef4444' }} />
                 )}

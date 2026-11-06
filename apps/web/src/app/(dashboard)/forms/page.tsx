@@ -247,7 +247,7 @@ export default function FormsPage() {
         <Text type="secondary">{t.forms.subtitle}</Text>
       </div>
 
-      <Tabs items={tabItems} size="large" />
+      <Tabs items={tabItems} size="middle" />
 
       {/* Create Web Form Modal */}
       <Modal
