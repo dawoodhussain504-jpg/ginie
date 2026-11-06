@@ -529,20 +529,6 @@ export default function DashboardLayout({
                 <Text strong style={{ fontSize: 17, lineHeight: 1.2, letterSpacing: '-0.02em', color: isDark ? '#f8fafc' : '#0f172a' }}>
                   GINIE
                 </Text>
-                <span
-                  style={{
-                    fontSize: 9,
-                    fontWeight: 700,
-                    textTransform: 'uppercase',
-                    color: '#2563eb',
-                    background: '#eff6ff',
-                    padding: '1px 6px',
-                    borderRadius: 999,
-                    border: '1px solid #bfdbfe',
-                  }}
-                >
-                  CRM
-                </span>
               </div>
               <Text type="secondary" style={{ fontSize: 11, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {user?.companyName || 'Business Cockpit'}
