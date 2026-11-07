@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import {
   Compass,
@@ -170,12 +171,11 @@ export default function MarketingLandingPage() {
   const dealsClosed = Math.max(1, Math.round(leadsPerMonth * 0.05));
   const avgDealValue = 8500;
   const projectedRevenue = dealsClosed * avgDealValue;
-  const hoursSaved = Math.round(leadsPerMonth * 0.25);
 
   const faqs = [
     {
-      q: 'How does the Google Maps Lead Discovery Radar find phone numbers?',
-      a: 'GINIE directly connects to live local Google Places data across 500+ Indian cities and pin codes. When you search for any niche (e.g. "Car Garages in Pune" or "Plywood Wholesalers in Surat"), GINIE extracts verified mobile/landline numbers, physical shop addresses, star ratings, and review counts with 1 click.',
+      q: 'How does the GINIE Maps Lead Discovery Radar find phone numbers?',
+      a: 'GINIE Maps directly connects to live local verified business directories and geographic data across 500+ Indian cities and pin codes. When you search for any niche (e.g. "Car Garages in Pune" or "Plywood Wholesalers in Surat"), GINIE Maps extracts verified mobile/landline numbers, physical shop addresses, star ratings, and review counts with 1 click.',
     },
     {
       q: 'Will my WhatsApp account get banned for messaging leads from CRM?',
@@ -205,39 +205,46 @@ export default function MarketingLandingPage() {
       <div className="bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-800 text-white text-xs sm:text-sm py-2 px-4 text-center font-medium flex items-center justify-center gap-2">
         <Sparkles className="w-4 h-4 text-yellow-300 animate-pulse shrink-0" />
         <span>
-          <strong>GINIE 2.0 Live:</strong> Google Maps Lead Radar + Direct WhatsApp CRM + Dynamic UPI Invoicing! 🇮🇳
+          <strong>GINIE 2.0 Live:</strong> GINIE Maps Lead Radar + Direct WhatsApp CRM + Dynamic UPI Invoicing! 🇮🇳
         </span>
         <Link
           href={isLoggedIn ? '/dashboard' : '/register'}
-          className="underline font-bold text-yellow-200 hover:text-white ml-2 inline-flex items-center gap-1 shrink-0"
+          className="underline font-semibold text-yellow-200 hover:text-white ml-2 inline-flex items-center gap-1 shrink-0"
         >
           Launch Free Cockpit <ArrowRight className="w-3 h-3" />
         </Link>
       </div>
 
       {/* Modern Sticky Navigation */}
-      <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200/80 transition-all">
+      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200/80 transition-all">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           {/* Brand Logo */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white flex items-center justify-center font-black text-xl shadow-md shadow-blue-500/25 group-hover:scale-105 transition-transform">
-              G
+            <div className="w-9 h-9 relative flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
+              <Image
+                src="/logo.png"
+                alt="GINIE Logo"
+                width={36}
+                height={36}
+                priority
+                className="w-full h-full object-contain"
+              />
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="font-extrabold text-xl tracking-tight text-slate-900">GINIE</span>
-                <Badge variant="outline" className="text-[10px] font-bold px-1.5 py-0 border-blue-200 bg-blue-50 text-blue-700">
-                  CRM & Radar
+                <span className="font-bold text-xl tracking-tight text-slate-900">GINIE</span>
+                <Badge variant="outline" className="text-[10px] font-semibold px-1.5 py-0 border-blue-200 bg-blue-50 text-blue-700">
+                  CRM & Maps
                 </Badge>
               </div>
-              <p className="text-[11px] text-slate-500 -mt-1 font-medium hidden sm:block">
+              <p className="text-[11px] text-slate-500 -mt-0.5 font-normal hidden sm:block">
                 B2B Growth OS for Bharat
               </p>
             </div>
           </Link>
 
           {/* Desktop Navigation Links */}
-          <nav className="hidden md:flex items-center gap-7 text-sm font-semibold text-slate-600">
+          <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-slate-600">
             <a href="#radar" className="hover:text-blue-600 transition-colors">
               Lead Discovery
             </a>
@@ -265,7 +272,7 @@ export default function MarketingLandingPage() {
                 variant="gradient"
                 size="sm"
                 onClick={() => router.push('/dashboard')}
-                className="gap-2 font-bold"
+                className="gap-2 font-semibold"
               >
                 Go to Dashboard <ArrowRight className="w-4 h-4" />
               </Button>
@@ -275,7 +282,7 @@ export default function MarketingLandingPage() {
                   variant="ghost"
                   size="sm"
                   onClick={() => router.push('/login')}
-                  className="font-semibold text-slate-700 hover:text-slate-900"
+                  className="font-medium text-slate-700 hover:text-slate-900"
                 >
                   Log In
                 </Button>
@@ -283,7 +290,7 @@ export default function MarketingLandingPage() {
                   variant="gradient"
                   size="sm"
                   onClick={() => router.push('/register')}
-                  className="gap-1.5 shadow-blue-500/20 font-bold"
+                  className="gap-1.5 shadow-blue-500/20 font-semibold"
                 >
                   Start Free <ArrowRight className="w-4 h-4" />
                 </Button>
@@ -307,42 +314,42 @@ export default function MarketingLandingPage() {
             <a
               href="#radar"
               onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 text-base font-semibold text-slate-700 hover:text-blue-600 border-b border-slate-100"
+              className="block py-2 text-base font-medium text-slate-700 hover:text-blue-600 border-b border-slate-100"
             >
-              Google Maps Lead Radar
+              GINIE Maps Lead Radar
             </a>
             <a
               href="#whatsapp"
               onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 text-base font-semibold text-slate-700 hover:text-blue-600 border-b border-slate-100"
+              className="block py-2 text-base font-medium text-slate-700 hover:text-blue-600 border-b border-slate-100"
             >
               Direct WhatsApp CRM
             </a>
             <a
               href="#pipeline"
               onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 text-base font-semibold text-slate-700 hover:text-blue-600 border-b border-slate-100"
+              className="block py-2 text-base font-medium text-slate-700 hover:text-blue-600 border-b border-slate-100"
             >
               Sales Pipeline & Tasks
             </a>
             <a
               href="#invoicing"
               onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 text-base font-semibold text-slate-700 hover:text-blue-600 border-b border-slate-100"
+              className="block py-2 text-base font-medium text-slate-700 hover:text-blue-600 border-b border-slate-100"
             >
               Dynamic UPI Invoicing
             </a>
             <a
               href="#pricing"
               onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 text-base font-semibold text-slate-700 hover:text-blue-600 border-b border-slate-100"
+              className="block py-2 text-base font-medium text-slate-700 hover:text-blue-600 border-b border-slate-100"
             >
               Pricing (₹0 / ₹599)
             </a>
             <a
               href="#faq"
               onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 text-base font-semibold text-slate-700 hover:text-blue-600"
+              className="block py-2 text-base font-medium text-slate-700 hover:text-blue-600"
             >
               FAQ
             </a>
@@ -350,7 +357,7 @@ export default function MarketingLandingPage() {
               {isLoggedIn ? (
                 <Button
                   variant="gradient"
-                  className="w-full font-bold"
+                  className="w-full font-semibold"
                   onClick={() => router.push('/dashboard')}
                 >
                   Open CRM Dashboard
@@ -359,14 +366,14 @@ export default function MarketingLandingPage() {
                 <>
                   <Button
                     variant="outline"
-                    className="w-full font-semibold"
+                    className="w-full font-medium"
                     onClick={() => router.push('/login')}
                   >
                     Log In
                   </Button>
                   <Button
                     variant="gradient"
-                    className="w-full font-bold"
+                    className="w-full font-semibold"
                     onClick={() => router.push('/register')}
                   >
                     Start Free CRM Forever
@@ -385,21 +392,21 @@ export default function MarketingLandingPage() {
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-100/90 border border-blue-200/80 text-blue-800 text-xs sm:text-sm font-semibold mb-6 shadow-sm">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-100/90 border border-blue-200/80 text-blue-800 text-xs sm:text-sm font-medium mb-6 shadow-sm">
             <Sparkles className="w-4 h-4 text-blue-600 shrink-0" />
-            <span>Google Maps Lead Radar • Direct WhatsApp CRM • Deals Pipeline • UPI Billing</span>
+            <span>GINIE Maps Lead Radar • Direct WhatsApp CRM • Deals Pipeline • UPI Billing</span>
           </div>
 
           {/* Main Headline */}
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-slate-900 leading-[1.15] max-w-5xl mx-auto">
-            Find High-Intent Leads on Google Maps, Close Deals on WhatsApp{' '}
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold tracking-tight text-slate-900 leading-[1.15] max-w-5xl mx-auto">
+            Find High-Intent Leads on GINIE Maps, Close Deals on WhatsApp{' '}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600">
               In One Smart Cockpit.
             </span>
           </h1>
 
           {/* Subtitle */}
-          <p className="mt-6 text-lg sm:text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed font-normal">
+          <p className="mt-6 text-base sm:text-lg text-slate-600 max-w-3xl mx-auto leading-relaxed font-normal">
             Built specifically for Indian Wholesalers, Distributors, Agencies, Freelancers & Growing MSMEs.
             Extract verified business numbers across 500+ cities, launch WhatsApp chats without saving contacts,
             and collect payments with Dynamic UPI QR Invoices.
@@ -411,7 +418,7 @@ export default function MarketingLandingPage() {
               variant="gradient"
               size="lg"
               onClick={() => router.push(isLoggedIn ? '/dashboard' : '/register')}
-              className="w-full sm:w-auto text-base px-8 py-6 rounded-xl shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/35 transition-all gap-2 font-bold"
+              className="w-full sm:w-auto text-base px-8 py-6 rounded-xl shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/35 transition-all gap-2 font-semibold"
             >
               Launch Free CRM Cockpit <ArrowRight className="w-5 h-5" />
             </Button>
@@ -422,14 +429,14 @@ export default function MarketingLandingPage() {
                 const el = document.getElementById('radar-simulator');
                 el?.scrollIntoView({ behavior: 'smooth' });
               }}
-              className="w-full sm:w-auto text-base px-7 py-6 rounded-xl border-slate-300 hover:bg-white/80 shadow-sm gap-2 font-semibold"
+              className="w-full sm:w-auto text-base px-7 py-6 rounded-xl border-slate-300 hover:bg-white/80 shadow-sm gap-2 font-medium"
             >
               Try Live Lead Simulator <ChevronDown className="w-4 h-4" />
             </Button>
           </div>
 
           {/* Trust Points */}
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-y-2 gap-x-6 text-xs sm:text-sm font-semibold text-slate-500">
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-y-2 gap-x-6 text-xs sm:text-sm font-medium text-slate-600">
             <span className="inline-flex items-center gap-1.5">
               <CheckCircle2 className="w-4 h-4 text-emerald-600" /> 100% Free Core CRM Forever
             </span>
@@ -445,18 +452,18 @@ export default function MarketingLandingPage() {
           </div>
 
           {/* Realistic CRM Cockpit Visual Preview */}
-          <div className="mt-14 relative mx-auto max-w-5xl rounded-2xl border border-slate-200/90 bg-white shadow-2xl p-4 sm:p-6 backdrop-blur text-left">
+          <div className="mt-14 relative mx-auto max-w-5xl rounded-2xl border border-slate-200/90 bg-white shadow-xl p-4 sm:p-6 backdrop-blur text-left">
             {/* Top Bar */}
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-5">
               <div className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded-full bg-red-400 inline-block" />
                 <span className="w-3 h-3 rounded-full bg-amber-400 inline-block" />
                 <span className="w-3 h-3 rounded-full bg-emerald-400 inline-block" />
-                <span className="ml-3 text-xs font-semibold text-slate-400 hidden sm:inline">
+                <span className="ml-3 text-xs font-medium text-slate-400 hidden sm:inline">
                   https://ginie.space/dashboard • Business Growth Cockpit
                 </span>
               </div>
-              <Badge variant="success" className="text-xs">
+              <Badge variant="success" className="text-xs font-medium">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping mr-1 inline-block" />
                 Real-Time Cloud Sync
               </Badge>
@@ -464,19 +471,19 @@ export default function MarketingLandingPage() {
 
             {/* Simulated 4-Zone Cockpit Layout */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {/* Card 1: Google Maps Radar */}
+              {/* Card 1: GINIE Maps Radar */}
               <div className="bg-blue-50/60 rounded-xl p-4 border border-blue-100 flex flex-col justify-between">
                 <div>
-                  <div className="flex items-center justify-between text-blue-700 text-xs font-bold uppercase tracking-wider mb-2">
+                  <div className="flex items-center justify-between text-blue-700 text-xs font-semibold uppercase tracking-wider mb-2">
                     <span>Lead Radar</span>
                     <Compass className="w-4 h-4" />
                   </div>
-                  <div className="text-2xl font-black text-slate-900">548 Leads</div>
+                  <div className="text-2xl font-bold text-slate-900">548 Leads</div>
                   <div className="text-xs text-blue-600 font-medium mt-1">
-                    Extracted from Google Places (Pune)
+                    Verified via GINIE Maps (Pune)
                   </div>
                 </div>
-                <div className="mt-3 pt-3 border-t border-blue-200/60 flex items-center justify-between text-[11px] text-blue-700 font-semibold">
+                <div className="mt-3 pt-3 border-t border-blue-200/60 flex items-center justify-between text-[11px] text-blue-700 font-medium">
                   <span>Direct Mobile Verified</span>
                   <span>98%</span>
                 </div>
@@ -485,54 +492,54 @@ export default function MarketingLandingPage() {
               {/* Card 2: WhatsApp Outreach */}
               <div className="bg-emerald-50/60 rounded-xl p-4 border border-emerald-100 flex flex-col justify-between">
                 <div>
-                  <div className="flex items-center justify-between text-emerald-700 text-xs font-bold uppercase tracking-wider mb-2">
+                  <div className="flex items-center justify-between text-emerald-700 text-xs font-semibold uppercase tracking-wider mb-2">
                     <span>WhatsApp CRM</span>
                     <MessageSquare className="w-4 h-4" />
                   </div>
-                  <div className="text-2xl font-black text-slate-900">142 Chats</div>
+                  <div className="text-2xl font-bold text-slate-900">142 Chats</div>
                   <div className="text-xs text-emerald-600 font-medium mt-1">
                     Sent without saving contacts
                   </div>
                 </div>
-                <div className="mt-3 pt-3 border-t border-emerald-200/60 flex items-center justify-between text-[11px] text-emerald-700 font-semibold">
+                <div className="mt-3 pt-3 border-t border-emerald-200/60 flex items-center justify-between text-[11px] text-emerald-700 font-medium">
                   <span>Baileys Bridge Paired</span>
-                  <span className="text-emerald-700 font-bold">Active ●</span>
+                  <span className="text-emerald-700 font-semibold">Active ●</span>
                 </div>
               </div>
 
               {/* Card 3: Active Deals Pipeline */}
               <div className="bg-purple-50/60 rounded-xl p-4 border border-purple-100 flex flex-col justify-between">
                 <div>
-                  <div className="flex items-center justify-between text-purple-700 text-xs font-bold uppercase tracking-wider mb-2">
+                  <div className="flex items-center justify-between text-purple-700 text-xs font-semibold uppercase tracking-wider mb-2">
                     <span>Sales Pipeline</span>
                     <Kanban className="w-4 h-4" />
                   </div>
-                  <div className="text-2xl font-black text-slate-900">₹3,45,000</div>
+                  <div className="text-2xl font-bold text-slate-900">₹3,45,000</div>
                   <div className="text-xs text-purple-600 font-medium mt-1">
                     18 Deals in negotiation stage
                   </div>
                 </div>
-                <div className="mt-3 pt-3 border-t border-purple-200/60 flex items-center justify-between text-[11px] text-purple-700 font-semibold">
+                <div className="mt-3 pt-3 border-t border-purple-200/60 flex items-center justify-between text-[11px] text-purple-700 font-medium">
                   <span>Won this month</span>
-                  <span className="font-bold text-emerald-600">₹1,85,000</span>
+                  <span className="font-semibold text-emerald-600">₹1,85,000</span>
                 </div>
               </div>
 
               {/* Card 4: UPI Invoices & Khata */}
               <div className="bg-amber-50/60 rounded-xl p-4 border border-amber-100 flex flex-col justify-between">
                 <div>
-                  <div className="flex items-center justify-between text-amber-800 text-xs font-bold uppercase tracking-wider mb-2">
+                  <div className="flex items-center justify-between text-amber-800 text-xs font-semibold uppercase tracking-wider mb-2">
                     <span>Dynamic UPI Invoices</span>
                     <Receipt className="w-4 h-4 text-amber-700" />
                   </div>
-                  <div className="text-2xl font-black text-slate-900">₹42,800</div>
+                  <div className="text-2xl font-bold text-slate-900">₹42,800</div>
                   <div className="text-xs text-amber-700 font-medium mt-1">
                     Settled via PhonePe / GPay QR
                   </div>
                 </div>
-                <div className="mt-3 pt-3 border-t border-amber-200/60 flex items-center justify-between text-[11px] text-amber-800 font-semibold">
+                <div className="mt-3 pt-3 border-t border-amber-200/60 flex items-center justify-between text-[11px] text-amber-800 font-medium">
                   <span>Pending Khata Recovered</span>
-                  <span className="font-bold">+35%</span>
+                  <span className="font-semibold">+35%</span>
                 </div>
               </div>
             </div>
@@ -540,12 +547,12 @@ export default function MarketingLandingPage() {
             {/* Quick Action Banner */}
             <div className="mt-4 bg-gradient-to-r from-slate-900 to-slate-800 rounded-xl p-4 text-white flex flex-col sm:flex-row items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold shrink-0">
+                <div className="w-9 h-9 rounded-lg bg-blue-600 text-white flex items-center justify-center font-semibold shrink-0">
                   <Compass className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="font-bold text-sm">Need New Local Business Clients in Your City?</h4>
-                  <p className="text-xs text-slate-300">
+                  <h4 className="font-semibold text-sm">Need New Local Business Clients in Your City?</h4>
+                  <p className="text-xs text-slate-300 font-normal">
                     Search any niche across 500+ cities and get verified mobile numbers right now.
                   </p>
                 </div>
@@ -557,7 +564,7 @@ export default function MarketingLandingPage() {
                   const el = document.getElementById('radar-simulator');
                   el?.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className="font-bold whitespace-nowrap"
+                className="font-semibold whitespace-nowrap"
               >
                 Try Lead Radar Free <ArrowRight className="w-4 h-4 ml-1" />
               </Button>
@@ -566,17 +573,17 @@ export default function MarketingLandingPage() {
         </div>
       </section>
 
-      {/* Interactive Google Maps Lead Radar Simulator */}
+      {/* Interactive GINIE Maps Lead Radar Simulator */}
       <section id="radar-simulator" className="py-20 bg-white border-t border-slate-200">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-10">
-            <Badge variant="default" className="mb-3 text-xs uppercase tracking-wider font-bold">
+            <Badge variant="default" className="mb-3 text-xs uppercase tracking-wider font-semibold">
               Interactive Live Demo
             </Badge>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-              Test the Google Maps Lead Radar Live
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 tracking-tight">
+              Test GINIE Maps Lead Radar Live
             </h2>
-            <p className="mt-3 text-base text-slate-600">
+            <p className="mt-3 text-sm sm:text-base text-slate-600 font-normal">
               Select an industry category and see how GINIE extracts verified business numbers, ratings, and addresses in real-time:
             </p>
           </div>
@@ -586,7 +593,7 @@ export default function MarketingLandingPage() {
             <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
               <button
                 onClick={() => handleRunSimulator('garages', 'Pune')}
-                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
                   simCategory === 'garages'
                     ? 'bg-blue-600 text-white shadow-sm'
                     : 'bg-white text-slate-700 hover:bg-slate-200'
@@ -597,7 +604,7 @@ export default function MarketingLandingPage() {
 
               <button
                 onClick={() => handleRunSimulator('clinics', 'New Delhi')}
-                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
                   simCategory === 'clinics'
                     ? 'bg-blue-600 text-white shadow-sm'
                     : 'bg-white text-slate-700 hover:bg-slate-200'
@@ -608,7 +615,7 @@ export default function MarketingLandingPage() {
 
               <button
                 onClick={() => handleRunSimulator('wholesalers', 'Ahmedabad')}
-                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
                   simCategory === 'wholesalers'
                     ? 'bg-blue-600 text-white shadow-sm'
                     : 'bg-white text-slate-700 hover:bg-slate-200'
@@ -623,10 +630,10 @@ export default function MarketingLandingPage() {
               size="sm"
               disabled={simScanning}
               onClick={() => handleRunSimulator(simCategory, simCity)}
-              className="gap-1.5 font-bold text-xs"
+              className="gap-1.5 font-semibold text-xs"
             >
               <Search className="w-3.5 h-3.5" />
-              {simScanning ? 'Scanning Google Places...' : `Scan ${simCity}`}
+              {simScanning ? 'Scanning GINIE Maps...' : `Scan ${simCity}`}
             </Button>
           </div>
 
@@ -639,15 +646,15 @@ export default function MarketingLandingPage() {
               >
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-base text-slate-900">{lead.name}</span>
-                    <Badge variant="success" className="text-[10px] font-bold">
+                    <span className="font-semibold text-base text-slate-900">{lead.name}</span>
+                    <Badge variant="success" className="text-[10px] font-semibold">
                       Verified Phone
                     </Badge>
                   </div>
-                  <div className="flex items-center gap-3 text-xs text-slate-500 font-medium flex-wrap">
-                    <span className="text-blue-600 font-semibold">{lead.category}</span>
+                  <div className="flex items-center gap-3 text-xs text-slate-500 font-normal flex-wrap">
+                    <span className="text-blue-600 font-medium">{lead.category}</span>
                     <span>&bull;</span>
-                    <span className="flex items-center gap-1 text-amber-500 font-bold">
+                    <span className="flex items-center gap-1 text-amber-500 font-medium">
                       <Star className="w-3.5 h-3.5 fill-amber-500" /> {lead.rating} ({lead.reviews} reviews)
                     </span>
                     <span>&bull;</span>
@@ -660,7 +667,7 @@ export default function MarketingLandingPage() {
                 <div className="flex items-center gap-2.5 shrink-0">
                   <a
                     href={`tel:${lead.phone}`}
-                    className="flex items-center gap-1 px-3 py-2 rounded-lg bg-blue-50 text-blue-700 font-bold text-xs hover:bg-blue-600 hover:text-white transition-colors"
+                    className="flex items-center gap-1 px-3 py-2 rounded-lg bg-blue-50 text-blue-700 font-semibold text-xs hover:bg-blue-600 hover:text-white transition-colors"
                   >
                     <Phone className="w-3.5 h-3.5" />
                     <span>{lead.phone}</span>
@@ -670,7 +677,7 @@ export default function MarketingLandingPage() {
                     variant="success"
                     size="sm"
                     onClick={() => router.push(isLoggedIn ? '/whatsapp' : '/register')}
-                    className="gap-1.5 font-bold text-xs"
+                    className="gap-1.5 font-semibold text-xs"
                   >
                     <MessageSquare className="w-3.5 h-3.5" />
                     <span>WhatsApp Pitch</span>
@@ -680,7 +687,7 @@ export default function MarketingLandingPage() {
                     variant="outline"
                     size="sm"
                     onClick={() => router.push(isLoggedIn ? '/customers' : '/register')}
-                    className="gap-1 font-semibold text-xs hidden sm:flex"
+                    className="gap-1 font-medium text-xs hidden sm:flex"
                   >
                     <Users className="w-3.5 h-3.5" /> Import
                   </Button>
@@ -691,18 +698,18 @@ export default function MarketingLandingPage() {
 
           {/* Import to CRM CTA */}
           <div className="mt-8 text-center bg-blue-50/70 border border-blue-200/80 rounded-2xl p-6">
-            <h3 className="font-extrabold text-lg text-slate-900">
+            <h3 className="font-bold text-lg text-slate-900">
               Want 500+ Verified Leads in Your Niche Right Now?
             </h3>
-            <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-xl mx-auto">
-              Our real Google Maps Discovery Radar searches any Indian city or pincode. Import leads directly into your Sales Pipeline and launch WhatsApp chats in 1 click.
+            <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-xl mx-auto font-normal">
+              Our real GINIE Maps Discovery Radar searches any Indian city or pincode. Import leads directly into your Sales Pipeline and launch WhatsApp chats in 1 click.
             </p>
             <div className="mt-4">
               <Button
                 variant="gradient"
                 size="lg"
                 onClick={() => router.push(isLoggedIn ? '/find-customers' : '/register')}
-                className="gap-2 font-bold px-8 shadow-md shadow-blue-500/25"
+                className="gap-2 font-semibold px-8 shadow-md shadow-blue-500/25"
               >
                 Access Full Lead Discovery Radar <ArrowRight className="w-4 h-4" />
               </Button>
@@ -715,35 +722,35 @@ export default function MarketingLandingPage() {
       <section id="features" className="py-20 bg-slate-50 border-t border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
-            <Badge variant="purple" className="mb-3 text-xs uppercase tracking-wider font-bold">
+            <Badge variant="purple" className="mb-3 text-xs uppercase tracking-wider font-semibold">
               The 4 Pillars
             </Badge>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 tracking-tight">
               Built Exactly For How Indian Business Gets Done
             </h2>
-            <p className="mt-4 text-base sm:text-lg text-slate-600">
+            <p className="mt-4 text-sm sm:text-base text-slate-600 font-normal">
               Forget heavy American enterprise software. GINIE gives you the exact tools you need to find customers, message them on WhatsApp, track deals, and get paid via UPI.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Pillar 1: Google Maps Lead Radar */}
+            {/* Pillar 1: GINIE Maps Lead Discovery Radar */}
             <div id="radar" className="bg-white rounded-2xl p-7 sm:p-9 border border-slate-200/90 shadow-sm hover:shadow-md transition-all space-y-4">
               <div className="w-12 h-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
                 <Compass className="w-6 h-6" />
               </div>
               <div className="flex items-center gap-2">
                 <h3 className="text-xl sm:text-2xl font-bold text-slate-900">
-                  Google Maps Lead Discovery Radar
+                  GINIE Maps Lead Discovery Radar
                 </h3>
-                <Badge variant="default" className="text-[10px]">
+                <Badge variant="default" className="text-[10px] font-semibold">
                   ₹599 / Mo
                 </Badge>
               </div>
-              <p className="text-sm text-slate-600 leading-relaxed">
-                Search local businesses across 500+ Indian cities and pincodes. Extract verified direct mobile numbers, Google star ratings, addresses, and review counts.
+              <p className="text-sm text-slate-600 leading-relaxed font-normal">
+                Search local businesses across 500+ Indian cities and pincodes. Extract verified direct mobile numbers, star ratings, addresses, and review counts.
               </p>
-              <ul className="space-y-2.5 text-xs sm:text-sm text-slate-700 font-medium pt-2">
+              <ul className="space-y-2.5 text-xs sm:text-sm text-slate-700 font-normal pt-2">
                 <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-blue-600 shrink-0" /> Search any category: Garages, Clinics, Wholesalers, Gyms, Cafes
                 </li>
@@ -757,7 +764,7 @@ export default function MarketingLandingPage() {
               <div className="pt-2">
                 <Link
                   href={isLoggedIn ? '/find-customers' : '/register'}
-                  className="text-xs sm:text-sm font-bold text-blue-600 hover:text-blue-800 inline-flex items-center gap-1"
+                  className="text-xs sm:text-sm font-semibold text-blue-600 hover:text-blue-800 inline-flex items-center gap-1"
                 >
                   Explore Lead Radar &rarr;
                 </Link>
@@ -773,14 +780,14 @@ export default function MarketingLandingPage() {
                 <h3 className="text-xl sm:text-2xl font-bold text-slate-900">
                   Direct In-App WhatsApp Outreach
                 </h3>
-                <Badge variant="success" className="text-[10px]">
+                <Badge variant="success" className="text-[10px] font-semibold">
                   100% Free Core
                 </Badge>
               </div>
-              <p className="text-sm text-slate-600 leading-relaxed">
+              <p className="text-sm text-slate-600 leading-relaxed font-normal">
                 Message prospects and clients directly without ever saving their phone numbers to your mobile contact list. Native Baileys QR code pairing bridge.
               </p>
-              <ul className="space-y-2.5 text-xs sm:text-sm text-slate-700 font-medium pt-2">
+              <ul className="space-y-2.5 text-xs sm:text-sm text-slate-700 font-normal pt-2">
                 <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-emerald-600 shrink-0" /> Launch chats instantly without cluttering phone contacts
                 </li>
@@ -794,7 +801,7 @@ export default function MarketingLandingPage() {
               <div className="pt-2">
                 <Link
                   href={isLoggedIn ? '/whatsapp' : '/register'}
-                  className="text-xs sm:text-sm font-bold text-emerald-600 hover:text-emerald-800 inline-flex items-center gap-1"
+                  className="text-xs sm:text-sm font-semibold text-emerald-600 hover:text-emerald-800 inline-flex items-center gap-1"
                 >
                   Explore WhatsApp CRM &rarr;
                 </Link>
@@ -810,14 +817,14 @@ export default function MarketingLandingPage() {
                 <h3 className="text-xl sm:text-2xl font-bold text-slate-900">
                   Visual Sales Pipeline & GPS Tasks
                 </h3>
-                <Badge variant="purple" className="text-[10px]">
+                <Badge variant="purple" className="text-[10px] font-semibold">
                   100% Free Core
                 </Badge>
               </div>
-              <p className="text-sm text-slate-600 leading-relaxed">
+              <p className="text-sm text-slate-600 leading-relaxed font-normal">
                 Never let an inquiry slip away. Drag-and-drop deals across sales stages in Indian Rupees (₹), track pending follow-ups, and log field staff check-ins.
               </p>
-              <ul className="space-y-2.5 text-xs sm:text-sm text-slate-700 font-medium pt-2">
+              <ul className="space-y-2.5 text-xs sm:text-sm text-slate-700 font-normal pt-2">
                 <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-purple-600 shrink-0" /> Visual Kanban Board: Lead In ➔ Contacted ➔ Proposal ➔ Won
                 </li>
@@ -831,7 +838,7 @@ export default function MarketingLandingPage() {
               <div className="pt-2">
                 <Link
                   href={isLoggedIn ? '/sales' : '/register'}
-                  className="text-xs sm:text-sm font-bold text-purple-600 hover:text-purple-800 inline-flex items-center gap-1"
+                  className="text-xs sm:text-sm font-semibold text-purple-600 hover:text-purple-800 inline-flex items-center gap-1"
                 >
                   Explore Sales Pipeline &rarr;
                 </Link>
@@ -847,14 +854,14 @@ export default function MarketingLandingPage() {
                 <h3 className="text-xl sm:text-2xl font-bold text-slate-900">
                   GST Invoicing & Dynamic UPI QR
                 </h3>
-                <Badge variant="warning" className="text-[10px]">
+                <Badge variant="warning" className="text-[10px] font-semibold">
                   100% Free Core
                 </Badge>
               </div>
-              <p className="text-sm text-slate-600 leading-relaxed">
+              <p className="text-sm text-slate-600 leading-relaxed font-normal">
                 Generate professional GST invoices in 10 seconds. Automatically embeds your dynamic PhonePe / GPay / Paytm QR code for instant payment collection.
               </p>
-              <ul className="space-y-2.5 text-xs sm:text-sm text-slate-700 font-medium pt-2">
+              <ul className="space-y-2.5 text-xs sm:text-sm text-slate-700 font-normal pt-2">
                 <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-amber-700 shrink-0" /> Dynamic UPI QR Code generated on every bill for 1-tap payment
                 </li>
@@ -868,7 +875,7 @@ export default function MarketingLandingPage() {
               <div className="pt-2">
                 <Link
                   href={isLoggedIn ? '/billing' : '/register'}
-                  className="text-xs sm:text-sm font-bold text-amber-800 hover:text-amber-900 inline-flex items-center gap-1"
+                  className="text-xs sm:text-sm font-semibold text-amber-800 hover:text-amber-900 inline-flex items-center gap-1"
                 >
                   Explore UPI Invoicing &rarr;
                 </Link>
@@ -881,24 +888,24 @@ export default function MarketingLandingPage() {
       {/* ROI & Revenue Projection Calculator */}
       <section className="py-20 bg-white border-t border-slate-200">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-blue-950 rounded-3xl p-8 sm:p-12 text-white shadow-2xl relative overflow-hidden">
+          <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-blue-950 rounded-3xl p-8 sm:p-12 text-white shadow-xl relative overflow-hidden">
             <div className="text-center max-w-2xl mx-auto mb-10">
-              <Badge variant="warning" className="mb-3 text-xs uppercase tracking-wider font-bold">
+              <Badge variant="warning" className="mb-3 text-xs uppercase tracking-wider font-semibold">
                 Projected Business Growth
               </Badge>
-              <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight">
                 How Much New Revenue Can GINIE Generate?
               </h2>
-              <p className="mt-3 text-slate-300 text-sm sm:text-base">
+              <p className="mt-3 text-slate-300 text-sm sm:text-base font-normal">
                 Slide to select how many local business leads you want to contact each month:
               </p>
             </div>
 
             <div className="max-w-lg mx-auto space-y-6">
               <div>
-                <div className="flex justify-between items-center text-sm font-semibold mb-2">
+                <div className="flex justify-between items-center text-sm font-medium mb-2">
                   <span>Target Leads Reached Monthly:</span>
-                  <span className="text-2xl font-black text-yellow-400">
+                  <span className="text-2xl font-bold text-yellow-400">
                     {leadsPerMonth} Leads / Month
                   </span>
                 </div>
@@ -909,9 +916,9 @@ export default function MarketingLandingPage() {
                   step="50"
                   value={leadsPerMonth}
                   onChange={(e) => setLeadsPerMonth(Number(e.target.value))}
-                  className="w-full h-2.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                  className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
                 />
-                <div className="flex justify-between text-xs text-slate-400 mt-1">
+                <div className="flex justify-between text-xs text-slate-400 mt-1 font-normal">
                   <span>50 Leads</span>
                   <span>500 Leads</span>
                   <span>1000+ Leads</span>
@@ -921,23 +928,23 @@ export default function MarketingLandingPage() {
               {/* Projections */}
               <div className="grid grid-cols-2 gap-4 pt-3">
                 <div className="bg-white/10 rounded-xl p-5 text-center border border-white/10 backdrop-blur">
-                  <div className="text-xs uppercase tracking-wider text-slate-300 font-bold">
+                  <div className="text-xs uppercase tracking-wider text-slate-300 font-medium">
                     Expected New Deals
                   </div>
-                  <div className="mt-2 text-3xl sm:text-4xl font-black text-emerald-400">
+                  <div className="mt-2 text-3xl sm:text-4xl font-bold text-emerald-400">
                     {dealsClosed} Deals
                   </div>
-                  <div className="text-xs text-slate-300 mt-1">at typical 5% conversion</div>
+                  <div className="text-xs text-slate-300 mt-1 font-normal">at typical 5% conversion</div>
                 </div>
 
                 <div className="bg-white/10 rounded-xl p-5 text-center border border-white/10 backdrop-blur">
-                  <div className="text-xs uppercase tracking-wider text-slate-300 font-bold">
+                  <div className="text-xs uppercase tracking-wider text-slate-300 font-medium">
                     Projected Revenue
                   </div>
-                  <div className="mt-2 text-3xl sm:text-4xl font-black text-yellow-400">
+                  <div className="mt-2 text-3xl sm:text-4xl font-bold text-yellow-400">
                     ₹{projectedRevenue.toLocaleString('en-IN')}
                   </div>
-                  <div className="text-xs text-slate-300 mt-1">based on ₹8.5K avg deal</div>
+                  <div className="text-xs text-slate-300 mt-1 font-normal">based on ₹8.5K avg deal</div>
                 </div>
               </div>
 
@@ -946,7 +953,7 @@ export default function MarketingLandingPage() {
                   variant="gradient"
                   size="lg"
                   onClick={() => router.push(isLoggedIn ? '/dashboard' : '/register')}
-                  className="w-full sm:w-auto px-9 py-6 text-base font-bold shadow-xl shadow-blue-500/30"
+                  className="w-full sm:w-auto px-9 py-6 text-base font-semibold shadow-xl shadow-blue-500/30"
                 >
                   Start Closing Deals Today <ArrowRight className="w-5 h-5 ml-1" />
                 </Button>
@@ -960,14 +967,14 @@ export default function MarketingLandingPage() {
       <section id="pricing" className="py-20 bg-slate-50 border-t border-slate-200">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
-            <Badge variant="success" className="mb-3 text-xs uppercase tracking-wider font-bold">
+            <Badge variant="success" className="mb-3 text-xs uppercase tracking-wider font-semibold">
               Transparent & Bharat-Friendly
             </Badge>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 tracking-tight">
               Simple 2-Tier Pricing. Zero Hidden Fees.
             </h2>
-            <p className="mt-4 text-base sm:text-lg text-slate-600">
-              The entire Core CRM is 100% free forever. Pay only ₹599 once via UPI QR when you want fresh Google Maps leads:
+            <p className="mt-4 text-sm sm:text-base text-slate-600 font-normal">
+              The entire Core CRM is 100% free forever. Pay only ₹599 once via UPI QR when you want fresh GINIE Maps leads:
             </p>
           </div>
 
@@ -975,19 +982,19 @@ export default function MarketingLandingPage() {
             {/* Tier 1: Core Growth CRM (Free Forever) */}
             <div className="bg-white rounded-2xl p-8 sm:p-9 border border-slate-200 shadow-sm flex flex-col justify-between">
               <div>
-                <Badge variant="secondary" className="mb-4 font-bold text-xs">
+                <Badge variant="secondary" className="mb-4 font-semibold text-xs">
                   Free Forever Plan
                 </Badge>
-                <h3 className="text-2xl font-black text-slate-900">Core Growth CRM</h3>
-                <p className="text-xs text-slate-500 mt-1 font-medium">
+                <h3 className="text-2xl font-bold text-slate-900">Core Growth CRM</h3>
+                <p className="text-xs text-slate-500 mt-1 font-normal">
                   Ideal for business owners, sales teams & freelancers.
                 </p>
                 <div className="mt-6 flex items-baseline gap-1">
-                  <span className="text-4xl font-black text-slate-900">₹0</span>
-                  <span className="text-slate-500 text-sm font-semibold">/ lifetime free</span>
+                  <span className="text-4xl font-bold text-slate-900">₹0</span>
+                  <span className="text-slate-500 text-sm font-medium">/ lifetime free</span>
                 </div>
 
-                <div className="mt-7 space-y-3.5 text-xs sm:text-sm text-slate-700">
+                <div className="mt-7 space-y-3.5 text-xs sm:text-sm text-slate-700 font-normal">
                   <div className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span>Unlimited Client Contacts & Accounts</span>
@@ -1018,7 +1025,7 @@ export default function MarketingLandingPage() {
               <div className="mt-8">
                 <Button
                   variant="outline"
-                  className="w-full font-bold py-6 text-sm"
+                  className="w-full font-semibold py-6 text-sm"
                   onClick={() => router.push(isLoggedIn ? '/dashboard' : '/register')}
                 >
                   Start Free CRM Forever
@@ -1027,32 +1034,32 @@ export default function MarketingLandingPage() {
             </div>
 
             {/* Tier 2: Lead Discovery Radar Add-on */}
-            <div className="bg-gradient-to-b from-blue-50/50 to-white rounded-2xl p-8 sm:p-9 border-2 border-blue-600 shadow-xl flex flex-col justify-between relative">
-              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[11px] font-extrabold px-3 py-1 rounded-full shadow-md uppercase tracking-wider">
+            <div className="bg-gradient-to-b from-blue-50/50 to-white rounded-2xl p-8 sm:p-9 border-2 border-blue-600 shadow-lg flex flex-col justify-between relative">
+              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[11px] font-bold px-3 py-1 rounded-full shadow-md uppercase tracking-wider">
                 RECOMMENDED FOR ACTIVE PROSPECTING
               </div>
 
               <div>
-                <Badge variant="default" className="mb-4 font-bold text-xs">
+                <Badge variant="default" className="mb-4 font-semibold text-xs">
                   Pay-As-You-Go Add-on
                 </Badge>
-                <h3 className="text-2xl font-black text-slate-900">Lead Discovery Radar</h3>
-                <p className="text-xs text-slate-500 mt-1 font-medium">
+                <h3 className="text-2xl font-bold text-slate-900">Lead Discovery Radar</h3>
+                <p className="text-xs text-slate-500 mt-1 font-normal">
                   Extract 500+ verified local B2B phone numbers every month.
                 </p>
                 <div className="mt-6 flex items-baseline gap-1">
-                  <span className="text-4xl font-black text-slate-900">₹599</span>
-                  <span className="text-slate-500 text-sm font-semibold">/ month (Pay via UPI QR)</span>
+                  <span className="text-4xl font-bold text-slate-900">₹599</span>
+                  <span className="text-slate-500 text-sm font-medium">/ month (Pay via UPI QR)</span>
                 </div>
 
-                <div className="mt-7 space-y-3.5 text-xs sm:text-sm text-slate-700">
-                  <div className="flex items-center gap-2.5 font-bold text-slate-900">
+                <div className="mt-7 space-y-3.5 text-xs sm:text-sm text-slate-700 font-normal">
+                  <div className="flex items-center gap-2.5 font-semibold text-slate-900">
                     <Check className="w-4 h-4 text-blue-600 shrink-0" />
                     <span>Everything in Core Free CRM, plus:</span>
                   </div>
                   <div className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-blue-600 shrink-0" />
-                    <span>Unlimited Google Places local business searches</span>
+                    <span>Unlimited GINIE Maps local business searches</span>
                   </div>
                   <div className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-blue-600 shrink-0" />
@@ -1076,7 +1083,7 @@ export default function MarketingLandingPage() {
               <div className="mt-8">
                 <Button
                   variant="gradient"
-                  className="w-full font-bold py-6 text-sm shadow-lg shadow-blue-500/25"
+                  className="w-full font-semibold py-6 text-sm shadow-md shadow-blue-500/25"
                   onClick={() => router.push(isLoggedIn ? '/find-customers' : '/register')}
                 >
                   Activate Lead Radar via UPI
@@ -1091,13 +1098,13 @@ export default function MarketingLandingPage() {
       <section id="faq" className="py-20 bg-white border-t border-slate-200">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
-            <Badge variant="secondary" className="mb-3 text-xs uppercase tracking-wider font-bold">
+            <Badge variant="secondary" className="mb-3 text-xs uppercase tracking-wider font-semibold">
               Frequently Asked Questions
             </Badge>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 tracking-tight">
               Honest Answers to Common Questions
             </h2>
-            <p className="mt-3 text-slate-600 text-sm sm:text-base">
+            <p className="mt-3 text-slate-600 text-sm sm:text-base font-normal">
               Everything you need to know about GINIE, lead data, WhatsApp anti-ban, and UPI payments:
             </p>
           </div>
@@ -1112,7 +1119,7 @@ export default function MarketingLandingPage() {
                 >
                   <button
                     onClick={() => setActiveFaq(isOpen ? null : index)}
-                    className="w-full py-4 px-5 text-left font-bold text-slate-900 flex items-center justify-between gap-4 hover:bg-slate-100/50 transition-colors"
+                    className="w-full py-4 px-5 text-left font-semibold text-slate-900 flex items-center justify-between gap-4 hover:bg-slate-100/50 transition-colors"
                   >
                     <span className="text-base sm:text-lg">{faq.q}</span>
                     <ChevronDown
@@ -1122,7 +1129,7 @@ export default function MarketingLandingPage() {
                     />
                   </button>
                   {isOpen && (
-                    <div className="px-5 pb-5 text-sm sm:text-base text-slate-600 leading-relaxed border-t border-slate-200/60 pt-3">
+                    <div className="px-5 pb-5 text-sm sm:text-base text-slate-600 leading-relaxed border-t border-slate-200/60 pt-3 font-normal">
                       {faq.a}
                     </div>
                   )}
@@ -1136,23 +1143,23 @@ export default function MarketingLandingPage() {
       {/* Final Call to Action */}
       <section className="py-20 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white relative overflow-hidden">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 text-white text-xs font-bold mb-6 backdrop-blur">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 text-white text-xs font-semibold mb-6 backdrop-blur">
             <Sparkles className="w-4 h-4 text-yellow-300" />
             <span>Setup Takes Less Than 30 Seconds</span>
           </div>
 
-          <h2 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
+          <h2 className="text-3xl sm:text-5xl font-bold tracking-tight leading-tight">
             Ready to Supercharge Your B2B Sales Pipeline?
           </h2>
 
-          <p className="mt-4 text-base sm:text-xl text-blue-100 max-w-2xl mx-auto">
+          <p className="mt-4 text-base sm:text-lg text-blue-100 max-w-2xl mx-auto font-normal">
             Start discovering new customers, sending direct WhatsApp pitches, and collecting payments with UPI QR right now.
           </p>
 
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button
               size="lg"
-              className="bg-white text-blue-700 hover:bg-blue-50 font-extrabold text-base px-9 py-6 rounded-xl shadow-xl hover:shadow-2xl transition-all"
+              className="bg-white text-blue-700 hover:bg-blue-50 font-bold text-base px-9 py-6 rounded-xl shadow-lg hover:shadow-xl transition-all"
               onClick={() => router.push(isLoggedIn ? '/dashboard' : '/register')}
             >
               Get Started Free Forever <ArrowRight className="w-5 h-5 ml-1 inline" />
@@ -1160,7 +1167,7 @@ export default function MarketingLandingPage() {
             <Button
               variant="outline"
               size="lg"
-              className="border-white/30 text-white hover:bg-white/10 font-bold text-base px-8 py-6 rounded-xl"
+              className="border-white/30 text-white hover:bg-white/10 font-medium text-base px-8 py-6 rounded-xl"
               onClick={() => router.push('/login')}
             >
               Existing User Login
@@ -1175,22 +1182,28 @@ export default function MarketingLandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             {/* Col 1 */}
             <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold">
-                  G
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 relative flex items-center justify-center flex-shrink-0">
+                  <Image
+                    src="/logo.png"
+                    alt="GINIE Logo"
+                    width={32}
+                    height={32}
+                    className="w-full h-full object-contain"
+                  />
                 </div>
-                <span className="font-extrabold text-lg text-white">GINIE</span>
+                <span className="font-bold text-lg text-white">GINIE</span>
               </div>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Smart B2B Growth OS for Bharat. Google Maps Lead Discovery Radar, Direct WhatsApp CRM, and Dynamic UPI Invoicing.
+              <p className="text-xs text-slate-400 leading-relaxed font-normal">
+                Smart B2B Growth OS for Bharat. GINIE Maps Lead Discovery Radar, Direct WhatsApp CRM, and Dynamic UPI Invoicing.
               </p>
             </div>
 
             {/* Col 2 */}
             <div>
-              <h4 className="text-white font-bold text-sm mb-3">Core Modules</h4>
-              <ul className="space-y-2 text-xs">
-                <li><Link href="/find-customers" className="hover:text-white">Google Maps Lead Radar</Link></li>
+              <h4 className="text-white font-semibold text-sm mb-3">Core Modules</h4>
+              <ul className="space-y-2 text-xs font-normal">
+                <li><Link href="/find-customers" className="hover:text-white">GINIE Maps Lead Radar</Link></li>
                 <li><Link href="/whatsapp" className="hover:text-white">Direct WhatsApp CRM</Link></li>
                 <li><Link href="/sales" className="hover:text-white">Sales Deals Kanban (₹)</Link></li>
                 <li><Link href="/billing" className="hover:text-white">Dynamic UPI QR Invoices</Link></li>
@@ -1200,8 +1213,8 @@ export default function MarketingLandingPage() {
 
             {/* Col 3 */}
             <div>
-              <h4 className="text-white font-bold text-sm mb-3">Pricing & Plans</h4>
-              <ul className="space-y-2 text-xs">
+              <h4 className="text-white font-semibold text-sm mb-3">Pricing & Plans</h4>
+              <ul className="space-y-2 text-xs font-normal">
                 <li><a href="#pricing" className="hover:text-white">Core CRM (₹0 Free Forever)</a></li>
                 <li><a href="#pricing" className="hover:text-white">Lead Radar (₹599 / Mo via UPI)</a></li>
                 <li><Link href="/store/catalog" className="hover:text-white">Digital Storefront Demo</Link></li>
@@ -1211,8 +1224,8 @@ export default function MarketingLandingPage() {
 
             {/* Col 4 */}
             <div>
-              <h4 className="text-white font-bold text-sm mb-3">Support & Legal</h4>
-              <ul className="space-y-2 text-xs">
+              <h4 className="text-white font-semibold text-sm mb-3">Support & Legal</h4>
+              <ul className="space-y-2 text-xs font-normal">
                 <li><a href="tel:7870819862" className="hover:text-white flex items-center gap-1.5"><PhoneCall className="w-3.5 h-3.5" /> +91 78708 19862</a></li>
                 <li><a href="mailto:support@ginie.space" className="hover:text-white">support@ginie.space</a></li>
                 <li><Link href="/terms" className="hover:text-white">Terms of Service</Link></li>
@@ -1222,7 +1235,7 @@ export default function MarketingLandingPage() {
             </div>
           </div>
 
-          <div className="pt-8 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
+          <div className="pt-8 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4 font-normal">
             <div>
               &copy; {new Date().getFullYear()} GINIE Technologies. All rights reserved.
             </div>
