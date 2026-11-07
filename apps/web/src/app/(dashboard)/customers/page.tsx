@@ -2,46 +2,40 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  Card,
   Table,
-  Button,
-  Input,
-  Tabs,
-  Tag,
-  Space,
-  Typography,
+  Button as AntButton,
   Modal,
   Form,
   InputNumber,
   Select,
   message,
-  Row,
-  Col,
-  Statistic,
 } from 'antd';
 import {
-  UsergroupAddOutlined,
-  SearchOutlined,
-  PlusOutlined,
-  UploadOutlined,
-  PhoneOutlined,
-  MailOutlined,
-  WhatsAppOutlined,
-  ShopOutlined,
-  ClockCircleOutlined,
-  GiftOutlined,
-  DollarCircleOutlined,
-  SendOutlined,
-  MessageOutlined,
-} from '@ant-design/icons';
+  Users,
+  Search,
+  Plus,
+  Upload,
+  Phone,
+  Mail,
+  Building,
+  Clock,
+  Gift,
+  Coins,
+  Send,
+  MessageCircle,
+  ExternalLink,
+  UserCheck,
+  CheckCircle2,
+} from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { api } from '@/lib/api';
-import { formatDateIndian, formatIndianCurrency } from '@ginie/i18n';
+import { formatIndianCurrency } from '@ginie/i18n';
 import { useSearchParams, useRouter } from 'next/navigation';
 import CustomerTimelineDrawer from '@/components/CustomerTimelineDrawer';
 import CustomerImportModal from '@/components/CustomerImportModal';
-
-const { Title, Text } = Typography;
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 
 interface LoyaltyData {
   points: number;
@@ -262,20 +256,27 @@ function CustomersContent() {
       key: 'name',
       render: (name: string, record: any) => (
         <div
-          style={{ cursor: 'pointer' }}
+          className="flex items-center gap-3 cursor-pointer group py-1"
           onClick={() => {
             setSelectedCustomerId(record.id);
             setTimelineDrawerOpen(true);
           }}
         >
-          <Text strong style={{ color: brandColor, fontSize: 14 }}>
-            {name}
-          </Text>
-          {record.designation && (
-            <Text type="secondary" style={{ display: 'block', fontSize: 12 }}>
-              {record.designation}
-            </Text>
-          )}
+          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 text-blue-700 font-extrabold flex items-center justify-center text-xs shrink-0 group-hover:from-blue-600 group-hover:to-indigo-600 group-hover:text-white transition-all shadow-sm">
+            {(name || 'C').slice(0, 2).toUpperCase()}
+          </div>
+          <div>
+            <div className="font-bold text-sm text-slate-900 group-hover:text-blue-600 transition-colors">
+              {name}
+            </div>
+            {record.designation ? (
+              <div className="text-xs text-slate-500 font-medium">
+                {record.designation}
+              </div>
+            ) : (
+              <div className="text-xs text-slate-400">Customer</div>
+            )}
+          </div>
         </div>
       ),
     },
@@ -286,30 +287,25 @@ function CustomersContent() {
         const pts = Number(record.loyaltyPoints) || 0;
         const tier = pts >= 500 ? 'Platinum' : pts >= 200 ? 'Gold' : 'Silver';
         const data = loyaltyMap[record.id] || { points: pts, cashback: Math.round(pts * 0.5), tier };
-        const tierColors: Record<string, string> = {
-          Gold: 'gold',
-          Silver: 'blue',
-          Platinum: 'purple',
-        };
+        const tierBadgeVariant = data.tier === 'Platinum' ? 'purple' : data.tier === 'Gold' ? 'warning' : 'secondary';
         return (
-          <div>
-            <Space size={6}>
-              <Tag color={tierColors[data.tier] || 'blue'} style={{ fontWeight: 600 }}>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Badge variant={tierBadgeVariant as any} className="font-bold text-[11px] px-2 py-0.5">
                 {data.tier}
-              </Tag>
-              <Text strong style={{ color: '#059669', fontSize: 13 }}>
-                <DollarCircleOutlined style={{ marginRight: 4 }} />{data.points} pts
-              </Text>
-            </Space>
-            <div style={{ marginTop: 2 }}>
-              <Button
-                size="small"
-                type="link"
-                style={{ padding: 0, height: 'auto', fontSize: 11 }}
+              </Badge>
+              <span className="font-bold text-xs text-emerald-600 flex items-center gap-1">
+                <Coins className="w-3.5 h-3.5" />
+                {data.points} pts
+              </span>
+            </div>
+            <div>
+              <button
                 onClick={() => handleOpenGiftModal(record)}
+                className="text-[11px] font-semibold text-blue-600 hover:text-blue-800 transition-colors inline-flex items-center gap-1 hover:underline"
               >
                 + Gift Points / Tier
-              </Button>
+              </button>
             </div>
           </div>
         );
@@ -321,12 +317,12 @@ function CustomersContent() {
       key: 'company',
       render: (comp: any) =>
         comp?.name ? (
-          <Space>
-            <ShopOutlined style={{ color: '#8c8c8c' }} />
-            <Text>{comp.name}</Text>
-          </Space>
+          <div className="flex items-center gap-2 text-xs font-semibold text-slate-700">
+            <Building className="w-4 h-4 text-slate-400 shrink-0" />
+            <span>{comp.name}</span>
+          </div>
         ) : (
-          <Text type="secondary">—</Text>
+          <span className="text-xs text-slate-400">—</span>
         ),
     },
     {
@@ -334,25 +330,25 @@ function CustomersContent() {
       dataIndex: 'phone',
       key: 'phone',
       render: (phone: string, record: any) => {
-        if (!phone) return <Text type="secondary">—</Text>;
+        if (!phone) return <span className="text-xs text-slate-400">—</span>;
         return (
-          <Space size={8}>
-            <Text>{phone}</Text>
-            <Button
-              type="text"
-              size="small"
-              icon={<PhoneOutlined style={{ color: '#1677ff' }} />}
+          <div className="flex items-center gap-2.5">
+            <span className="text-xs font-semibold text-slate-700">{phone}</span>
+            <a
               href={`tel:${phone}`}
-              title="Call"
-            />
-            <Button
-              type="text"
-              size="small"
-              icon={<WhatsAppOutlined style={{ color: '#52c41a' }} />}
+              className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white flex items-center justify-center transition-colors shadow-xs"
+              title="Direct Call"
+            >
+              <Phone className="w-3.5 h-3.5" />
+            </a>
+            <button
               onClick={() => handleOpenQuickWhatsApp(record)}
+              className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white flex items-center justify-center transition-colors shadow-xs"
               title="Send WhatsApp in CRM"
-            />
-          </Space>
+            >
+              <MessageCircle className="w-3.5 h-3.5" />
+            </button>
+          </div>
         );
       },
     },
@@ -362,12 +358,15 @@ function CustomersContent() {
       key: 'email',
       render: (email: string) =>
         email ? (
-          <a href={`mailto:${email}`} style={{ color: '#595959' }}>
-            <MailOutlined style={{ marginRight: 6 }} />
-            {email}
+          <a
+            href={`mailto:${email}`}
+            className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-blue-600 transition-colors"
+          >
+            <Mail className="w-3.5 h-3.5 text-slate-400" />
+            <span>{email}</span>
           </a>
         ) : (
-          <Text type="secondary">—</Text>
+          <span className="text-xs text-slate-400">—</span>
         ),
     },
     {
@@ -375,14 +374,15 @@ function CustomersContent() {
       key: 'action',
       render: (_: any, record: any) => (
         <Button
-          size="small"
-          icon={<ClockCircleOutlined />}
+          variant="outline"
+          size="sm"
+          className="gap-1.5 text-xs font-semibold h-8 bg-white hover:bg-slate-50 text-slate-700"
           onClick={() => {
             setSelectedCustomerId(record.id);
             setTimelineDrawerOpen(true);
           }}
         >
-          Activity Stream
+          <Clock className="w-3.5 h-3.5 text-slate-500" /> Activity Stream
         </Button>
       ),
     },
@@ -393,13 +393,25 @@ function CustomersContent() {
       title: 'Company Name',
       dataIndex: 'name',
       key: 'name',
-      render: (name: string) => <Text strong>{name}</Text>,
+      render: (name: string) => (
+        <div className="font-bold text-sm text-slate-900 flex items-center gap-2">
+          <Building className="w-4 h-4 text-blue-600" />
+          <span>{name}</span>
+        </div>
+      ),
     },
     {
       title: 'Industry',
       dataIndex: 'industry',
       key: 'industry',
-      render: (ind: string) => (ind ? <Tag color="blue">{ind}</Tag> : <Text type="secondary">—</Text>),
+      render: (ind: string) =>
+        ind ? (
+          <Badge variant="secondary" className="font-semibold text-xs">
+            {ind}
+          </Badge>
+        ) : (
+          <span className="text-xs text-slate-400">—</span>
+        ),
     },
     {
       title: 'City / Location',
@@ -407,9 +419,11 @@ function CustomersContent() {
       key: 'city',
       render: (city: string, record: any) =>
         city || record.customFields?.city ? (
-          <Text>{city || record.customFields?.city}</Text>
+          <span className="text-xs font-medium text-slate-700">
+            {city || record.customFields?.city}
+          </span>
         ) : (
-          <Text type="secondary">—</Text>
+          <span className="text-xs text-slate-400">—</span>
         ),
     },
     {
@@ -418,162 +432,211 @@ function CustomersContent() {
       key: 'contacts',
       render: (conts: any[]) =>
         conts && conts.length > 0 ? (
-          <Space wrap>
+          <div className="flex flex-wrap gap-1.5">
             {conts.map((c: any, i: number) => (
-              <Tag key={i} color="cyan">
+              <Badge key={i} variant="outline" className="text-xs bg-slate-50">
                 {c.name}
-              </Tag>
+              </Badge>
             ))}
-          </Space>
+          </div>
         ) : (
-          <Text type="secondary">0 contacts</Text>
+          <span className="text-xs text-slate-400">0 contacts</span>
         ),
     },
   ];
 
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '16px' }}>
-      {/* Header bar */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: 16,
-          marginBottom: 20,
-        }}
-      >
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+      {/* Top Header Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <Title level={2} style={{ margin: 0 }}>
-            <UsergroupAddOutlined style={{ marginRight: 10, color: brandColor }} />
-            Customers, Accounts & Loyalty
-          </Title>
-          <Text type="secondary">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold shadow-sm">
+              <Users className="w-5 h-5" />
+            </div>
+            <span>Customers, Accounts & Loyalty</span>
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1 font-medium">
             Manage all client contacts, customer cashback wallets, and 360° chronological activity timelines.
-          </Text>
+          </p>
         </div>
 
-        <Space wrap>
+        <div className="flex items-center gap-3 flex-wrap">
           <Button
-            icon={<UploadOutlined />}
+            variant="outline"
             onClick={() => setImportModalOpen(true)}
+            className="gap-2 font-semibold text-slate-700 bg-white hover:bg-slate-50 shadow-sm"
           >
-            Import Excel / CSV
+            <Upload className="w-4 h-4 text-slate-500" /> Import Excel / CSV
           </Button>
 
           <Button
-            type="primary"
-            icon={<PlusOutlined />}
+            variant="gradient"
             onClick={() => setAddCustomerOpen(true)}
+            className="gap-2 font-semibold shadow-md shadow-blue-500/20"
           >
-            Add Customer
+            <Plus className="w-4 h-4" /> Add Customer
           </Button>
-        </Space>
+        </div>
       </div>
 
-      {/* Loyalty & Retention Metric Bar */}
-      <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
-        <Col xs={24} sm={8}>
-          <Card style={{ borderRadius: 12 }}>
-            <Statistic
-              title="Active Customers"
-              value={contacts.length}
-              prefix={<UsergroupAddOutlined style={{ color: brandColor }} />}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={8}>
-          <Card style={{ borderRadius: 12 }}>
-            <Statistic
-              title="Total Loyalty Points In Circulation"
-              value={totalPointsInSystem}
-              suffix="Pts"
-              valueStyle={{ color: '#059669' }}
-              prefix={<GiftOutlined />}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={8}>
-          <Card style={{ borderRadius: 12 }}>
-            <Statistic
-              title="Redeemable Cashback Value"
-              value={formatIndianCurrency(totalPointsInSystem)}
-              valueStyle={{ color: '#7c3aed' }}
-              prefix={<DollarCircleOutlined />}
-            />
-          </Card>
-        </Col>
-      </Row>
+      {/* Modern Loyalty & Retention Metric Bar */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {/* Metric 1 */}
+        <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm hover:shadow transition-all flex items-center justify-between">
+          <div>
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              Active Customers
+            </span>
+            <div className="mt-1 text-2xl sm:text-3xl font-black text-slate-900">
+              {contacts.length}
+            </div>
+            <div className="mt-1 text-xs text-blue-600 font-semibold flex items-center gap-1">
+              <UserCheck className="w-3.5 h-3.5" /> All registered client accounts
+            </div>
+          </div>
+          <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold shadow-xs">
+            <Users className="w-6 h-6" />
+          </div>
+        </div>
 
-      {/* Main Card with Tabs: People vs Companies */}
-      <Card style={{ borderRadius: 14 }}>
-        <Tabs
-          activeKey={activeTab}
-          onChange={(key) => {
-            setActiveTab(key);
-            router.push(`/customers?tab=${key}`);
-          }}
-          tabBarExtraContent={
+        {/* Metric 2 */}
+        <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm hover:shadow transition-all flex items-center justify-between">
+          <div>
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              Total Loyalty Points
+            </span>
+            <div className="mt-1 text-2xl sm:text-3xl font-black text-emerald-600">
+              {totalPointsInSystem} <span className="text-sm font-bold text-slate-400">Pts</span>
+            </div>
+            <div className="mt-1 text-xs text-emerald-600 font-semibold flex items-center gap-1">
+              <CheckCircle2 className="w-3.5 h-3.5" /> Circulating in customer wallets
+            </div>
+          </div>
+          <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold shadow-xs">
+            <Gift className="w-6 h-6" />
+          </div>
+        </div>
+
+        {/* Metric 3 */}
+        <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm hover:shadow transition-all flex items-center justify-between">
+          <div>
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              Redeemable Cashback
+            </span>
+            <div className="mt-1 text-2xl sm:text-3xl font-black text-purple-600">
+              {formatIndianCurrency(totalPointsInSystem)}
+            </div>
+            <div className="mt-1 text-xs text-purple-600 font-semibold flex items-center gap-1">
+              <Coins className="w-3.5 h-3.5" /> Ready for counter bill redemption
+            </div>
+          </div>
+          <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold shadow-xs">
+            <Coins className="w-6 h-6" />
+          </div>
+        </div>
+      </div>
+
+      {/* Main Container with Modern Tabs and Search Filter */}
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+        {/* Controls Bar: Segmented Tab Pills + Modern Search */}
+        <div className="p-4 sm:p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          {/* Segmented Tab Buttons */}
+          <div className="flex items-center gap-2 bg-slate-100/90 p-1.5 rounded-xl self-start">
+            <button
+              onClick={() => {
+                setActiveTab('people');
+                router.push('/customers?tab=people');
+              }}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all ${
+                activeTab === 'people'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Users className="w-4 h-4" />
+              <span>People & Contacts</span>
+              <span
+                className={`text-[11px] px-2 py-0.5 rounded-full font-black ${
+                  activeTab === 'people'
+                    ? 'bg-blue-50 text-blue-700'
+                    : 'bg-slate-200 text-slate-600'
+                }`}
+              >
+                {filteredContacts.length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => {
+                setActiveTab('companies');
+                router.push('/customers?tab=companies');
+              }}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all ${
+                activeTab === 'companies'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Building className="w-4 h-4" />
+              <span>Companies & Accounts</span>
+              <span
+                className={`text-[11px] px-2 py-0.5 rounded-full font-black ${
+                  activeTab === 'companies'
+                    ? 'bg-blue-50 text-blue-700'
+                    : 'bg-slate-200 text-slate-600'
+                }`}
+              >
+                {filteredCompanies.length}
+              </span>
+            </button>
+          </div>
+
+          {/* Search Box */}
+          <div className="relative w-full sm:w-80">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
             <Input
               placeholder="Search name, phone, email, firm..."
-              prefix={<SearchOutlined style={{ color: '#8c8c8c' }} />}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              style={{ width: 280 }}
-              allowClear
+              className="pl-9 bg-slate-50 border-slate-200/90 focus:bg-white text-xs sm:text-sm rounded-xl"
             />
-          }
-          items={[
-            {
-              key: 'people',
-              label: (
-                <span style={{ fontSize: 15, fontWeight: 600 }}>
-                  People & Contacts ({filteredContacts.length})
-                </span>
-              ),
-              children: (
-                <Table
-                  dataSource={filteredContacts}
-                  columns={contactColumns}
-                  rowKey="id"
-                  loading={loading}
-                  pagination={{ pageSize: 10 }}
-                  scroll={{ x: 750 }}
-                  style={{ marginTop: 8 }}
-                />
-              ),
-            },
-            {
-              key: 'companies',
-              label: (
-                <span style={{ fontSize: 15, fontWeight: 600 }}>
-                  Companies & Accounts ({filteredCompanies.length})
-                </span>
-              ),
-              children: (
-                <Table
-                  dataSource={filteredCompanies}
-                  columns={companyColumns}
-                  rowKey="id"
-                  loading={loading}
-                  pagination={{ pageSize: 10 }}
-                  scroll={{ x: 650 }}
-                  style={{ marginTop: 8 }}
-                />
-              ),
-            },
-          ]}
-        />
-      </Card>
+          </div>
+        </div>
+
+        {/* Table Content */}
+        <div className="p-2 sm:p-4 overflow-x-auto">
+          {activeTab === 'people' ? (
+            <Table
+              dataSource={filteredContacts}
+              columns={contactColumns}
+              rowKey="id"
+              loading={loading}
+              pagination={{ pageSize: 10 }}
+              scroll={{ x: 750 }}
+              className="ginie-modern-table"
+            />
+          ) : (
+            <Table
+              dataSource={filteredCompanies}
+              columns={companyColumns}
+              rowKey="id"
+              loading={loading}
+              pagination={{ pageSize: 10 }}
+              scroll={{ x: 650 }}
+              className="ginie-modern-table"
+            />
+          )}
+        </div>
+      </div>
 
       {/* Gift Loyalty Points Modal */}
       <Modal
         title={
-          <Space>
-            <GiftOutlined style={{ color: '#059669' }} />
+          <div className="flex items-center gap-2 text-slate-900 font-bold text-base">
+            <Gift className="w-5 h-5 text-emerald-600" />
             <span>Credit Loyalty Points & Cashback Wallet</span>
-          </Space>
+          </div>
         }
         open={giftModalOpen}
         onCancel={() => setGiftModalOpen(false)}
@@ -581,10 +644,10 @@ function CustomersContent() {
         okText="Credit Points to Customer"
       >
         {selectedLoyaltyContact && (
-          <div>
-            <div style={{ background: '#f8fafc', padding: 12, borderRadius: 8, marginBottom: 16 }}>
-              <Text strong>{selectedLoyaltyContact.name}</Text>
-              <div style={{ fontSize: 12, color: '#64748b' }}>
+          <div className="pt-2">
+            <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200/70 mb-4">
+              <div className="font-bold text-slate-900 text-sm">{selectedLoyaltyContact.name}</div>
+              <div className="text-xs text-slate-500 mt-0.5">
                 Phone: {selectedLoyaltyContact.phone || 'N/A'} &bull; Current Points: {loyaltyMap[selectedLoyaltyContact.id]?.points || 0}
               </div>
             </div>
@@ -619,10 +682,10 @@ function CustomersContent() {
       {/* In-App Quick WhatsApp Chat Modal */}
       <Modal
         title={
-          <Space>
-            <WhatsAppOutlined style={{ color: '#25D366', fontSize: 20 }} />
+          <div className="flex items-center gap-2 text-slate-900 font-bold text-base">
+            <MessageCircle className="w-5 h-5 text-emerald-600" />
             <span>Send WhatsApp &bull; {quickWaContact?.name || 'Customer'}</span>
-          </Space>
+          </div>
         }
         open={quickWaModalOpen}
         onCancel={() => setQuickWaModalOpen(false)}
@@ -630,18 +693,18 @@ function CustomersContent() {
         width={520}
         destroyOnClose
       >
-        <div style={{ marginTop: 12 }}>
-          <div style={{ marginBottom: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Text type="secondary" style={{ fontSize: 13 }}>
-              To: <Text strong>+91 {(quickWaContact?.phone || '').replace(/\D/g, '').slice(-10)}</Text>
-            </Text>
-            <Tag color="success">Direct In-App Delivery</Tag>
+        <div className="pt-2 space-y-4">
+          <div className="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-200/70 text-xs">
+            <span className="text-slate-600">
+              To: <strong className="text-slate-900">+91 {(quickWaContact?.phone || '').replace(/\D/g, '').slice(-10)}</strong>
+            </span>
+            <Badge variant="success" className="text-[10px]">Direct In-App Delivery</Badge>
           </div>
 
-          <div style={{ marginBottom: 14 }}>
-            <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 6 }}>
+          <div>
+            <label className="text-xs font-bold text-slate-700 block mb-1.5">
               Quick Templates:
-            </Text>
+            </label>
             <Select
               style={{ width: '100%' }}
               placeholder="Choose a template..."
@@ -666,50 +729,51 @@ function CustomersContent() {
             />
           </div>
 
-          <div style={{ marginBottom: 16 }}>
-            <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 6 }}>
+          <div>
+            <label className="text-xs font-bold text-slate-700 block mb-1.5">
               Message Text:
-            </Text>
-            <Input.TextArea
-              rows={5}
+            </label>
+            <textarea
+              rows={4}
               value={quickWaText}
               onChange={(e) => setQuickWaText(e.target.value)}
               placeholder="Type your WhatsApp message..."
-              showCount
-              maxLength={1000}
+              className="w-full rounded-xl border border-slate-200 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 bg-white"
             />
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, flexWrap: 'wrap', gap: 12 }}>
-            <Button
-              type="link"
-              size="small"
-              icon={<MessageOutlined />}
+          <div className="flex items-center justify-between pt-2">
+            <button
               onClick={() => {
                 const cleanDigits = (quickWaContact?.phone || '').replace(/\D/g, '');
                 const clean = cleanDigits.length === 10 ? `91${cleanDigits}` : cleanDigits;
                 setQuickWaModalOpen(false);
                 router.push(`/whatsapp?phone=${clean}`);
               }}
-              style={{ padding: 0, fontSize: 13, color: '#1677ff' }}
+              className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1"
             >
               Open in WhatsApp Inbox &rarr;
-            </Button>
+            </button>
 
-            <Space>
-              <Button onClick={() => setQuickWaModalOpen(false)}>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setQuickWaModalOpen(false)}
+              >
                 Cancel
               </Button>
               <Button
-                type="primary"
-                loading={sendingQuickWa}
-                icon={<SendOutlined />}
+                variant="success"
+                size="sm"
+                disabled={sendingQuickWa}
                 onClick={handleSendQuickWhatsApp}
-                style={{ background: '#25D366', borderColor: '#25D366' }}
+                className="gap-1.5 shadow-sm font-bold"
               >
-                Send via WhatsApp
+                <Send className="w-3.5 h-3.5" />
+                {sendingQuickWa ? 'Sending...' : 'Send via WhatsApp'}
               </Button>
-            </Space>
+            </div>
           </div>
         </div>
       </Modal>
@@ -766,7 +830,11 @@ function CustomersContent() {
           </Form.Item>
 
           <Form.Item name="notes" label="Initial Notes">
-            <Input.TextArea rows={3} placeholder="Any notes from call or meeting..." />
+            <textarea
+              rows={3}
+              placeholder="Any notes from call or meeting..."
+              className="w-full rounded-lg border border-slate-200 p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
           </Form.Item>
         </Form>
       </Modal>
@@ -776,7 +844,7 @@ function CustomersContent() {
 
 export default function CustomersPage() {
   return (
-    <React.Suspense fallback={<div style={{ padding: 32, textAlign: 'center' }}>Loading customers...</div>}>
+    <React.Suspense fallback={<div className="p-8 text-center text-slate-500">Loading customers...</div>}>
       <CustomersContent />
     </React.Suspense>
   );

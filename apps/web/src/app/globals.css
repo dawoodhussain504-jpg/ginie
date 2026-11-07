@@ -1,3 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 0.75rem;
+  }
+}
+
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 :root {
@@ -217,7 +246,6 @@ html, body {
     min-height: 48px !important;
   }
 
-  
   /* Responsive Section & Card Paddings for Mobile */
   .responsive-section {
     padding: 44px 16px !important;
@@ -262,7 +290,7 @@ html, body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justifyContent: center;
+    justify-content: center;
     text-decoration: none;
     color: #64748b;
     font-size: 11px;
@@ -336,3 +364,47 @@ html, body {
   100% { transform: translateY(-75px); opacity: 0.7; }
 }
 
+/* Sleek Modern AntD Menu & Table Overrides */
+.ant-menu-light .ant-menu-item {
+  border-radius: 10px !important;
+  margin: 3px 8px !important;
+  width: calc(100% - 16px) !important;
+  font-weight: 500 !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.ant-menu-light .ant-menu-item-selected {
+  background: #eff6ff !important;
+  color: #2563eb !important;
+  font-weight: 700 !important;
+}
+
+.ant-menu-light .ant-menu-item:hover:not(.ant-menu-item-selected) {
+  background: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+.ginie-modern-table .ant-table-thead > tr > th {
+  background: #f8fafc !important;
+  color: #475569 !important;
+  font-size: 11px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  font-weight: 700 !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  padding: 12px 14px !important;
+}
+
+.ginie-modern-table .ant-table-tbody > tr > td {
+  padding: 14px 14px !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+  transition: background 0.15s ease !important;
+}
+
+.ginie-modern-table .ant-table-tbody > tr:hover > td {
+  background: #f8fafc !important;
+}
+
+.ginie-modern-table .ant-pagination {
+  margin: 16px 8px !important;
+}
