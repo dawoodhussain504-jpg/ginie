@@ -174,28 +174,28 @@ export default function MarketingLandingPage() {
 
   const faqs = [
     {
-      q: 'How does the GINIE Maps Lead Discovery Radar find phone numbers?',
-      a: 'GINIE Maps directly connects to live local verified business directories and geographic data across 500+ Indian cities and pin codes. When you search for any niche (e.g. "Car Garages in Pune" or "Plywood Wholesalers in Surat"), GINIE Maps extracts verified mobile/landline numbers, physical shop addresses, star ratings, and review counts with 1 click.',
+      q: 'GINIE Maps par dukan aur business ke phone numbers kaise milte hain?',
+      a: 'GINIE Maps 500+ Indian sheharon aur pincodes ke live business directories aur maps se juda hai. Jab aap search karte hain (jaise "Pune ke Car Garages" ya "Surat ke Kapda Wholesalers"), toh GINIE verified mobile numbers, dukan ka address aur customer ratings 1 click me nikaal kar deta hai.',
     },
     {
-      q: 'Will my WhatsApp account get banned for messaging leads from CRM?',
-      a: 'No! GINIE connects using a native multi-device WhatsApp bridge with anti-ban pacing intervals (15-30s humanized pauses), opt-out headers, and pre-formatted conversational greeting scripts. You send direct one-to-one chats without spamming broadcast lists.',
+      q: 'Kya WhatsApp se message bhejne par number block hone ka darr hai?',
+      a: 'Bilkul nahi! GINIE aapke phone ke regular WhatsApp se safe QR scan ke zariye link hota hai. Messages normal insaan ki tarah 15-30 second ke gap me aaram se jaate hain. Koi robot spam nahi hota, isliye aapka personal aur business number 100% safe rehta hai.',
     },
     {
-      q: 'Do I have to save customer phone numbers on my mobile phonebook first?',
-      a: 'Never! That is one of GINIE’s biggest superpowers. You can launch one-click direct WhatsApp chats with any customer or newly discovered prospect straight from your computer or phone browser without adding them to your phone contacts.',
+      q: 'Kya message bhejne se pehle phone me number save karna zaroori hai?',
+      a: 'Kabhi nahi! Ye GINIE ka sabse bada fayda hai. Aap computer ya phone browser se kisi bhi naye customer ko bina uska number contact list me save kiye 1 click me seedha WhatsApp chat shuru kar sakte hain.',
     },
     {
-      q: 'How does the ₹599 Lead Discovery plan work? Is there an auto-debit trap?',
-      a: 'Zero auto-debit trap! Unlike foreign SaaS platforms that demand credit cards and charge you automatically every month, GINIE uses Bharat’s UPI QR payment. When you need fresh business leads, scan the ₹599 UPI QR code, enter your UTR, and your radar is instantly activated for 30 days. No recurring charges ever.',
+      q: '₹599 wale plan me koi auto-debit trap toh nahi hai?',
+      a: 'Zero auto-debit! Foreign software ki tarah credit card mangna aur har mahine bina bataye paise kaatne ka koi chakkar nahi hai. Jab aapko naye leads chahiye hon, bas UPI QR scan karke ₹599 pay karein aur 30 din ke liye radar chalayein. Agle mahine zaroorat ho toh renew karein, warna ₹0 free plan chalta rahega.',
     },
     {
-      q: 'What is included in the 100% Free Core CRM plan?',
-      a: 'The Core CRM is 100% free forever: Unlimited client contacts, Visual Drag-and-Drop Sales Pipeline Kanban (in ₹), Follow-up Tasks, One-Click WhatsApp Outreach, Professional GST Invoices with Dynamic UPI QR codes, Customer Loyalty Wallets, and Digital Storefront.',
+      q: '100% Free plan me kya-kya milta hai?',
+      a: 'Free plan lifetime free hai: Unlimited Customer Contacts, Aasan Deal Stages Tracker, Follow-up Reminders, 1-Click WhatsApp Chat, PhonePe/GPay QR ke sath GST Bills, Grahak Khata aur Online Storefront Catalog.',
     },
     {
-      q: 'Can my field sales executives use GINIE on their mobile phones?',
-      a: 'Yes, 100%! GINIE is built with a responsive mobile-first architecture and includes GPS Satellite Field Check-ins. When an executive visits a client shop, they tap "Check-in" to log their verified GPS coordinates and timestamp directly into the CRM deal activity stream.',
+      q: 'Kya mere field salesmen aur delivery team ise phone par chala sakte hain?',
+      a: 'Haan, 100%! Ye mobile browser par tezi se chalta hai. Jab salesman kisi dukan par visit karta hai, toh "Check-in" dabata hai aur uski live GPS location aur time auto-record ho jata hai, jisse malik ko pata rehta hai ki team field me active hai.',
     },
   ];
 
@@ -205,20 +205,20 @@ export default function MarketingLandingPage() {
       <div className="bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-800 text-white text-xs sm:text-sm py-2 px-4 text-center font-medium flex items-center justify-center gap-2">
         <Sparkles className="w-4 h-4 text-yellow-300 animate-pulse shrink-0" />
         <span>
-          <strong>GINIE 2.0 Live:</strong> GINIE Maps Lead Radar + Direct WhatsApp CRM + Dynamic UPI Invoicing! 🇮🇳
+          <strong>GINIE 2.0 Live:</strong> Naye Grahak Dhoondein + Direct WhatsApp CRM + Har Bill Par UPI QR Code! 🇮🇳
         </span>
         <Link
           href={isLoggedIn ? '/dashboard' : '/register'}
           className="ml-2 bg-yellow-400/20 hover:bg-yellow-400/30 text-yellow-200 hover:text-white px-2.5 py-0.5 rounded-full text-xs font-semibold inline-flex items-center gap-1 shrink-0 no-underline transition-colors"
         >
-          Launch Free Cockpit <ArrowRight className="w-3 h-3" />
+          Free Start Karein <ArrowRight className="w-3 h-3" />
         </Link>
       </div>
 
       {/* Modern Sticky Navigation */}
       <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200/80 transition-all">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          {/* Brand Logo */}
+          {/* Brand Logo - ONLY Logo + GINIE */}
           <Link href="/" className="flex items-center gap-2.5 group no-underline">
             <div className="w-9 h-9 relative flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
               <Image
@@ -238,19 +238,19 @@ export default function MarketingLandingPage() {
           {/* Desktop Navigation Links */}
           <nav className="hidden md:flex items-center gap-8 text-[14px] font-medium text-slate-700">
             <a href="#radar" className="text-slate-700 hover:text-blue-600 no-underline transition-colors py-1">
-              Lead Discovery
+              Naye Grahak (Leads)
             </a>
             <a href="#whatsapp" className="text-slate-700 hover:text-blue-600 no-underline transition-colors py-1">
               WhatsApp CRM
             </a>
             <a href="#pipeline" className="text-slate-700 hover:text-blue-600 no-underline transition-colors py-1">
-              Sales Pipeline
+              Deal Tracker
             </a>
             <a href="#invoicing" className="text-slate-700 hover:text-blue-600 no-underline transition-colors py-1">
-              UPI Invoicing
+              GST & UPI Bill
             </a>
             <a href="#pricing" className="text-slate-700 hover:text-blue-600 no-underline transition-colors py-1">
-              Pricing (₹0 / ₹599)
+              Plans & Pricing
             </a>
             <a href="#faq" className="text-slate-700 hover:text-blue-600 no-underline transition-colors py-1">
               FAQ
@@ -264,7 +264,7 @@ export default function MarketingLandingPage() {
                 variant="gradient"
                 size="sm"
                 onClick={() => router.push('/dashboard')}
-                className="gap-2 font-semibold"
+                className="gap-2 font-semibold no-underline"
               >
                 Go to Dashboard <ArrowRight className="w-4 h-4" />
               </Button>
@@ -274,7 +274,7 @@ export default function MarketingLandingPage() {
                   variant="ghost"
                   size="sm"
                   onClick={() => router.push('/login')}
-                  className="font-medium text-slate-700 hover:text-slate-900"
+                  className="font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-100 no-underline"
                 >
                   Log In
                 </Button>
@@ -282,7 +282,7 @@ export default function MarketingLandingPage() {
                   variant="gradient"
                   size="sm"
                   onClick={() => router.push('/register')}
-                  className="gap-1.5 shadow-blue-500/20 font-semibold"
+                  className="gap-1.5 shadow-blue-500/20 font-semibold no-underline"
                 >
                   Start Free <ArrowRight className="w-4 h-4" />
                 </Button>
@@ -308,7 +308,7 @@ export default function MarketingLandingPage() {
               onClick={() => setMobileMenuOpen(false)}
               className="block py-2.5 text-base font-medium text-slate-800 hover:text-blue-600 border-b border-slate-100 no-underline transition-colors"
             >
-              GINIE Maps Lead Radar
+              Naye Grahak (Leads)
             </a>
             <a
               href="#whatsapp"
@@ -322,50 +322,50 @@ export default function MarketingLandingPage() {
               onClick={() => setMobileMenuOpen(false)}
               className="block py-2.5 text-base font-medium text-slate-800 hover:text-blue-600 border-b border-slate-100 no-underline transition-colors"
             >
-              Sales Pipeline & Tasks
+              Deal & Order Tracker
             </a>
             <a
               href="#invoicing"
               onClick={() => setMobileMenuOpen(false)}
               className="block py-2.5 text-base font-medium text-slate-800 hover:text-blue-600 border-b border-slate-100 no-underline transition-colors"
             >
-              Dynamic UPI Invoicing
+              GST & UPI Invoicing
             </a>
             <a
               href="#pricing"
               onClick={() => setMobileMenuOpen(false)}
               className="block py-2.5 text-base font-medium text-slate-800 hover:text-blue-600 border-b border-slate-100 no-underline transition-colors"
             >
-              Pricing (₹0 / ₹599)
+              Plans (₹0 / ₹599)
             </a>
             <a
               href="#faq"
               onClick={() => setMobileMenuOpen(false)}
               className="block py-2.5 text-base font-medium text-slate-800 hover:text-blue-600 no-underline transition-colors"
             >
-              FAQ
+              Sawaal-Jawaab (FAQ)
             </a>
             <div className="pt-2 flex flex-col gap-2">
               {isLoggedIn ? (
                 <Button
                   variant="gradient"
-                  className="w-full font-semibold"
+                  className="w-full font-semibold no-underline"
                   onClick={() => router.push('/dashboard')}
                 >
-                  Open CRM Dashboard
+                  Open Business Dashboard
                 </Button>
               ) : (
                 <>
                   <Button
                     variant="outline"
-                    className="w-full font-medium"
+                    className="w-full font-medium no-underline"
                     onClick={() => router.push('/login')}
                   >
                     Log In
                   </Button>
                   <Button
                     variant="gradient"
-                    className="w-full font-semibold"
+                    className="w-full font-semibold no-underline"
                     onClick={() => router.push('/register')}
                   >
                     Start Free CRM Forever
@@ -386,22 +386,22 @@ export default function MarketingLandingPage() {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-100/90 border border-blue-200/80 text-blue-800 text-xs sm:text-sm font-medium mb-6 shadow-sm">
             <Sparkles className="w-4 h-4 text-blue-600 shrink-0" />
-            <span>GINIE Maps Lead Radar • Direct WhatsApp CRM • Deals Pipeline • UPI Billing</span>
+            <span>GINIE Maps Lead Finder • Direct WhatsApp CRM • Deals Tracker • Instant UPI Billing</span>
           </div>
 
-          {/* Main Headline */}
+          {/* Main Headline - Plain, High-Impact User Words */}
           <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold tracking-tight text-slate-900 leading-[1.15] max-w-5xl mx-auto">
-            Find High-Intent Leads on GINIE Maps, Close Deals on WhatsApp{' '}
+            Apne Shehar Me Naye Business Grahak Paayein, WhatsApp Par Deals Close Karein{' '}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600">
-              In One Smart Cockpit.
+              — Sab Kuch Ek Hi Jagah Se.
             </span>
           </h1>
 
           {/* Subtitle */}
           <p className="mt-6 text-base sm:text-lg text-slate-600 max-w-3xl mx-auto leading-relaxed font-normal">
-            Built specifically for Indian Wholesalers, Distributors, Agencies, Freelancers & Growing MSMEs.
-            Extract verified business numbers across 500+ cities, launch WhatsApp chats without saving contacts,
-            and collect payments with Dynamic UPI QR Invoices.
+            Bharat ke Wholesalers, Distributors, Agencies, Traders aur Growing MSMEs ke liye bana Smart Business Software.
+            500+ sheharon me verified mobile numbers nikalein, bina number save kiye WhatsApp karein,
+            aur har bill par Scan & Pay UPI QR se turant payment lein.
           </p>
 
           {/* CTA Buttons */}
@@ -410,9 +410,9 @@ export default function MarketingLandingPage() {
               variant="gradient"
               size="lg"
               onClick={() => router.push(isLoggedIn ? '/dashboard' : '/register')}
-              className="w-full sm:w-auto text-base px-8 py-6 rounded-xl shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/35 transition-all gap-2 font-semibold"
+              className="w-full sm:w-auto text-base px-8 py-6 rounded-xl shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/35 transition-all gap-2 font-semibold no-underline"
             >
-              Launch Free CRM Cockpit <ArrowRight className="w-5 h-5" />
+              Free Me Shuru Karein (₹0 Forever) <ArrowRight className="w-5 h-5" />
             </Button>
             <Button
               variant="outline"
@@ -421,29 +421,29 @@ export default function MarketingLandingPage() {
                 const el = document.getElementById('radar-simulator');
                 el?.scrollIntoView({ behavior: 'smooth' });
               }}
-              className="w-full sm:w-auto text-base px-7 py-6 rounded-xl border-slate-300 hover:bg-white/80 shadow-sm gap-2 font-medium"
+              className="w-full sm:w-auto text-base px-7 py-6 rounded-xl border-slate-300 hover:bg-white/80 shadow-sm gap-2 font-medium no-underline"
             >
-              Try Live Lead Simulator <ChevronDown className="w-4 h-4" />
+              Live Lead Demo Dekhein <ChevronDown className="w-4 h-4" />
             </Button>
           </div>
 
           {/* Trust Points */}
           <div className="mt-8 flex flex-wrap items-center justify-center gap-y-2 gap-x-6 text-xs sm:text-sm font-medium text-slate-600">
             <span className="inline-flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" /> 100% Free Core CRM Forever
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" /> 100% Free Core Software Forever
             </span>
             <span className="inline-flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" /> No Contact-Saving Needed
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Bina Number Save Kiye WhatsApp
             </span>
             <span className="inline-flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Dynamic UPI QR (GPay / PhonePe)
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Har Bill Par PhonePe / GPay QR
             </span>
             <span className="inline-flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Made for Bharat 🇮🇳
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Made with ❤️ for Bharat 🇮🇳
             </span>
           </div>
 
-          {/* Realistic CRM Cockpit Visual Preview */}
+          {/* Realistic CRM Visual Preview */}
           <div className="mt-14 relative mx-auto max-w-5xl rounded-2xl border border-slate-200/90 bg-white shadow-xl p-4 sm:p-6 backdrop-blur text-left">
             {/* Top Bar */}
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-5">
@@ -452,27 +452,27 @@ export default function MarketingLandingPage() {
                 <span className="w-3 h-3 rounded-full bg-amber-400 inline-block" />
                 <span className="w-3 h-3 rounded-full bg-emerald-400 inline-block" />
                 <span className="ml-3 text-xs font-medium text-slate-400 hidden sm:inline">
-                  https://ginie.space/dashboard • Business Growth Cockpit
+                  https://ginie.space/dashboard • Business Growth Dashboard
                 </span>
               </div>
               <Badge variant="success" className="text-xs font-medium">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping mr-1 inline-block" />
-                Real-Time Cloud Sync
+                Data 100% Safe & Auto-Saved
               </Badge>
             </div>
 
-            {/* Simulated 4-Zone Cockpit Layout */}
+            {/* Simulated 4-Zone Business Layout */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {/* Card 1: GINIE Maps Radar */}
+              {/* Card 1: GINIE Maps Leads */}
               <div className="bg-blue-50/60 rounded-xl p-4 border border-blue-100 flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between text-blue-700 text-xs font-semibold uppercase tracking-wider mb-2">
-                    <span>Lead Radar</span>
+                    <span>Naye Grahak (Leads)</span>
                     <Compass className="w-4 h-4" />
                   </div>
-                  <div className="text-2xl font-bold text-slate-900">548 Leads</div>
+                  <div className="text-2xl font-bold text-slate-900">548 Leads Found</div>
                   <div className="text-xs text-blue-600 font-medium mt-1">
-                    Verified via GINIE Maps (Pune)
+                    Baner, Pune ke Garages
                   </div>
                 </div>
                 <div className="mt-3 pt-3 border-t border-blue-200/60 flex items-center justify-between text-[11px] text-blue-700 font-medium">
@@ -485,53 +485,53 @@ export default function MarketingLandingPage() {
               <div className="bg-emerald-50/60 rounded-xl p-4 border border-emerald-100 flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between text-emerald-700 text-xs font-semibold uppercase tracking-wider mb-2">
-                    <span>WhatsApp CRM</span>
+                    <span>WhatsApp Inbox</span>
                     <MessageSquare className="w-4 h-4" />
                   </div>
-                  <div className="text-2xl font-bold text-slate-900">142 Chats</div>
+                  <div className="text-2xl font-bold text-slate-900">142 Chats Sent</div>
                   <div className="text-xs text-emerald-600 font-medium mt-1">
-                    Sent without saving contacts
+                    Bina contact save kiye bheje
                   </div>
                 </div>
                 <div className="mt-3 pt-3 border-t border-emerald-200/60 flex items-center justify-between text-[11px] text-emerald-700 font-medium">
-                  <span>Baileys Bridge Paired</span>
+                  <span>WhatsApp Phone Linked</span>
                   <span className="text-emerald-700 font-semibold">Active ●</span>
                 </div>
               </div>
 
-              {/* Card 3: Active Deals Pipeline */}
+              {/* Card 3: Active Deals & Orders */}
               <div className="bg-purple-50/60 rounded-xl p-4 border border-purple-100 flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between text-purple-700 text-xs font-semibold uppercase tracking-wider mb-2">
-                    <span>Sales Pipeline</span>
+                    <span>Active Deals & Orders</span>
                     <Kanban className="w-4 h-4" />
                   </div>
                   <div className="text-2xl font-bold text-slate-900">₹3,45,000</div>
                   <div className="text-xs text-purple-600 font-medium mt-1">
-                    18 Deals in negotiation stage
+                    18 Deals par baat chal rahi hai
                   </div>
                 </div>
                 <div className="mt-3 pt-3 border-t border-purple-200/60 flex items-center justify-between text-[11px] text-purple-700 font-medium">
-                  <span>Won this month</span>
+                  <span>Is mahine close hue</span>
                   <span className="font-semibold text-emerald-600">₹1,85,000</span>
                 </div>
               </div>
 
-              {/* Card 4: UPI Invoices & Khata */}
+              {/* Card 4: UPI Bills & Khata */}
               <div className="bg-amber-50/60 rounded-xl p-4 border border-amber-100 flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between text-amber-800 text-xs font-semibold uppercase tracking-wider mb-2">
-                    <span>Dynamic UPI Invoices</span>
+                    <span>UPI Bills & Khata</span>
                     <Receipt className="w-4 h-4 text-amber-700" />
                   </div>
                   <div className="text-2xl font-bold text-slate-900">₹42,800</div>
                   <div className="text-xs text-amber-700 font-medium mt-1">
-                    Settled via PhonePe / GPay QR
+                    PhonePe / GPay QR se payment aayi
                   </div>
                 </div>
                 <div className="mt-3 pt-3 border-t border-amber-200/60 flex items-center justify-between text-[11px] text-amber-800 font-medium">
-                  <span>Pending Khata Recovered</span>
-                  <span className="font-semibold">+35%</span>
+                  <span>Purani Udhaari Vasooli</span>
+                  <span className="font-semibold">35% Tez</span>
                 </div>
               </div>
             </div>
@@ -543,9 +543,9 @@ export default function MarketingLandingPage() {
                   <Compass className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-sm">Need New Local Business Clients in Your City?</h4>
+                  <h4 className="font-semibold text-sm">Apne Shehar Me Naye Business Grahak Chahiyein?</h4>
                   <p className="text-xs text-slate-300 font-normal">
-                    Search any niche across 500+ cities and get verified mobile numbers right now.
+                    500+ sheharon me kisi bhi category ke verified mobile numbers abhi nikaalein.
                   </p>
                 </div>
               </div>
@@ -556,9 +556,9 @@ export default function MarketingLandingPage() {
                   const el = document.getElementById('radar-simulator');
                   el?.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className="font-semibold whitespace-nowrap"
+                className="font-semibold whitespace-nowrap no-underline"
               >
-                Try Lead Radar Free <ArrowRight className="w-4 h-4 ml-1" />
+                Lead Finder Try Karein <ArrowRight className="w-4 h-4 ml-1" />
               </Button>
             </div>
           </div>
@@ -570,13 +570,13 @@ export default function MarketingLandingPage() {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-10">
             <Badge variant="default" className="mb-3 text-xs uppercase tracking-wider font-semibold">
-              Interactive Live Demo
+              Live Demo
             </Badge>
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 tracking-tight">
-              Test GINIE Maps Lead Radar Live
+              Apne Shehar Me Live Grahak Dhoond Kar Dekhein
             </h2>
             <p className="mt-3 text-sm sm:text-base text-slate-600 font-normal">
-              Select an industry category and see how GINIE extracts verified business numbers, ratings, and addresses in real-time:
+              Category chuniye aur dekhiye kaise GINIE Maps se verified dukan-malik aur business ke numbers, ratings aur address 1 second me nikalte hain:
             </p>
           </div>
 
@@ -622,10 +622,10 @@ export default function MarketingLandingPage() {
               size="sm"
               disabled={simScanning}
               onClick={() => handleRunSimulator(simCategory, simCity)}
-              className="gap-1.5 font-semibold text-xs"
+              className="gap-1.5 font-semibold text-xs no-underline"
             >
               <Search className="w-3.5 h-3.5" />
-              {simScanning ? 'Scanning GINIE Maps...' : `Scan ${simCity}`}
+              {simScanning ? 'Dukan & Business Dhoond Rahe Hain...' : `${simCity} Me Search Karein`}
             </Button>
           </div>
 
@@ -640,7 +640,7 @@ export default function MarketingLandingPage() {
                   <div className="flex items-center gap-2">
                     <span className="font-semibold text-base text-slate-900">{lead.name}</span>
                     <Badge variant="success" className="text-[10px] font-semibold">
-                      Verified Phone
+                      Verified Mobile
                     </Badge>
                   </div>
                   <div className="flex items-center gap-3 text-xs text-slate-500 font-normal flex-wrap">
@@ -659,7 +659,7 @@ export default function MarketingLandingPage() {
                 <div className="flex items-center gap-2.5 shrink-0">
                   <a
                     href={`tel:${lead.phone}`}
-                    className="flex items-center gap-1 px-3 py-2 rounded-lg bg-blue-50 text-blue-700 font-semibold text-xs hover:bg-blue-600 hover:text-white transition-colors"
+                    className="flex items-center gap-1 px-3 py-2 rounded-lg bg-blue-50 text-blue-700 font-semibold text-xs hover:bg-blue-600 hover:text-white transition-colors no-underline"
                   >
                     <Phone className="w-3.5 h-3.5" />
                     <span>{lead.phone}</span>
@@ -669,7 +669,7 @@ export default function MarketingLandingPage() {
                     variant="success"
                     size="sm"
                     onClick={() => router.push(isLoggedIn ? '/whatsapp' : '/register')}
-                    className="gap-1.5 font-semibold text-xs"
+                    className="gap-1.5 font-semibold text-xs no-underline"
                   >
                     <MessageSquare className="w-3.5 h-3.5" />
                     <span>WhatsApp Pitch</span>
@@ -679,9 +679,9 @@ export default function MarketingLandingPage() {
                     variant="outline"
                     size="sm"
                     onClick={() => router.push(isLoggedIn ? '/customers' : '/register')}
-                    className="gap-1 font-medium text-xs hidden sm:flex"
+                    className="gap-1 font-medium text-xs hidden sm:flex no-underline"
                   >
-                    <Users className="w-3.5 h-3.5" /> Import
+                    <Users className="w-3.5 h-3.5" /> Save Karein
                   </Button>
                 </div>
               </div>
@@ -691,74 +691,74 @@ export default function MarketingLandingPage() {
           {/* Import to CRM CTA */}
           <div className="mt-8 text-center bg-blue-50/70 border border-blue-200/80 rounded-2xl p-6">
             <h3 className="font-bold text-lg text-slate-900">
-              Want 500+ Verified Leads in Your Niche Right Now?
+              Kya Aapko Apne Niche Me 500+ Naye Verified Grahak Chahiyein?
             </h3>
             <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-xl mx-auto font-normal">
-              Our real GINIE Maps Discovery Radar searches any Indian city or pincode. Import leads directly into your Sales Pipeline and launch WhatsApp chats in 1 click.
+              Hamara GINIE Maps engine kisi bhi shehar ya pincode se verified business dhoondta hai. 1 click me WhatsApp par message karein aur deal pakki karein.
             </p>
             <div className="mt-4">
               <Button
                 variant="gradient"
                 size="lg"
                 onClick={() => router.push(isLoggedIn ? '/find-customers' : '/register')}
-                className="gap-2 font-semibold px-8 shadow-md shadow-blue-500/25"
+                className="gap-2 font-semibold px-8 shadow-md shadow-blue-500/25 no-underline"
               >
-                Access Full Lead Discovery Radar <ArrowRight className="w-4 h-4" />
+                Lead Finder Kholein <ArrowRight className="w-4 h-4" />
               </Button>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 4 True Core Pillars of GINIE */}
+      {/* 4 True Core Pillars of GINIE - Vyapari Friendly Copy */}
       <section id="features" className="py-20 bg-slate-50 border-t border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <Badge variant="purple" className="mb-3 text-xs uppercase tracking-wider font-semibold">
-              The 4 Pillars
+              4 Main Features
             </Badge>
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 tracking-tight">
-              Built Exactly For How Indian Business Gets Done
+              Bhartiya Vyapar Aur Dukanon Ke Liye Banaye Gaye 4 Khaas Tools
             </h2>
             <p className="mt-4 text-sm sm:text-base text-slate-600 font-normal">
-              Forget heavy American enterprise software. GINIE gives you the exact tools you need to find customers, message them on WhatsApp, track deals, and get paid via UPI.
+              Bhari-bharkam mushkil software ko bhool jaiye. GINIE aapko wahi zaroori cheezein deta hai jisse naye grahak milein, WhatsApp par baat ho, hisaab safe rahe aur UPI se turant paise aayein.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Pillar 1: GINIE Maps Lead Discovery Radar */}
+            {/* Pillar 1: GINIE Maps Lead Radar */}
             <div id="radar" className="bg-white rounded-2xl p-7 sm:p-9 border border-slate-200/90 shadow-sm hover:shadow-md transition-all space-y-4">
               <div className="w-12 h-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
                 <Compass className="w-6 h-6" />
               </div>
               <div className="flex items-center gap-2">
                 <h3 className="text-xl sm:text-2xl font-bold text-slate-900">
-                  GINIE Maps Lead Discovery Radar
+                  GINIE Maps Lead Finder (Naye Grahak Dhoondein)
                 </h3>
                 <Badge variant="default" className="text-[10px] font-semibold">
                   ₹599 / Mo
                 </Badge>
               </div>
               <p className="text-sm text-slate-600 leading-relaxed font-normal">
-                Search local businesses across 500+ Indian cities and pincodes. Extract verified direct mobile numbers, star ratings, addresses, and review counts.
+                500+ Indian sheharon aur pincodes me kisi bhi category (Garages, Clinics, Wholesalers, Shops, Gyms) ke verified mobile numbers, ratings aur address nikaalein.
               </p>
               <ul className="space-y-2.5 text-xs sm:text-sm text-slate-700 font-normal pt-2">
                 <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-blue-600 shrink-0" /> Search any category: Garages, Clinics, Wholesalers, Gyms, Cafes
+                  <Check className="w-4 h-4 text-blue-600 shrink-0" /> Apne shehar me category search karein: Wholesalers, Garages, Clinics, Retailers
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-blue-600 shrink-0" /> 1-Click Import into your Sales Pipeline & Deals
+                  <Check className="w-4 h-4 text-blue-600 shrink-0" /> 1 Click me saare contacts apne Deal Board me add karein
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-blue-600 shrink-0" /> Simple ₹599 one-time UPI payment when you need leads — zero auto-debit
+                  <Check className="w-4 h-4 text-blue-600 shrink-0" /> Jab zaroorat ho bas ₹599 ka UPI payment karein — koi auto-debit ya credit card nahi
                 </li>
               </ul>
               <div className="pt-2">
                 <Link
                   href={isLoggedIn ? '/find-customers' : '/register'}
-                  className="text-xs sm:text-sm font-semibold text-blue-600 hover:text-blue-800 inline-flex items-center gap-1"
+                  className="text-xs sm:text-sm font-semibold text-blue-600 hover:text-blue-800 inline-flex items-center gap-1 no-underline"
                 >
-                  Explore Lead Radar &rarr;
+                  Lead Finder Dekhein &rarr;
                 </Link>
               </div>
             </div>
@@ -770,106 +770,106 @@ export default function MarketingLandingPage() {
               </div>
               <div className="flex items-center gap-2">
                 <h3 className="text-xl sm:text-2xl font-bold text-slate-900">
-                  Direct In-App WhatsApp Outreach
+                  Direct WhatsApp Chat (Bina Number Save Kiye)
                 </h3>
                 <Badge variant="success" className="text-[10px] font-semibold">
                   100% Free Core
                 </Badge>
               </div>
               <p className="text-sm text-slate-600 leading-relaxed font-normal">
-                Message prospects and clients directly without ever saving their phone numbers to your mobile contact list. Native Baileys QR code pairing bridge.
+                Grahakon ko phonebook me number save kiye bina direct WhatsApp message karein. Aapka apna personal WhatsApp phone se judta hai, 100% surakshit.
               </p>
               <ul className="space-y-2.5 text-xs sm:text-sm text-slate-700 font-normal pt-2">
                 <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-emerald-600 shrink-0" /> Launch chats instantly without cluttering phone contacts
+                  <Check className="w-4 h-4 text-emerald-600 shrink-0" /> Phonebook bhare bina 1 click me naye customer ko WhatsApp karein
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-emerald-600 shrink-0" /> High-converting pre-built Hindi & English pitch scripts
+                  <Check className="w-4 h-4 text-emerald-600 shrink-0" /> Bhejne ke liye bane-banaye ready-made Hindi & English business messages
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-emerald-600 shrink-0" /> Automated win-back broadcasts for inactive customers
+                  <Check className="w-4 h-4 text-emerald-600 shrink-0" /> Purane shant baithe grahakon ko dobara order dilwane ke aasan messages
                 </li>
               </ul>
               <div className="pt-2">
                 <Link
                   href={isLoggedIn ? '/whatsapp' : '/register'}
-                  className="text-xs sm:text-sm font-semibold text-emerald-600 hover:text-emerald-800 inline-flex items-center gap-1"
+                  className="text-xs sm:text-sm font-semibold text-emerald-600 hover:text-emerald-800 inline-flex items-center gap-1 no-underline"
                 >
-                  Explore WhatsApp CRM &rarr;
+                  WhatsApp Chat Dekhein &rarr;
                 </Link>
               </div>
             </div>
 
-            {/* Pillar 3: Visual Sales Pipeline & GPS Tasks */}
+            {/* Pillar 3: Deal Tracker & Sales Stages */}
             <div id="pipeline" className="bg-white rounded-2xl p-7 sm:p-9 border border-slate-200/90 shadow-sm hover:shadow-md transition-all space-y-4">
               <div className="w-12 h-12 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center font-bold">
                 <Kanban className="w-6 h-6" />
               </div>
               <div className="flex items-center gap-2">
                 <h3 className="text-xl sm:text-2xl font-bold text-slate-900">
-                  Visual Sales Pipeline & GPS Tasks
+                  Aasan Deal & Order Tracker (Kaunsa Grahak Kis Stage Par Hai)
                 </h3>
                 <Badge variant="purple" className="text-[10px] font-semibold">
                   100% Free Core
                 </Badge>
               </div>
               <p className="text-sm text-slate-600 leading-relaxed font-normal">
-                Never let an inquiry slip away. Drag-and-drop deals across sales stages in Indian Rupees (₹), track pending follow-ups, and log field staff check-ins.
+                Kisi bhi inquiry ya grahak ko chhootne na dein. Har customer ka hisaab rakhein ki kiski inquiry aayi, kisko quotation bheja, aur kiska order pakka hua.
               </p>
               <ul className="space-y-2.5 text-xs sm:text-sm text-slate-700 font-normal pt-2">
                 <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-purple-600 shrink-0" /> Visual Kanban Board: Lead In ➔ Contacted ➔ Proposal ➔ Won
+                  <Check className="w-4 h-4 text-purple-600 shrink-0" /> Clear Deal Stages: Nayi Inquiry ➔ Baat Hui ➔ Quotation Bheja ➔ Order Done!
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-purple-600 shrink-0" /> GPS Satellite Field Check-ins with verified timestamps
+                  <Check className="w-4 h-4 text-purple-600 shrink-0" /> Field salesman dukan par pohcha ya nahi — live GPS location se pakki attendance
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-purple-600 shrink-0" /> Daily follow-up task calendar & priority alerts
+                  <Check className="w-4 h-4 text-purple-600 shrink-0" /> Rozana follow-up reminder taaki koi client bhool na jayein
                 </li>
               </ul>
               <div className="pt-2">
                 <Link
                   href={isLoggedIn ? '/sales' : '/register'}
-                  className="text-xs sm:text-sm font-semibold text-purple-600 hover:text-purple-800 inline-flex items-center gap-1"
+                  className="text-xs sm:text-sm font-semibold text-purple-600 hover:text-purple-800 inline-flex items-center gap-1 no-underline"
                 >
-                  Explore Sales Pipeline &rarr;
+                  Deal Tracker Kholein &rarr;
                 </Link>
               </div>
             </div>
 
-            {/* Pillar 4: GST Invoicing & Dynamic UPI QR */}
+            {/* Pillar 4: GST Billing & UPI QR */}
             <div id="invoicing" className="bg-white rounded-2xl p-7 sm:p-9 border border-slate-200/90 shadow-sm hover:shadow-md transition-all space-y-4">
               <div className="w-12 h-12 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold">
                 <Receipt className="w-6 h-6" />
               </div>
               <div className="flex items-center gap-2">
                 <h3 className="text-xl sm:text-2xl font-bold text-slate-900">
-                  GST Invoicing & Dynamic UPI QR
+                  GST Invoicing & Scan-and-Pay UPI QR
                 </h3>
                 <Badge variant="warning" className="text-[10px] font-semibold">
                   100% Free Core
                 </Badge>
               </div>
               <p className="text-sm text-slate-600 leading-relaxed font-normal">
-                Generate professional GST invoices in 10 seconds. Automatically embeds your dynamic PhonePe / GPay / Paytm QR code for instant payment collection.
+                10 second me professional bill banayein. Har bill par aapka PhonePe / GPay QR code hota hai, jisse client mobile se scan karke turant pay karta hai.
               </p>
               <ul className="space-y-2.5 text-xs sm:text-sm text-slate-700 font-normal pt-2">
                 <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-amber-700 shrink-0" /> Dynamic UPI QR Code generated on every bill for 1-tap payment
+                  <Check className="w-4 h-4 text-amber-700 shrink-0" /> Har bill par auto-generated UPI QR code — client scan karke turant payment karega
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-amber-700 shrink-0" /> Automatic Indian Number-to-Words in INR (e.g. "Twelve Thousand Only")
+                  <Check className="w-4 h-4 text-amber-700 shrink-0" /> Amount shabdon me auto-likh kar aayega (e.g. "Twelve Thousand Only")
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-amber-700 shrink-0" /> 1-Click WhatsApp PDF dispatch straight to client’s chat
+                  <Check className="w-4 h-4 text-amber-700 shrink-0" /> 1 Click me bill ka PDF sidha client ke WhatsApp par bhejein
                 </li>
               </ul>
               <div className="pt-2">
                 <Link
                   href={isLoggedIn ? '/billing' : '/register'}
-                  className="text-xs sm:text-sm font-semibold text-amber-800 hover:text-amber-900 inline-flex items-center gap-1"
+                  className="text-xs sm:text-sm font-semibold text-amber-800 hover:text-amber-900 inline-flex items-center gap-1 no-underline"
                 >
-                  Explore UPI Invoicing &rarr;
+                  UPI Billing Kholein &rarr;
                 </Link>
               </div>
             </div>
@@ -883,20 +883,20 @@ export default function MarketingLandingPage() {
           <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-blue-950 rounded-3xl p-8 sm:p-12 text-white shadow-xl relative overflow-hidden">
             <div className="text-center max-w-2xl mx-auto mb-10">
               <Badge variant="warning" className="mb-3 text-xs uppercase tracking-wider font-semibold">
-                Projected Business Growth
+                Vyapar Growth Calculator
               </Badge>
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight">
-                How Much New Revenue Can GINIE Generate?
+                GINIE Se Aapka Business Kitna Badh Sakta Hai?
               </h2>
               <p className="mt-3 text-slate-300 text-sm sm:text-base font-normal">
-                Slide to select how many local business leads you want to contact each month:
+                Select karein ki aap har mahine kitne naye prospective clients ko contact karenge:
               </p>
             </div>
 
             <div className="max-w-lg mx-auto space-y-6">
               <div>
                 <div className="flex justify-between items-center text-sm font-medium mb-2">
-                  <span>Target Leads Reached Monthly:</span>
+                  <span>Target Leads / Naye Grahak Monthly:</span>
                   <span className="text-2xl font-bold text-yellow-400">
                     {leadsPerMonth} Leads / Month
                   </span>
@@ -921,22 +921,22 @@ export default function MarketingLandingPage() {
               <div className="grid grid-cols-2 gap-4 pt-3">
                 <div className="bg-white/10 rounded-xl p-5 text-center border border-white/10 backdrop-blur">
                   <div className="text-xs uppercase tracking-wider text-slate-300 font-medium">
-                    Expected New Deals
+                    Expected Naye Orders
                   </div>
                   <div className="mt-2 text-3xl sm:text-4xl font-bold text-emerald-400">
-                    {dealsClosed} Deals
+                    {dealsClosed} Orders
                   </div>
-                  <div className="text-xs text-slate-300 mt-1 font-normal">at typical 5% conversion</div>
+                  <div className="text-xs text-slate-300 mt-1 font-normal">lagbhag 5% conversion par</div>
                 </div>
 
                 <div className="bg-white/10 rounded-xl p-5 text-center border border-white/10 backdrop-blur">
                   <div className="text-xs uppercase tracking-wider text-slate-300 font-medium">
-                    Projected Revenue
+                    Expected Extra Kamai
                   </div>
                   <div className="mt-2 text-3xl sm:text-4xl font-bold text-yellow-400">
                     ₹{projectedRevenue.toLocaleString('en-IN')}
                   </div>
-                  <div className="text-xs text-slate-300 mt-1 font-normal">based on ₹8.5K avg deal</div>
+                  <div className="text-xs text-slate-300 mt-1 font-normal">avg ₹8.5K per order par</div>
                 </div>
               </div>
 
@@ -945,9 +945,9 @@ export default function MarketingLandingPage() {
                   variant="gradient"
                   size="lg"
                   onClick={() => router.push(isLoggedIn ? '/dashboard' : '/register')}
-                  className="w-full sm:w-auto px-9 py-6 text-base font-semibold shadow-xl shadow-blue-500/30"
+                  className="w-full sm:w-auto px-9 py-6 text-base font-semibold shadow-xl shadow-blue-500/30 no-underline"
                 >
-                  Start Closing Deals Today <ArrowRight className="w-5 h-5 ml-1" />
+                  Aaj Hi Bikri Badhana Shuru Karein <ArrowRight className="w-5 h-5 ml-1" />
                 </Button>
               </div>
             </div>
@@ -955,18 +955,18 @@ export default function MarketingLandingPage() {
         </div>
       </section>
 
-      {/* Honest 2-Tier Pricing Section */}
+      {/* Honest 2-Tier Pricing Section - Transparent & Bharat-Friendly */}
       <section id="pricing" className="py-20 bg-slate-50 border-t border-slate-200">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <Badge variant="success" className="mb-3 text-xs uppercase tracking-wider font-semibold">
-              Transparent & Bharat-Friendly
+              Transparent & Vyapari-Friendly
             </Badge>
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 tracking-tight">
-              Simple 2-Tier Pricing. Zero Hidden Fees.
+              Seedha aur Saaf Hisaab. Koi Chhupa Kharcha Nahi.
             </h2>
             <p className="mt-4 text-sm sm:text-base text-slate-600 font-normal">
-              The entire Core CRM is 100% free forever. Pay only ₹599 once via UPI QR when you want fresh GINIE Maps leads:
+              Pura Core Business Software 100% Free hai. Sirf tab ₹599 dein jab aapko apne shehar ke hazaron naye business leads nikaalne hon:
             </p>
           </div>
 
@@ -977,9 +977,9 @@ export default function MarketingLandingPage() {
                 <Badge variant="secondary" className="mb-4 font-semibold text-xs">
                   Free Forever Plan
                 </Badge>
-                <h3 className="text-2xl font-bold text-slate-900">Core Growth CRM</h3>
+                <h3 className="text-2xl font-bold text-slate-900">Core Business Software</h3>
                 <p className="text-xs text-slate-500 mt-1 font-normal">
-                  Ideal for business owners, sales teams & freelancers.
+                  Dukan-malikon, sales teams aur vyapariyon ke liye best.
                 </p>
                 <div className="mt-6 flex items-baseline gap-1">
                   <span className="text-4xl font-bold text-slate-900">₹0</span>
@@ -989,27 +989,27 @@ export default function MarketingLandingPage() {
                 <div className="mt-7 space-y-3.5 text-xs sm:text-sm text-slate-700 font-normal">
                   <div className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Unlimited Client Contacts & Accounts</span>
+                    <span>Unlimited Grahak aur Party Contacts</span>
                   </div>
                   <div className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Visual Drag-and-Drop Sales Pipeline Kanban (in ₹)</span>
+                    <span>Aasan Deal & Sales Stages Tracker (₹ me)</span>
                   </div>
                   <div className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Direct WhatsApp Web Outreach (No saving numbers)</span>
+                    <span>Bina number save kiye Direct WhatsApp Chat</span>
                   </div>
                   <div className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>GST Invoices with Dynamic UPI QR Code (PhonePe/GPay)</span>
+                    <span>GST Invoices with PhonePe / GPay Scan-to-Pay QR</span>
                   </div>
                   <div className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Customer 360° Timeline & Loyalty Wallets</span>
+                    <span>Grahak ka pura Khata-Itihaas aur Loyalty Points</span>
                   </div>
                   <div className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Digital Storefront Catalog for WhatsApp Orders</span>
+                    <span>Online Digital Storefront jisse grahak WhatsApp par order dein</span>
                   </div>
                 </div>
               </div>
@@ -1017,10 +1017,10 @@ export default function MarketingLandingPage() {
               <div className="mt-8">
                 <Button
                   variant="outline"
-                  className="w-full font-semibold py-6 text-sm"
+                  className="w-full font-semibold py-6 text-sm no-underline"
                   onClick={() => router.push(isLoggedIn ? '/dashboard' : '/register')}
                 >
-                  Start Free CRM Forever
+                  Free Me Shuru Karein (Lifetime Free)
                 </Button>
               </div>
             </div>
@@ -1028,46 +1028,46 @@ export default function MarketingLandingPage() {
             {/* Tier 2: Lead Discovery Radar Add-on */}
             <div className="bg-gradient-to-b from-blue-50/50 to-white rounded-2xl p-8 sm:p-9 border-2 border-blue-600 shadow-lg flex flex-col justify-between relative">
               <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[11px] font-bold px-3 py-1 rounded-full shadow-md uppercase tracking-wider">
-                RECOMMENDED FOR ACTIVE PROSPECTING
+                NAYE GRAHAK BADHANE KE LIYE SABSE BEST
               </div>
 
               <div>
                 <Badge variant="default" className="mb-4 font-semibold text-xs">
-                  Pay-As-You-Go Add-on
+                  Pay-As-You-Go Plan
                 </Badge>
-                <h3 className="text-2xl font-bold text-slate-900">Lead Discovery Radar</h3>
+                <h3 className="text-2xl font-bold text-slate-900">GINIE Maps Lead Finder</h3>
                 <p className="text-xs text-slate-500 mt-1 font-normal">
-                  Extract 500+ verified local B2B phone numbers every month.
+                  Har mahine apne shehar ke 500+ verified business phone numbers nikaalein.
                 </p>
                 <div className="mt-6 flex items-baseline gap-1">
                   <span className="text-4xl font-bold text-slate-900">₹599</span>
-                  <span className="text-slate-500 text-sm font-medium">/ month (Pay via UPI QR)</span>
+                  <span className="text-slate-500 text-sm font-medium">/ mahina (Pay via UPI QR)</span>
                 </div>
 
                 <div className="mt-7 space-y-3.5 text-xs sm:text-sm text-slate-700 font-normal">
                   <div className="flex items-center gap-2.5 font-semibold text-slate-900">
                     <Check className="w-4 h-4 text-blue-600 shrink-0" />
-                    <span>Everything in Core Free CRM, plus:</span>
+                    <span>Core Free Software ke sabhi features, plus:</span>
                   </div>
                   <div className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-blue-600 shrink-0" />
-                    <span>Unlimited GINIE Maps local business searches</span>
+                    <span>Unlimited GINIE Maps par local business searches</span>
                   </div>
                   <div className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-blue-600 shrink-0" />
-                    <span>Verified direct mobile numbers, star ratings & addresses</span>
+                    <span>Verified mobile numbers, ratings aur shop address</span>
                   </div>
                   <div className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-blue-600 shrink-0" />
-                    <span>1-Click Bulk Import into CRM Leads & Pipelines</span>
+                    <span>1 Click me hazaron leads apne CRM me import karein</span>
                   </div>
                   <div className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-blue-600 shrink-0" />
-                    <span>Zero Credit Card Requirement (Pay directly via UPI)</span>
+                    <span>Koi Credit Card ki zaroorat nahi (Seedha UPI se pay karein)</span>
                   </div>
                   <div className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-blue-600 shrink-0" />
-                    <span>Zero recurring auto-debit surprise charges</span>
+                    <span>Zero Auto-Debit: Har mahine bina pooche paise katne ka koi chakkar nahi</span>
                   </div>
                 </div>
               </div>
@@ -1075,10 +1075,10 @@ export default function MarketingLandingPage() {
               <div className="mt-8">
                 <Button
                   variant="gradient"
-                  className="w-full font-semibold py-6 text-sm shadow-md shadow-blue-500/25"
+                  className="w-full font-semibold py-6 text-sm shadow-md shadow-blue-500/25 no-underline"
                   onClick={() => router.push(isLoggedIn ? '/find-customers' : '/register')}
                 >
-                  Activate Lead Radar via UPI
+                  UPI QR Se Activate Karein
                 </Button>
               </div>
             </div>
@@ -1094,10 +1094,10 @@ export default function MarketingLandingPage() {
               Frequently Asked Questions
             </Badge>
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 tracking-tight">
-              Honest Answers to Common Questions
+              Aapke Sawaal, Hamare Seedhe Jawaab
             </h2>
             <p className="mt-3 text-slate-600 text-sm sm:text-base font-normal">
-              Everything you need to know about GINIE, lead data, WhatsApp anti-ban, and UPI payments:
+              GINIE, customer data, WhatsApp security aur UPI payments ke baare me sab kuch jaan lijiye:
             </p>
           </div>
 
@@ -1137,32 +1137,32 @@ export default function MarketingLandingPage() {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 text-white text-xs font-semibold mb-6 backdrop-blur">
             <Sparkles className="w-4 h-4 text-yellow-300" />
-            <span>Setup Takes Less Than 30 Seconds</span>
+            <span>Setup Me Sirf 30 Second Lagte Hain</span>
           </div>
 
           <h2 className="text-3xl sm:text-5xl font-bold tracking-tight leading-tight">
-            Ready to Supercharge Your B2B Sales Pipeline?
+            Apne Business Ki Bikri Badhane Ke Liye Taiyaar Hain?
           </h2>
 
           <p className="mt-4 text-base sm:text-lg text-blue-100 max-w-2xl mx-auto font-normal">
-            Start discovering new customers, sending direct WhatsApp pitches, and collecting payments with UPI QR right now.
+            Aaj hi naye grahak dhoondna shuru karein, WhatsApp par deals close karein aur UPI QR se payments collect karein.
           </p>
 
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button
               size="lg"
-              className="bg-white text-blue-700 hover:bg-blue-50 font-bold text-base px-9 py-6 rounded-xl shadow-lg hover:shadow-xl transition-all"
+              className="bg-white text-blue-700 hover:bg-blue-50 font-bold text-base px-9 py-6 rounded-xl shadow-lg hover:shadow-xl transition-all no-underline"
               onClick={() => router.push(isLoggedIn ? '/dashboard' : '/register')}
             >
-              Get Started Free Forever <ArrowRight className="w-5 h-5 ml-1 inline" />
+              Free Me Shuru Karein (Lifetime Free) <ArrowRight className="w-5 h-5 ml-1 inline" />
             </Button>
             <Button
               variant="outline"
               size="lg"
-              className="border-white/30 text-white hover:bg-white/10 font-medium text-base px-8 py-6 rounded-xl"
+              className="border-white/30 text-white hover:bg-white/10 font-medium text-base px-8 py-6 rounded-xl no-underline"
               onClick={() => router.push('/login')}
             >
-              Existing User Login
+              Login Karein
             </Button>
           </div>
         </div>
@@ -1184,45 +1184,45 @@ export default function MarketingLandingPage() {
                     className="w-full h-full object-contain"
                   />
                 </div>
-                <span className="font-bold text-lg text-white">GINIE</span>
+                <span className="font-bold text-xl text-white tracking-tight">GINIE</span>
               </div>
               <p className="text-xs text-slate-400 leading-relaxed font-normal">
-                Smart B2B Growth OS for Bharat. GINIE Maps Lead Discovery Radar, Direct WhatsApp CRM, and Dynamic UPI Invoicing.
+                Bharat ke vyapariyon ke liye Smart Business OS. GINIE Maps Lead Finder, Direct WhatsApp Chat, aur Instant UPI Invoicing.
               </p>
             </div>
 
             {/* Col 2 */}
             <div>
-              <h4 className="text-white font-semibold text-sm mb-3">Core Modules</h4>
+              <h4 className="text-white font-semibold text-sm mb-3">Core Features</h4>
               <ul className="space-y-2 text-xs font-normal">
-                <li><Link href="/find-customers" className="hover:text-white">GINIE Maps Lead Radar</Link></li>
-                <li><Link href="/whatsapp" className="hover:text-white">Direct WhatsApp CRM</Link></li>
-                <li><Link href="/sales" className="hover:text-white">Sales Deals Kanban (₹)</Link></li>
-                <li><Link href="/billing" className="hover:text-white">Dynamic UPI QR Invoices</Link></li>
-                <li><Link href="/customers" className="hover:text-white">Customer Loyalty & Wallets</Link></li>
+                <li><Link href="/find-customers" className="hover:text-white no-underline">GINIE Maps Lead Finder</Link></li>
+                <li><Link href="/whatsapp" className="hover:text-white no-underline">Direct WhatsApp Chat</Link></li>
+                <li><Link href="/sales" className="hover:text-white no-underline">Deal & Order Tracker</Link></li>
+                <li><Link href="/billing" className="hover:text-white no-underline">GST & UPI QR Invoices</Link></li>
+                <li><Link href="/customers" className="hover:text-white no-underline">Grahak Khata & Loyalty</Link></li>
               </ul>
             </div>
 
             {/* Col 3 */}
             <div>
-              <h4 className="text-white font-semibold text-sm mb-3">Pricing & Plans</h4>
+              <h4 className="text-white font-semibold text-sm mb-3">Plans & Demo</h4>
               <ul className="space-y-2 text-xs font-normal">
-                <li><a href="#pricing" className="hover:text-white">Core CRM (₹0 Free Forever)</a></li>
-                <li><a href="#pricing" className="hover:text-white">Lead Radar (₹599 / Mo via UPI)</a></li>
-                <li><Link href="/store/catalog" className="hover:text-white">Digital Storefront Demo</Link></li>
-                <li><a href="#radar-simulator" className="hover:text-white">Live Lead Simulator</a></li>
+                <li><a href="#pricing" className="hover:text-white no-underline">Core Software (₹0 Free Forever)</a></li>
+                <li><a href="#pricing" className="hover:text-white no-underline">Lead Radar (₹599 / Mo via UPI)</a></li>
+                <li><Link href="/store/catalog" className="hover:text-white no-underline">Digital Storefront Demo</Link></li>
+                <li><a href="#radar-simulator" className="hover:text-white no-underline">Live Lead Simulator</a></li>
               </ul>
             </div>
 
             {/* Col 4 */}
             <div>
-              <h4 className="text-white font-semibold text-sm mb-3">Support & Legal</h4>
+              <h4 className="text-white font-semibold text-sm mb-3">Support & Help</h4>
               <ul className="space-y-2 text-xs font-normal">
-                <li><a href="tel:7870819862" className="hover:text-white flex items-center gap-1.5"><PhoneCall className="w-3.5 h-3.5" /> +91 78708 19862</a></li>
-                <li><a href="mailto:support@ginie.space" className="hover:text-white">support@ginie.space</a></li>
-                <li><Link href="/terms" className="hover:text-white">Terms of Service</Link></li>
-                <li><Link href="/privacy" className="hover:text-white">Privacy Policy</Link></li>
-                <li><Link href="/refund-policy" className="hover:text-white">Refund Policy</Link></li>
+                <li><a href="tel:7870819862" className="hover:text-white flex items-center gap-1.5 no-underline"><PhoneCall className="w-3.5 h-3.5" /> +91 78708 19862</a></li>
+                <li><a href="mailto:support@ginie.space" className="hover:text-white no-underline">support@ginie.space</a></li>
+                <li><Link href="/terms" className="hover:text-white no-underline">Terms of Service</Link></li>
+                <li><Link href="/privacy" className="hover:text-white no-underline">Privacy Policy</Link></li>
+                <li><Link href="/refund-policy" className="hover:text-white no-underline">Refund Policy</Link></li>
               </ul>
             </div>
           </div>
