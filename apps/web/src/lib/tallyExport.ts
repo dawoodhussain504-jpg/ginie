@@ -85,7 +85,7 @@ export function generateTallySalesXml(invoices: InvoiceExportItem[], companyName
           <PARTYLEDGERNAME>${partyName}</PARTYLEDGERNAME>
           <PARTYNAME>${partyName}</PARTYNAME>
           <BASICBUYERNAME>${partyName}</BASICBUYERNAME>
-          <NARRATION>Tax Invoice ${voucherNumber} generated via GINIE Space ERP</NARRATION>
+          <NARRATION>Tax Invoice ${voucherNumber} generated via GINIE</NARRATION>
 
           <!-- Party Debit Entry (Total Invoice Amount) -->
           <ALLLEDGERENTRIES.LIST>

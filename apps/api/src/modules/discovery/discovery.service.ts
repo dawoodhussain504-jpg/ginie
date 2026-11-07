@@ -207,7 +207,7 @@ export class DiscoveryService {
     const plan = await this.getPlanStatus(tenantId, userId);
     if (!plan.active) {
       throw new BadRequestException(
-        'Google Maps Lead Discovery requires an active ₹599/mo plan. Please scan the UPI QR in the Find Customers tab to activate.',
+        'GINIE Maps Lead Discovery requires an active ₹599/mo plan. Please scan the UPI QR in the Find Customers tab to activate.',
       );
     }
 
@@ -589,8 +589,8 @@ export class DiscoveryService {
           lat: r.lat,
           lng: r.lng,
           googlePlaceId: r.placeId,
-          source: 'Google Maps',
-          tags: dto.tags || ['Google Maps'],
+          source: 'GINIE Maps',
+          tags: dto.tags || ['GINIE Maps'],
         },
       });
 

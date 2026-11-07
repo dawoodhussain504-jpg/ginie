@@ -572,6 +572,73 @@ export class AdminService {
     }
   }
 
+  async getSupportTickets(limit = 100) {
+    try {
+      const tickets = await prisma.auditLog.findMany({
+        where: {
+          action: 'SUPPORT_TICKET_CREATED',
+        },
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          user: { select: { name: true, email: true } },
+          tenant: { select: { name: true } },
+        },
+      });
+
+      return tickets.map((t) => {
+        const after: any = t.after || {};
+        return {
+          id: t.id,
+          ticketId: t.entityId || after.ticketId || `TK-${t.id.slice(0, 6)}`,
+          tenantId: t.tenantId,
+          businessName: after.businessName || t.tenant?.name || 'Business Account',
+          userName: after.userName || t.user?.name || 'User',
+          contact: after.contact || t.user?.email || '',
+          screen: after.screen || '/dashboard',
+          category: after.category || 'General Query',
+          note: after.note || '',
+          status: after.status || 'OPEN',
+          createdAt: t.createdAt,
+        };
+      });
+    } catch (err: any) {
+      console.error('Error fetching support tickets:', err);
+      return [];
+    }
+  }
+
+  async updateTicketStatus(id: string, status: string) {
+    try {
+      const ticket = await prisma.auditLog.findUnique({
+        where: { id },
+      });
+      if (!ticket) {
+        throw new Error('Ticket not found');
+      }
+
+      const existingAfter: any = ticket.after || {};
+      const updated = await prisma.auditLog.update({
+        where: { id },
+        data: {
+          after: {
+            ...existingAfter,
+            status,
+            updatedAt: new Date().toISOString(),
+          },
+        },
+      });
+      return {
+        success: true,
+        id: updated.id,
+        status,
+      };
+    } catch (err: any) {
+      console.error('Error updating ticket status:', err);
+      throw err;
+    }
+  }
+
   // ─── Platform UPI & Discovery Subscription Management ────────────────────
 
   async getPlatformUpiSettings() {
@@ -731,7 +798,7 @@ export class AdminService {
         const bridge = new BridgeProvider('admin-master');
         await bridge.sendText(
           fullNumber,
-          `🎉 *GINIE Lead Discovery Activated!*\n\nNamaste ${owner.name || 'Partner'},\n\nYour payment of *₹599* has been verified and approved!\n\n✨ *Plan Details:*\n• Service: Google Maps Lead Discovery\n• Status: *Active (30 Days)*\n• Valid Till: *${expiresAt.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric' })}*\n\nAap ab apne GINIE Cockpit me *Find Customers* tab use karke unlimited verified leads nikaal sakte hain!\n\n🚀 Dashboard: https://ginie.space/find-customers`,
+          `🎉 *GINIE Lead Discovery Activated!*\n\nNamaste ${owner.name || 'Partner'},\n\nYour payment of *₹599* has been verified and approved!\n\n✨ *Plan Details:*\n• Service: GINIE Maps Lead Discovery\n• Status: *Active (30 Days)*\n• Valid Till: *${expiresAt.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric' })}*\n\nAap ab apne GINIE Cockpit me *Find Customers* tab use karke unlimited verified leads nikaal sakte hain!\n\n🚀 Dashboard: https://ginie.space/find-customers`,
         );
       } catch (err: any) {
         this.logger.warn(`Could not send discovery approval WhatsApp: ${err.message}`);

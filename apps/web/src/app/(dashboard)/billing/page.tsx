@@ -772,7 +772,7 @@ export default function BillingPage() {
   const currentUpiUri = selectedInvoice
     ? buildUpiUri({
         vpa: adminUpiVpa,
-        payeeName: company?.settings?.upiName || company?.name || 'Ginie Space',
+        payeeName: company?.settings?.upiName || company?.name || 'GINIE',
         amount: Number(selectedInvoice.total || 0),
         transactionNote: `Invoice ${selectedInvoice.invoiceNumber}`,
       })
@@ -1011,7 +1011,7 @@ export default function BillingPage() {
         </Space>
       </div>
 
-      <Tabs items={tabItems} size="large" defaultActiveKey="invoices" />
+      <Tabs items={tabItems} size="middle" defaultActiveKey="invoices" />
 
       {/* FULL PROFESSIONAL INDIAN GST TAX INVOICE MODAL */}
       <Modal

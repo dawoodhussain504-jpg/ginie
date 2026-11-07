@@ -1,7 +1,7 @@
 {
-  "name": "GINIE Cockpit — Business CRM",
+  "name": "GINIE",
   "short_name": "GINIE",
-  "description": "Smart CRM & Lead Discovery Cockpit for Modern Businesses & Sales Teams",
+  "description": "Smart Business CRM, Multi-Trade ERP & Digital Storefront",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#141414",

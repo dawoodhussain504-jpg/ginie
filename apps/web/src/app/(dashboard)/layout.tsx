@@ -33,6 +33,8 @@ import {
   GlobalOutlined,
   MobileOutlined,
   MenuOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
   AppstoreOutlined,
   SafetyCertificateOutlined,
   SwapOutlined,
@@ -49,6 +51,8 @@ import Link from 'next/link';
 import { api } from '@/lib/api';
 import OnboardingWizardModal from '@/components/OnboardingWizardModal';
 import GinieAiAssistantDrawer from '@/components/GinieAiAssistantDrawer';
+import SupportModal from '@/components/SupportModal';
+import GinieLogo from '@/components/GinieLogo';
 
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
@@ -68,6 +72,7 @@ export default function DashboardLayout({
   const [isInstallable, setIsInstallable] = useState(false);
   const [isImpersonating, setIsImpersonating] = useState(false);
   const [aiDrawerOpen, setAiDrawerOpen] = useState(false);
+  const [supportModalOpen, setSupportModalOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
 
   useEffect(() => {
@@ -457,6 +462,20 @@ export default function DashboardLayout({
           ]
         : []),
       {
+        key: 'whatsapp-support',
+        icon: <WhatsAppOutlined style={{ color: '#25D366' }} />,
+        label: <a onClick={() => setSupportModalOpen(true)}>Help & WhatsApp Support</a>,
+      },
+      {
+        key: 'switch-language',
+        icon: <GlobalOutlined style={{ color: '#2563eb' }} />,
+        label: (
+          <span onClick={() => setLocale(locale === 'hi' ? 'en' : 'hi')}>
+            {locale === 'hi' ? 'Switch to English' : 'हिंदी में बदलें (Switch to HI)'}
+          </span>
+        ),
+      },
+      {
         key: 'settings',
         icon: <SettingOutlined />,
         label: <Link href="/settings">{t.nav.settings}</Link>,
@@ -501,6 +520,11 @@ export default function DashboardLayout({
         style={{
           borderRight: isDark ? '1px solid #1e293b' : '1px solid #e2e8f0',
           background: isDark ? '#0f172a' : '#ffffff',
+          position: 'sticky',
+          top: 0,
+          height: '100vh',
+          overflowY: 'auto',
+          zIndex: 110,
         }}
         width={250}
       >
@@ -514,44 +538,13 @@ export default function DashboardLayout({
             borderBottom: isDark ? '1px solid #1e293b' : '1px solid #e2e8f0',
           }}
         >
-          <div
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 10,
-              background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-              color: '#fff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 900,
-              fontSize: 18,
-              boxShadow: '0 4px 12px rgba(37, 99, 235, 0.35)',
-              flexShrink: 0,
-            }}
-          >
-            G
-          </div>
+          <GinieLogo size={36} isDark={isDark} />
           {!collapsed && (
             <div style={{ overflow: 'hidden' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Text strong style={{ fontSize: 16, lineHeight: 1.2, letterSpacing: '-0.02em', color: isDark ? '#f8fafc' : '#0f172a' }}>
+                <Text strong style={{ fontSize: 17, lineHeight: 1.2, letterSpacing: '-0.02em', color: isDark ? '#f8fafc' : '#0f172a' }}>
                   GINIE
                 </Text>
-                <span
-                  style={{
-                    fontSize: 9,
-                    fontWeight: 700,
-                    textTransform: 'uppercase',
-                    color: '#2563eb',
-                    background: '#eff6ff',
-                    padding: '1px 6px',
-                    borderRadius: 999,
-                    border: '1px solid #bfdbfe',
-                  }}
-                >
-                  CRM
-                </span>
               </div>
               <Text type="secondary" style={{ fontSize: 11, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {user?.companyName || 'Business Cockpit'}
@@ -572,10 +565,10 @@ export default function DashboardLayout({
         />
       </Sider>
 
-      <Layout style={{ background: isDark ? '#0b0f17' : '#f8fafc' }}>
+      <Layout style={{ background: isDark ? '#0b0f17' : '#f8fafc', overflow: 'visible' }}>
         {/* Top Header */}
         <Header
-          className="ginie-mobile-header"
+          className="ginie-mobile-header ginie-sticky-header"
           style={{
             background: isDark ? '#0f172a' : '#ffffff',
             padding: '0 24px',
@@ -590,34 +583,56 @@ export default function DashboardLayout({
             boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03)',
           }}
         >
-          {/* Left: Breadcrumb & Workspace badge (Desktop) + Mobile Brand Pill */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            {/* Show GINIE brand logo & title on mobile */}
-            <div className="show-on-mobile" style={{ alignItems: 'center', gap: 8 }}>
-              <div
-                style={{
-                  width: 30,
-                  height: 30,
-                  borderRadius: 8,
-                  background: brandColor || '#2563eb',
-                  color: '#fff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 800,
-                  fontSize: 15,
-                }}
-              >
-                G
-              </div>
-              <span style={{ fontWeight: 800, fontSize: 16, letterSpacing: -0.5 }}>GINIE</span>
+          {/* Left: Mobile Hamburger + Desktop Sider Toggle + Breadcrumb + Workspace badge */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+            {/* Show Mobile Hamburger to open All Navigation Drawer */}
+            <div className="show-on-mobile" style={{ alignItems: 'center', marginRight: 2 }}>
+              <Button
+                type="text"
+                icon={<MenuOutlined style={{ fontSize: 18, color: isDark ? '#f8fafc' : '#0f172a' }} />}
+                onClick={() => setMoreDrawerOpen(true)}
+                style={{ padding: 0, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                aria-label="Open Navigation Menu"
+              />
             </div>
 
+            {/* Show GINIE brand logo & title on mobile */}
+            <div className="show-on-mobile" style={{ alignItems: 'center' }}>
+              <GinieLogo size={28} showText={true} textSize={15} isDark={isDark} />
+            </div>
+
+            {/* Desktop Sider Collapse / Expand Toggle */}
+            <Button
+              type="text"
+              className="hide-on-mobile"
+              icon={collapsed ? <MenuUnfoldOutlined style={{ fontSize: 16 }} /> : <MenuFoldOutlined style={{ fontSize: 16 }} />}
+              onClick={() => setCollapsed(!collapsed)}
+              title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              style={{
+                color: isDark ? '#94a3b8' : '#64748b',
+                width: 32,
+                height: 32,
+                borderRadius: 6,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginRight: 2,
+              }}
+            />
+
             {/* Desktop breadcrumb */}
-            <div className="hide-on-mobile" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 13, fontWeight: 500, color: isDark ? '#94a3b8' : '#64748b' }}>
+            <div className="hide-on-mobile" style={{ display: 'flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap' }}>
+              <Link
+                href="/dashboard"
+                style={{
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: isDark ? '#94a3b8' : '#64748b',
+                  textDecoration: 'none',
+                }}
+              >
                 GINIE
-              </span>
+              </Link>
               <span style={{ color: isDark ? '#475569' : '#cbd5e1', fontSize: 12 }}>/</span>
               <span style={{ fontSize: 14, fontWeight: 700, color: isDark ? '#f8fafc' : '#0f172a' }}>
                 {getPageTitle(pathname)}
@@ -625,7 +640,8 @@ export default function DashboardLayout({
             </div>
 
             <Tag
-              className="hide-on-mobile"
+              className="hide-on-mobile hide-on-tablet"
+              title={user?.companyName || 'Business Cockpit'}
               style={{
                 borderRadius: 999,
                 margin: 0,
@@ -635,6 +651,10 @@ export default function DashboardLayout({
                 background: isDark ? 'rgba(56, 189, 248, 0.1)' : '#f0f9ff',
                 color: isDark ? '#38bdf8' : '#0284c7',
                 padding: '2px 10px',
+                maxWidth: 170,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
               }}
             >
               {user?.companyName || 'Business Cockpit'}
@@ -642,7 +662,7 @@ export default function DashboardLayout({
           </div>
 
           {/* Right: Controls & User Profile */}
-          <Space size="middle" align="center">
+          <Space size={8} align="center">
             {/* Sync status - Desktop */}
             <div className="hide-on-mobile" style={{ display: 'flex', alignItems: 'center', gap: 6, marginRight: 4 }}>
               <span
@@ -655,7 +675,7 @@ export default function DashboardLayout({
                   boxShadow: isOnline ? '0 0 8px rgba(16, 185, 129, 0.6)' : 'none',
                 }}
               />
-              <span style={{ fontSize: 12, color: isDark ? '#94a3b8' : '#64748b', fontWeight: 500 }}>
+              <span className="hide-on-tablet" style={{ fontSize: 12, color: isDark ? '#94a3b8' : '#64748b', fontWeight: 500 }}>
                 {isOnline ? 'Cloud Synced' : 'Offline'}
               </span>
             </div>
@@ -674,7 +694,25 @@ export default function DashboardLayout({
                   height: 36,
                 }}
               >
-                Ask GINIE AI
+                <span className="hide-on-tablet">Ask GINIE AI</span>
+              </Button>
+            </div>
+
+            {/* WhatsApp Support Button - Desktop */}
+            <div className="hide-on-mobile">
+              <Button
+                icon={<WhatsAppOutlined style={{ color: '#25D366', fontSize: 16 }} />}
+                onClick={() => setSupportModalOpen(true)}
+                style={{
+                  borderRadius: 8,
+                  background: isDark ? 'rgba(37, 211, 102, 0.12)' : '#f0fdf4',
+                  borderColor: isDark ? 'rgba(37, 211, 102, 0.3)' : '#bbf7d0',
+                  color: isDark ? '#4ade80' : '#15803d',
+                  fontWeight: 700,
+                  height: 36,
+                }}
+              >
+                <span className="hide-on-tablet">Support</span>
               </Button>
             </div>
 
@@ -694,6 +732,21 @@ export default function DashboardLayout({
               />
             </div>
 
+            {/* WhatsApp Support Button - Mobile Compact */}
+            <div className="show-on-mobile">
+              <Button
+                shape="circle"
+                size="middle"
+                icon={<WhatsAppOutlined style={{ color: '#25D366', fontSize: 18 }} />}
+                onClick={() => setSupportModalOpen(true)}
+                style={{
+                  background: isDark ? '#1e293b' : '#ffffff',
+                  borderColor: isDark ? 'rgba(37, 211, 102, 0.3)' : '#bbf7d0',
+                  boxShadow: '0 2px 6px rgba(37, 211, 102, 0.25)',
+                }}
+              />
+            </div>
+
             {/* Impersonation Exit if active */}
             {isImpersonatingActive && (
               <Button
@@ -708,18 +761,40 @@ export default function DashboardLayout({
               </Button>
             )}
 
-            {/* Language Selector */}
-            <Select
-              size="middle"
-              value={locale}
-              onChange={setLocale}
-              options={[
-                { value: 'en', label: 'English' },
-                { value: 'hi', label: 'हिंदी (HI)' },
-              ]}
-              prefix={<GlobalOutlined style={{ color: isDark ? '#94a3b8' : '#64748b' }} />}
-              style={{ width: 110 }}
-            />
+            {/* Language Selector - Desktop */}
+            <div className="hide-on-mobile">
+              <Select
+                size="middle"
+                value={locale}
+                onChange={setLocale}
+                options={[
+                  { value: 'en', label: 'English' },
+                  { value: 'hi', label: 'हिंदी (HI)' },
+                ]}
+                prefix={<GlobalOutlined style={{ color: isDark ? '#94a3b8' : '#64748b' }} />}
+                style={{ width: 110 }}
+              />
+            </div>
+
+            {/* Language Toggle - Mobile Compact Pill (Save ~75px space!) */}
+            <div className="show-on-mobile">
+              <Button
+                size="small"
+                onClick={() => setLocale(locale === 'hi' ? 'en' : 'hi')}
+                style={{
+                  fontWeight: 700,
+                  fontSize: 11,
+                  height: 30,
+                  padding: '0 8px',
+                  borderRadius: 6,
+                  background: isDark ? 'rgba(255,255,255,0.08)' : '#f1f5f9',
+                  borderColor: isDark ? 'rgba(255,255,255,0.15)' : '#cbd5e1',
+                  color: isDark ? '#38bdf8' : '#0284c7',
+                }}
+              >
+                {locale === 'hi' ? 'EN' : 'हि'}
+              </Button>
+            </div>
 
             {/* Theme Toggle */}
             <Button
@@ -737,7 +812,7 @@ export default function DashboardLayout({
                   alignItems: 'center',
                   gap: 8,
                   cursor: 'pointer',
-                  padding: '4px 8px',
+                  padding: '4px 6px',
                   borderRadius: 8,
                   transition: 'background 0.2s ease',
                 }}
@@ -851,7 +926,10 @@ export default function DashboardLayout({
           title={
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: 8 }}>
               <span style={{ fontWeight: 700, fontSize: 16 }}>All Business Modules</span>
-              <Tag color="blue" style={{ borderRadius: 10, margin: 0 }}>GINIE Cockpit</Tag>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <GinieLogo size={22} />
+                <Tag color="purple" style={{ borderRadius: 10, margin: 0, fontWeight: 700 }}>GINIE</Tag>
+              </div>
             </div>
           }
           placement="bottom"
@@ -860,26 +938,49 @@ export default function DashboardLayout({
           open={moreDrawerOpen}
           bodyStyle={{ padding: '16px 16px 28px' }}
         >
-          {/* Quick AI & PWA Action Bar */}
-          <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-            <Button
-              type="primary"
-              block
-              icon={<ThunderboltFilled />}
-              onClick={() => {
-                setMoreDrawerOpen(false);
-                setAiDrawerOpen(true);
-              }}
-              style={{
-                height: 42,
-                borderRadius: 10,
-                background: 'linear-gradient(135deg, #1677ff 0%, #722ed1 100%)',
-                borderColor: 'transparent',
-                fontWeight: 700,
-              }}
-            >
-              Ask GINIE AI Assistant
-            </Button>
+          {/* Quick AI & Support Action Bar */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <Button
+                type="primary"
+                block
+                icon={<ThunderboltFilled />}
+                onClick={() => {
+                  setMoreDrawerOpen(false);
+                  setAiDrawerOpen(true);
+                }}
+                style={{
+                  height: 42,
+                  borderRadius: 10,
+                  background: 'linear-gradient(135deg, #1677ff 0%, #722ed1 100%)',
+                  borderColor: 'transparent',
+                  fontWeight: 700,
+                  fontSize: 13,
+                }}
+              >
+                GINIE AI
+              </Button>
+              <Button
+                type="primary"
+                block
+                icon={<WhatsAppOutlined />}
+                onClick={() => {
+                  setMoreDrawerOpen(false);
+                  setSupportModalOpen(true);
+                }}
+                style={{
+                  height: 42,
+                  borderRadius: 10,
+                  background: '#25D366',
+                  borderColor: '#25D366',
+                  fontWeight: 700,
+                  fontSize: 13,
+                  color: '#ffffff',
+                }}
+              >
+                WhatsApp Help
+              </Button>
+            </div>
             {isInstallable && (
               <Button
                 block
@@ -889,7 +990,7 @@ export default function DashboardLayout({
                   handleInstallApp();
                 }}
                 style={{
-                  height: 42,
+                  height: 38,
                   borderRadius: 10,
                   borderColor: '#4f46e5',
                   color: '#4f46e5',
@@ -1127,6 +1228,46 @@ export default function DashboardLayout({
         open={aiDrawerOpen}
         onClose={() => setAiDrawerOpen(false)}
       />
+      <SupportModal
+        open={supportModalOpen}
+        onClose={() => setSupportModalOpen(false)}
+      />
+
+      {/* Floating WhatsApp Support Trigger (Desktop) */}
+      <div
+        className="hide-on-mobile"
+        style={{
+          position: 'fixed',
+          bottom: 24,
+          right: 24,
+          zIndex: 990,
+        }}
+      >
+        <Tooltip title="Direct WhatsApp Support (+91 7870819862)" placement="left">
+          <Button
+            type="primary"
+            icon={<WhatsAppOutlined style={{ fontSize: 22 }} />}
+            onClick={() => setSupportModalOpen(true)}
+            style={{
+              height: 46,
+              borderRadius: 24,
+              background: '#25D366',
+              borderColor: '#25D366',
+              color: '#ffffff',
+              fontWeight: 700,
+              fontSize: 13,
+              boxShadow: '0 4px 18px rgba(37, 211, 102, 0.45)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '0 18px',
+              transition: 'all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
+            }}
+          >
+            <span>Need Help?</span>
+          </Button>
+        </Tooltip>
+      </div>
     </Layout>
   );
 }

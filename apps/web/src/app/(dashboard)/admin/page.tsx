@@ -3,6 +3,7 @@
 export const dynamic = 'force-dynamic';
 
 import React, { useState, useEffect } from 'react';
+import GinieLogo from '@/components/GinieLogo';
 import {
   Card,
   Typography,
@@ -28,6 +29,7 @@ import {
   Col,
   Image,
   QRCode,
+  Radio,
 } from 'antd';
 import {
   SafetyCertificateOutlined,
@@ -61,6 +63,8 @@ import {
   DollarCircleOutlined,
   ArrowLeftOutlined,
   LoginOutlined,
+  CustomerServiceOutlined,
+  SearchOutlined,
 } from '@ant-design/icons';
 import { useApp } from '@/context/AppContext';
 import { useRouter } from 'next/navigation';
@@ -113,7 +117,7 @@ export default function AdminMasterConsolePage() {
   // Discovery & UPI Settings State
   const [platformUpi, setPlatformUpi] = useState({
     upiId: '7870819862@paytm',
-    payeeName: 'GINIE Space Platform Admin',
+    payeeName: 'GINIE',
     qrCodeUrl: '',
     amount: 599,
     instructions: 'Scan UPI QR code, pay ₹599, and upload payment screenshot with 12-digit UTR number.',
@@ -133,12 +137,19 @@ export default function AdminMasterConsolePage() {
   const [editPlanPrice, setEditPlanPrice] = useState<number>(0);
   const [savingPlanPrice, setSavingPlanPrice] = useState(false);
 
+  // Support Tickets Helpdesk State
+  const [supportTickets, setSupportTickets] = useState<any[]>([]);
+  const [loadingTickets, setLoadingTickets] = useState(false);
+  const [ticketStatusFilter, setTicketStatusFilter] = useState<string>('all');
+  const [ticketSearch, setTicketSearch] = useState<string>('');
+
   useEffect(() => {
     if (user && user.isSuperAdmin) {
       loadAdminData();
       loadBridgeStatus();
       loadHealthAndAudit();
       loadUpiAndDiscovery();
+      loadSupportTickets();
     }
   }, [user]);
 
@@ -151,6 +162,9 @@ export default function AdminMasterConsolePage() {
     }
     if (activeTab === 'discovery') {
       loadUpiAndDiscovery();
+    }
+    if (activeTab === 'support') {
+      loadSupportTickets();
     }
   }, [activeTab]);
 
@@ -257,6 +271,57 @@ export default function AdminMasterConsolePage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadSupportTickets = async () => {
+    setLoadingTickets(true);
+    try {
+      const res = await api.get('/api/admin/support-tickets?limit=100').catch(() => []);
+      if (Array.isArray(res)) {
+        setSupportTickets(res);
+      }
+    } catch (err) {
+      console.error('Failed to load support tickets:', err);
+    } finally {
+      setLoadingTickets(false);
+    }
+  };
+
+  const handleUpdateTicketStatus = async (ticketId: string, newStatus: string) => {
+    try {
+      await api.patch(`/api/admin/support-tickets/${ticketId}/status`, { status: newStatus });
+      message.success(`Ticket status updated to ${newStatus}`);
+      setSupportTickets((prev) =>
+        prev.map((t) => (t.id === ticketId ? { ...t, status: newStatus } : t))
+      );
+    } catch (err: any) {
+      message.error(err.message || 'Failed to update ticket status');
+    }
+  };
+
+  const handleReplyViaWhatsApp = (ticket: any) => {
+    let contact = (ticket.contact || '').replace(/[^0-9]/g, '');
+    if (contact.length === 10) {
+      contact = `91${contact}`;
+    }
+    if (!contact) {
+      message.warning('User contact phone number not available for this ticket.');
+      return;
+    }
+    const replyText = `👋 Namaste ${ticket.userName || 'Partner'}!\n\nMain GINIE Master Support Desk se aapke Ticket #${ticket.ticketId} (${ticket.category}) ke regard me connect kar raha hoon.\n\n*Business:* ${ticket.businessName}\n*Screen:* ${ticket.screen}\n${ticket.note ? `*Issue Note:* ${ticket.note}\n` : ''}\nAapko kya issue aa raha hai? Main abhi help kar deta hoon.`;
+
+    const nativeUrl = `whatsapp://send?phone=${contact}&text=${encodeURIComponent(replyText)}`;
+    const link = document.createElement('a');
+    link.href = nativeUrl;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(() => {
+      try {
+        document.body.removeChild(link);
+      } catch {}
+    }, 1000);
+    message.success(`Opening WhatsApp chat with ${ticket.userName || contact}...`);
   };
 
   const loadBridgeStatus = async () => {
@@ -598,10 +663,27 @@ export default function AdminMasterConsolePage() {
     return matchesSearch && matchesStatus && matchesPlan;
   });
 
+  const openTicketsCount = supportTickets.filter((t) => (t.status || 'OPEN') === 'OPEN').length;
+
+  const filteredTickets = supportTickets.filter((t) => {
+    const matchesStatus =
+      ticketStatusFilter === 'all' ? true : (t.status || 'OPEN') === ticketStatusFilter;
+    const q = ticketSearch.toLowerCase().trim();
+    const matchesSearch =
+      !q ||
+      (t.ticketId && t.ticketId.toLowerCase().includes(q)) ||
+      (t.businessName && t.businessName.toLowerCase().includes(q)) ||
+      (t.userName && t.userName.toLowerCase().includes(q)) ||
+      (t.note && t.note.toLowerCase().includes(q)) ||
+      (t.category && t.category.toLowerCase().includes(q));
+    return matchesStatus && matchesSearch;
+  });
+
   const tenantColumns = [
     {
       title: 'Business & Storefront',
       key: 'name',
+      width: 260,
       render: (_: any, record: any) => {
         const trade = TRADE_CONFIG[record.businessType] || TRADE_CONFIG.services;
         return (
@@ -660,6 +742,7 @@ export default function AdminMasterConsolePage() {
     {
       title: 'Owner & WhatsApp',
       key: 'owner',
+      width: 220,
       render: (_: any, record: any) => {
         const phone = record.owner?.phone ? record.owner.phone.replace(/\D/g, '') : '';
         const clean10 = phone.slice(-10);
@@ -693,6 +776,7 @@ export default function AdminMasterConsolePage() {
     {
       title: 'WhatsApp Session',
       key: 'whatsApp',
+      width: 170,
       render: (_: any, record: any) =>
         record.whatsApp?.connected ? (
           <Tag color="success" icon={<WhatsAppOutlined />} style={{ fontWeight: 600 }}>
@@ -705,6 +789,7 @@ export default function AdminMasterConsolePage() {
     {
       title: 'Discovery Add-on',
       key: 'discoveryPlan',
+      width: 190,
       render: (_: any, record: any) => {
         const disc = record.discoveryPlan;
         const isActive = disc?.active;
@@ -744,6 +829,7 @@ export default function AdminMasterConsolePage() {
       title: 'Subscription Tier',
       dataIndex: 'planName',
       key: 'planName',
+      width: 160,
       render: (plan: string, record: any) => {
         const isFree = plan.toLowerCase().includes('free');
         const isDisc = plan.toLowerCase().includes('discovery');
@@ -775,6 +861,7 @@ export default function AdminMasterConsolePage() {
     {
       title: 'Activity & Data',
       key: 'activity',
+      width: 180,
       render: (_: any, record: any) => (
         <div style={{ fontSize: 12 }}>
           <div><b>{record.leadCount || 0}</b> leads • <b>{record.dealCount || 0}</b> deals</div>
@@ -788,6 +875,7 @@ export default function AdminMasterConsolePage() {
       title: 'Status',
       dataIndex: 'status',
       key: 'status',
+      width: 120,
       render: (status: string) => (
         <Badge
           status={status === 'active' ? 'success' : 'error'}
@@ -802,6 +890,8 @@ export default function AdminMasterConsolePage() {
     {
       title: 'Actions',
       key: 'actions',
+      width: 220,
+      fixed: 'right' as const,
       render: (_: any, record: any) => (
         <Space wrap>
           <Button
@@ -852,13 +942,13 @@ export default function AdminMasterConsolePage() {
         }}
       >
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <SafetyCertificateOutlined style={{ color: '#faad14', fontSize: 24 }} />
-            <Title level={3} style={{ color: '#fff', margin: 0, fontWeight: 700 }}>
-              GINIE Master Console
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <GinieLogo size={36} isDark={true} />
+            <Title level={3} style={{ color: '#fff', margin: 0, fontWeight: 800 }}>
+              GINIE
             </Title>
             <Tag color="gold" style={{ fontWeight: 800, padding: '2px 8px' }}>
-              SUPER ADMIN
+              MASTER ADMIN
             </Tag>
           </div>
           <Text style={{ color: '#94a3b8', fontSize: 13, marginTop: 4, display: 'block' }}>
@@ -892,20 +982,20 @@ export default function AdminMasterConsolePage() {
         </Space>
       </div>
 
-      {/* ─── 4 Professional Master Tabs ───────────────────────────────────── */}
+      {/* ─── 6 Master Control Tabs ───────────────────────────────────────── */}
       <Tabs
         activeKey={activeTab}
         onChange={setActiveTab}
-        size="large"
+        size="middle"
         type="card"
         style={{ marginBottom: 20 }}
         items={[
           {
             key: 'overview',
             label: (
-              <Space>
+              <Space size={6}>
                 <DashboardOutlined />
-                <span style={{ fontWeight: 600 }}>Cockpit Overview</span>
+                <span style={{ fontWeight: 600 }}>Overview</span>
               </Space>
             ),
             children: (
@@ -936,7 +1026,7 @@ export default function AdminMasterConsolePage() {
                   </Card>
 
                   <Card style={{ borderRadius: 12, borderTop: '4px solid #722ed1' }}>
-                    <Text type="secondary">Google Maps Searches</Text>
+                    <Text type="secondary">GINIE Maps Searches</Text>
                     <Title level={2} style={{ margin: '8px 0 0', color: '#722ed1' }}>
                       {metrics?.totalSearches || 0}
                     </Title>
@@ -952,48 +1042,48 @@ export default function AdminMasterConsolePage() {
                   </Card>
                 </div>
 
-                {/* 3 Quick Launch Action Cards */}
+                {/* 4 Quick Launch Action Cards */}
                 <Row gutter={[16, 16]}>
-                  <Col xs={24} md={8}>
+                  <Col xs={24} sm={12} lg={6}>
                     <Card
                       hoverable
                       onClick={() => setActiveTab('whatsapp')}
-                      style={{ borderRadius: 12, border: '1px solid #bbf7d0', background: '#f0fdf4' }}
+                      style={{ borderRadius: 12, border: '1px solid #bbf7d0', background: '#f0fdf4', height: '100%' }}
                     >
                       <Space align="center" style={{ marginBottom: 12 }}>
-                        <WhatsAppOutlined style={{ fontSize: 28, color: '#16a34a' }} />
+                        <WhatsAppOutlined style={{ fontSize: 26, color: '#16a34a' }} />
                         <Title level={5} style={{ margin: 0, color: '#15803d' }}>
-                          WhatsApp Master Bridge
+                          WhatsApp Bridge
                         </Title>
                       </Space>
                       <Paragraph type="secondary" style={{ fontSize: 13, marginBottom: 12 }}>
                         Status:{' '}
                         <b>{bridgeStatus?.status === 'connected' ? `Connected (+${bridgeStatus?.phone})` : 'Disconnected / QR Ready'}</b>
                         <br />
-                        PostgreSQL Session Persistence: <b>Active</b>
+                        PostgreSQL Session: <b>Active</b>
                       </Paragraph>
                       <Button type="primary" size="small" style={{ background: '#16a34a', borderColor: '#16a34a' }}>
-                        Manage Bridge & QR &rarr;
+                        Manage Bridge &rarr;
                       </Button>
                     </Card>
                   </Col>
 
-                  <Col xs={24} md={8}>
+                  <Col xs={24} sm={12} lg={6}>
                     <Card
                       hoverable
                       onClick={() => setActiveTab('tenants')}
-                      style={{ borderRadius: 12, border: '1px solid #bfdbfe', background: '#eff6ff' }}
+                      style={{ borderRadius: 12, border: '1px solid #bfdbfe', background: '#eff6ff', height: '100%' }}
                     >
                       <Space align="center" style={{ marginBottom: 12 }}>
-                        <ShopOutlined style={{ fontSize: 28, color: '#2563eb' }} />
+                        <ShopOutlined style={{ fontSize: 26, color: '#2563eb' }} />
                         <Title level={5} style={{ margin: 0, color: '#1d4ed8' }}>
-                          Client Businesses & Plans
+                          Client Businesses
                         </Title>
                       </Space>
                       <Paragraph type="secondary" style={{ fontSize: 13, marginBottom: 12 }}>
                         Total Onboarded: <b>{tenants.length} Companies</b>
                         <br />
-                        Manage subscriptions, suspend/activate, or login as client.
+                        Manage subscriptions & accounts.
                       </Paragraph>
                       <Button type="primary" size="small" style={{ background: '#2563eb', borderColor: '#2563eb' }}>
                         View Businesses &rarr;
@@ -1001,25 +1091,48 @@ export default function AdminMasterConsolePage() {
                     </Card>
                   </Col>
 
-                  <Col xs={24} md={8}>
+                  <Col xs={24} sm={12} lg={6}>
+                    <Card
+                      hoverable
+                      onClick={() => setActiveTab('support')}
+                      style={{ borderRadius: 12, border: '1px solid #fbcfe8', background: '#fdf2f8', height: '100%' }}
+                    >
+                      <Space align="center" style={{ marginBottom: 12 }}>
+                        <CustomerServiceOutlined style={{ fontSize: 26, color: '#db2777' }} />
+                        <Title level={5} style={{ margin: 0, color: '#be185d' }}>
+                          Support Helpdesk
+                        </Title>
+                      </Space>
+                      <Paragraph type="secondary" style={{ fontSize: 13, marginBottom: 12 }}>
+                        Open Issues: <b style={{ color: openTicketsCount > 0 ? '#ef4444' : '#10b981' }}>{openTicketsCount} Pending</b>
+                        <br />
+                        Total Tickets: <b>{supportTickets.length} Logged</b>
+                      </Paragraph>
+                      <Button type="primary" size="small" style={{ background: '#db2777', borderColor: '#db2777' }}>
+                        Open Support Desk &rarr;
+                      </Button>
+                    </Card>
+                  </Col>
+
+                  <Col xs={24} sm={12} lg={6}>
                     <Card
                       hoverable
                       onClick={() => setActiveTab('health')}
-                      style={{ borderRadius: 12, border: '1px solid #e2e8f0', background: '#f8fafc' }}
+                      style={{ borderRadius: 12, border: '1px solid #e2e8f0', background: '#f8fafc', height: '100%' }}
                     >
                       <Space align="center" style={{ marginBottom: 12 }}>
-                        <CloudServerOutlined style={{ fontSize: 28, color: '#475569' }} />
+                        <CloudServerOutlined style={{ fontSize: 26, color: '#475569' }} />
                         <Title level={5} style={{ margin: 0, color: '#334155' }}>
-                          System Health & Security
+                          Server Health
                         </Title>
                       </Space>
                       <Paragraph type="secondary" style={{ fontSize: 13, marginBottom: 12 }}>
                         DB Latency: <b>{systemHealth?.database?.latencyMs || 0}ms</b>
                         <br />
-                        Places API & AI Engine status monitoring.
+                        Places API & AI Engine status.
                       </Paragraph>
                       <Button size="small">
-                        View Server Diagnostics &rarr;
+                        Diagnostics &rarr;
                       </Button>
                     </Card>
                   </Col>
@@ -1030,9 +1143,9 @@ export default function AdminMasterConsolePage() {
           {
             key: 'whatsapp',
             label: (
-              <Space>
+              <Space size={6}>
                 <WhatsAppOutlined style={{ color: '#25D366' }} />
-                <span style={{ fontWeight: 600 }}>WhatsApp Master Hub</span>
+                <span style={{ fontWeight: 600 }}>WhatsApp Bridge</span>
                 {bridgeStatus?.status === 'connected' && <Badge status="success" />}
               </Space>
             ),
@@ -1258,9 +1371,9 @@ export default function AdminMasterConsolePage() {
           {
             key: 'discovery',
             label: (
-              <Space>
+              <Space size={6}>
                 <QrcodeOutlined style={{ color: '#2563eb' }} />
-                <span style={{ fontWeight: 600 }}>Discovery Plans & UPI</span>
+                <span style={{ fontWeight: 600 }}>UPI & Discovery</span>
                 {discoveryRequests.filter((r) => r.plan?.status === 'pending').length > 0 && (
                   <Badge
                     count={discoveryRequests.filter((r) => r.plan?.status === 'pending').length}
@@ -1284,7 +1397,7 @@ export default function AdminMasterConsolePage() {
                       style={{ borderRadius: 12 }}
                     >
                       <Paragraph type="secondary" style={{ fontSize: 13, marginBottom: 16 }}>
-                        Jab bhi koi client Google Maps discovery tab me UPI paywall dekhega, ye QR code aur UPI details dikhengi:
+                        Jab bhi koi client GINIE Maps discovery tab me UPI paywall dekhega, ye QR code aur UPI details dikhengi:
                       </Paragraph>
 
                       <div style={{ textAlign: 'center', marginBottom: 20 }}>
@@ -1365,7 +1478,7 @@ export default function AdminMasterConsolePage() {
 
                         <Form.Item label="Payee Name">
                           <Input
-                            placeholder="e.g. GINIE Space Platform Admin"
+                            placeholder="e.g. GINIE"
                             value={platformUpi.payeeName}
                             onChange={(e) => setPlatformUpi((p) => ({ ...p, payeeName: e.target.value }))}
                           />
@@ -1590,6 +1703,7 @@ export default function AdminMasterConsolePage() {
                         dataSource={discoveryRequests}
                         rowKey="id"
                         loading={loadingDiscovery}
+                        scroll={{ x: 950 }}
                         pagination={{ pageSize: 8 }}
                       />
                     </Card>
@@ -1601,9 +1715,9 @@ export default function AdminMasterConsolePage() {
           {
             key: 'tenants',
             label: (
-              <Space>
+              <Space size={6}>
                 <ShopOutlined />
-                <span style={{ fontWeight: 600 }}>Businesses & Plans</span>
+                <span style={{ fontWeight: 600 }}>Businesses</span>
                 <Badge count={tenants.length} overflowCount={999} style={{ backgroundColor: '#2563eb' }} />
               </Space>
             ),
@@ -1683,7 +1797,7 @@ export default function AdminMasterConsolePage() {
                           Discovery Growth Plan
                         </Title>
                         <Text type="secondary" style={{ fontSize: 12, display: 'block', lineHeight: 1.4 }}>
-                          • Google Maps B2B Lead Generator<br />
+                          • GINIE Maps B2B Lead Generator<br />
                           • Verified WhatsApp Mobile Extractor<br />
                           • 1-Click CRM Import & Pitch Script<br />
                           • One-time UPI QR Payment (No Auto-debit)
@@ -1811,6 +1925,7 @@ export default function AdminMasterConsolePage() {
                     dataSource={filteredTenants}
                     rowKey="id"
                     loading={loading}
+                    scroll={{ x: 1350 }}
                     pagination={{ pageSize: 10, showTotal: (total) => `Total ${total} client businesses` }}
                   />
                 </Card>
@@ -1820,9 +1935,9 @@ export default function AdminMasterConsolePage() {
           {
             key: 'health',
             label: (
-              <Space>
+              <Space size={6}>
                 <CloudServerOutlined />
-                <span style={{ fontWeight: 600 }}>System & Server Health</span>
+                <span style={{ fontWeight: 600 }}>Server Health</span>
               </Space>
             ),
             children: (
@@ -1892,24 +2007,254 @@ export default function AdminMasterConsolePage() {
                         title: 'Timestamp',
                         dataIndex: 'createdAt',
                         key: 'createdAt',
+                        width: 160,
                         render: (t: string) => formatDateIndian(t),
                       },
                       {
                         title: 'User',
                         key: 'user',
+                        width: 150,
                         render: (_: any, r: any) => r.user?.name || 'System / Admin',
                       },
                       {
                         title: 'Action',
                         dataIndex: 'action',
                         key: 'action',
+                        width: 220,
                         render: (act: string) => <Tag color="blue">{act}</Tag>,
                       },
                       {
                         title: 'Target Entity',
                         dataIndex: 'entityType',
                         key: 'entityType',
+                        width: 150,
                         render: (e: string) => <Tag>{e}</Tag>,
+                      },
+                    ]}
+                    scroll={{ x: 750 }}
+                  />
+                </Card>
+              </div>
+            ),
+          },
+          {
+            key: 'support',
+            label: (
+              <Space size={6}>
+                <CustomerServiceOutlined style={{ color: '#ec4899' }} />
+                <span style={{ fontWeight: 600 }}>Support Desk</span>
+                {openTicketsCount > 0 && (
+                  <Badge count={openTicketsCount} style={{ backgroundColor: '#ef4444' }} />
+                )}
+              </Space>
+            ),
+            children: (
+              <div>
+                {/* 3 KPI Summary Cards */}
+                <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
+                  <Col xs={24} sm={8}>
+                    <Card style={{ borderRadius: 12, borderTop: '4px solid #3b82f6' }}>
+                      <Text type="secondary">Total Logged Tickets</Text>
+                      <Title level={2} style={{ margin: '4px 0 0', color: '#1d4ed8' }}>
+                        {supportTickets.length}
+                      </Title>
+                      <Text type="secondary" style={{ fontSize: 12 }}>All merchant requests received</Text>
+                    </Card>
+                  </Col>
+                  <Col xs={24} sm={8}>
+                    <Card style={{ borderRadius: 12, borderTop: '4px solid #ef4444' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Text type="secondary">Open & Pending Issues</Text>
+                        {openTicketsCount > 0 && <Tag color="error">Action Needed</Tag>}
+                      </div>
+                      <Title level={2} style={{ margin: '4px 0 0', color: '#dc2626' }}>
+                        {openTicketsCount}
+                      </Title>
+                      <Text type="secondary" style={{ fontSize: 12 }}>Awaiting resolution by team</Text>
+                    </Card>
+                  </Col>
+                  <Col xs={24} sm={8}>
+                    <Card style={{ borderRadius: 12, borderTop: '4px solid #10b981' }}>
+                      <Text type="secondary">Resolved Tickets</Text>
+                      <Title level={2} style={{ margin: '4px 0 0', color: '#059669' }}>
+                        {supportTickets.filter((t) => t.status === 'RESOLVED').length}
+                      </Title>
+                      <Text type="secondary" style={{ fontSize: 12 }}>Successfully closed issues</Text>
+                    </Card>
+                  </Col>
+                </Row>
+
+                {/* Filter & Search Card */}
+                <Card style={{ borderRadius: 12, marginBottom: 16 }} bodyStyle={{ padding: '16px 20px' }}>
+                  <Row gutter={[16, 16]} justify="space-between" align="middle">
+                    <Col xs={24} sm={12} md={8}>
+                      <Input
+                        placeholder="Search by Ticket ID, Business, User or Note..."
+                        prefix={<SearchOutlined style={{ color: '#94a3b8' }} />}
+                        value={ticketSearch}
+                        onChange={(e) => setTicketSearch(e.target.value)}
+                        allowClear
+                        style={{ borderRadius: 8 }}
+                      />
+                    </Col>
+                    <Col xs={24} sm={12} md={14} style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                      <Radio.Group
+                        value={ticketStatusFilter}
+                        onChange={(e) => setTicketStatusFilter(e.target.value)}
+                        buttonStyle="solid"
+                      >
+                        <Radio.Button value="all">All ({supportTickets.length})</Radio.Button>
+                        <Radio.Button value="OPEN">Open ({openTicketsCount})</Radio.Button>
+                        <Radio.Button value="IN_PROGRESS">
+                          In Progress ({supportTickets.filter((t) => t.status === 'IN_PROGRESS').length})
+                        </Radio.Button>
+                        <Radio.Button value="RESOLVED">
+                          Resolved ({supportTickets.filter((t) => t.status === 'RESOLVED').length})
+                        </Radio.Button>
+                      </Radio.Group>
+                      <Button icon={<SyncOutlined spin={loadingTickets} />} onClick={loadSupportTickets}>
+                        Refresh
+                      </Button>
+                    </Col>
+                  </Row>
+                </Card>
+
+                {/* Tickets Table */}
+                <Card style={{ borderRadius: 12 }} bodyStyle={{ padding: 0 }}>
+                  <Table
+                    dataSource={filteredTickets}
+                    rowKey="id"
+                    loading={loadingTickets}
+                    scroll={{ x: 1350 }}
+                    pagination={{ pageSize: 15, showSizeChanger: true }}
+                    columns={[
+                      {
+                        title: 'Ticket ID',
+                        dataIndex: 'ticketId',
+                        key: 'ticketId',
+                        width: 120,
+                        render: (tid: string) => (
+                          <Tag color="purple" style={{ fontWeight: 800, fontSize: 12, borderRadius: 6, margin: 0 }}>
+                            #{tid}
+                          </Tag>
+                        ),
+                      },
+                      {
+                        title: 'Business & Merchant',
+                        key: 'business',
+                        width: 260,
+                        render: (_: any, r: any) => (
+                          <div style={{ minWidth: 220 }}>
+                            <Text strong style={{ fontSize: 13, display: 'block', color: '#0f172a' }}>
+                              {r.businessName}
+                            </Text>
+                            <div style={{ fontSize: 12, color: '#64748b', marginTop: 2, display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+                              <span>👤 {r.userName}</span>
+                              {r.contact && <span>&bull; {r.contact}</span>}
+                            </div>
+                          </div>
+                        ),
+                      },
+                      {
+                        title: 'Category',
+                        dataIndex: 'category',
+                        key: 'category',
+                        width: 200,
+                        render: (cat: string) => (
+                          <Tag color="blue" style={{ borderRadius: 6, fontWeight: 600, padding: '2px 8px' }}>
+                            {cat}
+                          </Tag>
+                        ),
+                      },
+                      {
+                        title: 'Screen / Module',
+                        dataIndex: 'screen',
+                        key: 'screen',
+                        width: 140,
+                        render: (scr: string) => (
+                          <Tag color="cyan" style={{ borderRadius: 6 }}>
+                            {scr || '/dashboard'}
+                          </Tag>
+                        ),
+                      },
+                      {
+                        title: 'User Issue Note',
+                        dataIndex: 'note',
+                        key: 'note',
+                        width: 240,
+                        render: (note: string) =>
+                          note ? (
+                            <Tooltip title={note} placement="topLeft">
+                              <div style={{ maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 12, color: '#334155' }}>
+                                {note}
+                              </div>
+                            </Tooltip>
+                          ) : (
+                            <Text type="secondary" italic style={{ fontSize: 12 }}>
+                              No additional note
+                            </Text>
+                          ),
+                      },
+                      {
+                        title: 'Reported At',
+                        dataIndex: 'createdAt',
+                        key: 'createdAt',
+                        width: 160,
+                        render: (dt: string) => (
+                          <span style={{ fontSize: 12, color: '#64748b', whiteSpace: 'nowrap' }}>
+                            {dt
+                              ? new Date(dt).toLocaleString('en-IN', {
+                                  dateStyle: 'short',
+                                  timeStyle: 'short',
+                                })
+                              : 'Just now'}
+                          </span>
+                        ),
+                      },
+                      {
+                        title: 'Status',
+                        dataIndex: 'status',
+                        key: 'status',
+                        width: 140,
+                        render: (st: string, r: any) => {
+                          const currentStatus = st || 'OPEN';
+                          return (
+                            <Select
+                              value={currentStatus}
+                              size="small"
+                              style={{ width: 124 }}
+                              onChange={(val) => handleUpdateTicketStatus(r.id, val)}
+                              options={[
+                                { value: 'OPEN', label: '🟡 Open' },
+                                { value: 'IN_PROGRESS', label: '🔵 In Progress' },
+                                { value: 'RESOLVED', label: '🟢 Resolved' },
+                              ]}
+                            />
+                          );
+                        },
+                      },
+                      {
+                        title: 'Direct Action',
+                        key: 'actions',
+                        width: 190,
+                        fixed: 'right' as const,
+                        render: (_: any, r: any) => (
+                          <Button
+                            type="primary"
+                            size="small"
+                            icon={<WhatsAppOutlined />}
+                            onClick={() => handleReplyViaWhatsApp(r)}
+                            style={{
+                              background: '#25D366',
+                              borderColor: '#25D366',
+                              fontWeight: 600,
+                              borderRadius: 6,
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            Reply on WhatsApp
+                          </Button>
+                        ),
                       },
                     ]}
                   />
@@ -2024,7 +2369,7 @@ export default function AdminMasterConsolePage() {
             <Space>
               <input type="checkbox" id="grantDiscovery" />
               <label htmlFor="grantDiscovery" style={{ cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#16a34a' }}>
-                Activate 30-Day Google Maps Lead Discovery instantly
+                Activate 30-Day GINIE Maps Lead Discovery instantly
               </label>
             </Space>
           </Form.Item>

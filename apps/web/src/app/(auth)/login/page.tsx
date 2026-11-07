@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import GinieLogo from '@/components/GinieLogo';
 import {
   Card,
   Form,
@@ -230,26 +231,11 @@ export default function LoginPage() {
       >
         {/* Brand Header */}
         <div style={{ textAlign: 'center', marginBottom: 20 }}>
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 56,
-              height: 56,
-              borderRadius: 14,
-              background: brandColor,
-              color: '#fff',
-              fontSize: 26,
-              fontWeight: 800,
-              marginBottom: 10,
-              boxShadow: '0 8px 16px rgba(22, 119, 255, 0.35)',
-            }}
-          >
-            G
+          <div style={{ marginBottom: 12 }}>
+            <GinieLogo size={60} />
           </div>
-          <Title level={3} style={{ margin: 0, letterSpacing: '-0.5px' }}>
-            GINIE CRM
+          <Title level={2} style={{ margin: 0, letterSpacing: '-0.5px', fontWeight: 900 }}>
+            GINIE
           </Title>
           <Text type="secondary" style={{ fontSize: 13, marginTop: 4, display: 'block' }}>
             {locale === 'hi' ? 'अपने बिजनेस वर्कस्पेस में साइन इन करें' : 'Sign in to your business workspace'}

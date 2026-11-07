@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import GinieLogo from '@/components/GinieLogo';
 import { Card, Form, Input, Button, Typography, Alert, Select } from 'antd';
 import {
   ShopOutlined,
@@ -80,23 +81,8 @@ export default function RegisterPage() {
         }}
       >
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 54,
-              height: 54,
-              borderRadius: 14,
-              background: brandColor,
-              color: '#fff',
-              fontSize: 26,
-              fontWeight: 800,
-              marginBottom: 12,
-              boxShadow: '0 8px 16px rgba(22, 119, 255, 0.3)',
-            }}
-          >
-            G
+          <div style={{ marginBottom: 12 }}>
+            <GinieLogo size={58} />
           </div>
           <Title level={3} style={{ margin: 0, letterSpacing: '-0.5px' }}>
             {locale === 'hi' ? 'नया बिजनेस अकाउंट बनाएं' : 'Create Business Account'}

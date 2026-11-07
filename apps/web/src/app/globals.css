@@ -41,16 +41,45 @@
   --slate-900: #0f172a;
 }
 
-html, body {
+html {
   margin: 0;
   padding: 0;
   width: 100%;
-  overflow-x: hidden;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  overflow-x: clip;
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: var(--slate-50);
   color: var(--slate-900);
+}
+
+/* Rock-Solid Frozen Sticky Header & Sider Rules */
+.ant-layout {
+  overflow: visible !important;
+}
+
+.ant-layout-header,
+.ginie-mobile-header,
+.ginie-sticky-header {
+  position: -webkit-sticky !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 1000 !important;
+}
+
+.ginie-desktop-sider {
+  position: -webkit-sticky !important;
+  position: sticky !important;
+  top: 0 !important;
+  height: 100vh !important;
+  overflow-y: auto !important;
+  z-index: 1001 !important;
 }
 
 * {
@@ -126,11 +155,82 @@ html, body {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
-/* Universal Table Horizontal Scrolling on Mobile */
+/* Universal Responsive Ant Design Tabs: Ensure tabs never clip, wrap or hide */
+.ant-tabs {
+  max-width: 100% !important;
+}
+
+.ant-tabs-nav {
+  margin-bottom: 16px !important;
+  max-width: 100% !important;
+}
+
+.ant-tabs-nav-wrap {
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  scrollbar-width: thin !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+.ant-tabs-nav-wrap::-webkit-scrollbar {
+  height: 4px;
+}
+
+.ant-tabs-nav-wrap::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.ant-tabs-nav-wrap::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.ant-tabs-nav-wrap::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.ant-tabs-nav-list {
+  flex-wrap: nowrap !important;
+  display: flex !important;
+}
+
+.ant-tabs-tab {
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.ant-tabs-tab-btn {
+  white-space: nowrap !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+/* Ant Design Card Tabs Optimization: Sleek padding & clean borders */
+.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab {
+  padding: 8px 16px !important;
+  border-radius: 8px 8px 0 0 !important;
+  font-weight: 500;
+}
+
+.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab.ant-tabs-tab-active {
+  font-weight: 700;
+}
+
+/* Universal Table Quality: Prevent vertical letter wrapping and squishing */
 .ant-table-wrapper {
   width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+}
+
+.ant-table-thead > tr > th {
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+}
+
+.ant-table-cell {
+  word-break: normal;
 }
 
 /* Mobile responsive utility helpers */
@@ -172,6 +272,42 @@ html, body {
 /* Mobile bottom navigation styling */
 .ginie-mobile-bottom-nav {
   display: none;
+}
+
+/* Responsive Tablet Breakpoint & Header Utilities */
+@media (max-width: 1180px) {
+  .hide-on-tablet {
+    display: none !important;
+  }
+}
+
+.ginie-nav-link {
+  color: #cbd5e1 !important;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 6px 14px;
+  border-radius: 8px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+}
+
+.ginie-nav-link:hover {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Sticky Sidebar custom scrollbar */
+.ginie-desktop-sider::-webkit-scrollbar {
+  width: 4px;
+}
+.ginie-desktop-sider::-webkit-scrollbar-track {
+  background: transparent;
+}
+.ginie-desktop-sider::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 4px;
 }
 
 @media (max-width: 768px) {

@@ -8,16 +8,17 @@ import './globals.css';
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://ginie.space'),
   title: {
-    default: 'GINIE — All-in-One CRM, Multi-Trade ERP & Digital Storefront Built for India',
-    template: '%s | GINIE Business Suite',
+    default: 'GINIE — All-in-One CRM, Multi-Trade ERP & Digital Storefront',
+    template: '%s | GINIE',
   },
-  description: '100% Free Core Sales CRM, Multi-Trade Barcode POS ERP for 11 Indian trades, Commission-Free Digital Storefront & ₹599 On-Demand Google Maps Lead Discovery with Zero Auto-Debit.',
+  description: '100% Free Core Sales CRM, Multi-Trade Barcode POS ERP for 11 Indian trades, Commission-Free Digital Storefront & ₹599 On-Demand GINIE Maps Lead Discovery with Zero Auto-Debit.',
   keywords: [
+    'GINIE',
     'CRM for Indian Business',
     'Multi-Trade ERP',
     'Barcode POS Counter',
     'Free Digital Storefront India',
-    'Google Maps Lead Discovery',
+    'GINIE Maps Lead Discovery',
     'GST Invoicing with UPI QR',
     'Kirana Billing Software',
     'Restaurant KOT POS',
@@ -26,22 +27,27 @@ export const metadata: Metadata = {
   ],
   manifest: '/manifest.json',
   icons: {
-    icon: '/icons/icon.svg',
-    apple: '/icons/icon-192.png',
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icons/icon.svg', type: 'image/svg+xml' },
+      { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+    ],
+    apple: '/apple-touch-icon.png',
+    shortcut: '/favicon.ico',
   },
   openGraph: {
     type: 'website',
     locale: 'en_IN',
     url: 'https://ginie.space',
-    siteName: 'GINIE Business Suite',
+    siteName: 'GINIE',
     title: 'GINIE — All-in-One CRM, Multi-Trade ERP & Digital Storefront',
-    description: 'Empower your Indian business with 100% Free Core CRM, 11-Trade ERP, POS Counter, Digital Storefront and On-Demand Google Maps Leads via UPI.',
+    description: 'Empower your Indian business with 100% Free Core CRM, 11-Trade ERP, POS Counter, Digital Storefront and On-Demand GINIE Maps Leads via UPI.',
     images: [
       {
-        url: '/icons/icon-512.png',
-        width: 512,
-        height: 512,
-        alt: 'GINIE Business Suite',
+        url: '/logo.png',
+        width: 1024,
+        height: 1024,
+        alt: 'GINIE',
       },
     ],
   },
@@ -49,7 +55,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'GINIE — All-in-One CRM, Multi-Trade ERP & Digital Storefront',
     description: '100% Free Core Sales CRM, 11-Trade ERP POS Counter & Commission-Free Digital Storefront built for Indian SMEs.',
-    images: ['/icons/icon-512.png'],
+    images: ['/logo.png'],
   },
   appleWebApp: {
     capable: true,
@@ -74,7 +80,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
       </head>
       <body style={{ margin: 0, padding: 0 }}>
         <AntdRegistry>

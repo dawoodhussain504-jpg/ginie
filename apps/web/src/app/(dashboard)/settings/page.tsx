@@ -628,7 +628,7 @@ function SettingsContent() {
         <Card style={{ maxWidth: 640, borderRadius: 12 }}>
           <Title level={4}>Subscription & Usage Quotas</Title>
           <Paragraph type="secondary">
-            View your current monthly limits for Google Places searches, WhatsApp messaging, and seats.
+            View your current monthly limits for GINIE Maps searches, WhatsApp messaging, and seats.
           </Paragraph>
           <Button type="primary" onClick={() => router.push('/subscriptions')}>
             View Plan Details

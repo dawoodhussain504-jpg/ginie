@@ -2,8 +2,9 @@
 
 import React from 'react';
 import Link from 'next/link';
+import GinieLogo from '@/components/GinieLogo';
 import { Card, Typography, Breadcrumb, Divider, Tag } from 'antd';
-import { ThunderboltFilled, ArrowLeftOutlined, SafetyCertificateOutlined, LockOutlined } from '@ant-design/icons';
+import { ArrowLeftOutlined, SafetyCertificateOutlined, LockOutlined } from '@ant-design/icons';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -20,19 +21,7 @@ export default function PrivacyPolicyPage() {
       >
         <div style={{ maxWidth: 1080, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-            <div
-              style={{
-                width: 34,
-                height: 34,
-                borderRadius: 8,
-                background: '#2563eb',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <ThunderboltFilled style={{ color: '#ffffff', fontSize: 18 }} />
-            </div>
+            <GinieLogo size={34} isDark={true} />
             <span style={{ fontSize: 22, fontWeight: 900, color: '#ffffff', letterSpacing: '0.04em' }}>GINIE</span>
             <span style={{ fontSize: 11, fontWeight: 700, color: '#38bdf8', background: 'rgba(56, 189, 248, 0.12)', padding: '2px 8px', borderRadius: 999 }}>
               Legal & Compliance
@@ -81,7 +70,7 @@ export default function PrivacyPolicyPage() {
               1. Introduction & Scope
             </Title>
             <Paragraph style={{ fontSize: 15, lineHeight: 1.8, color: '#475569' }}>
-              GINIE Space (&quot;GINIE&quot;, &quot;we&quot;, &quot;us&quot;, or &quot;our&quot;) is committed to protecting the privacy, confidentiality, and data sovereignty of our business users, retail merchants, clinics, manufacturers, and their end-customers across India. This Privacy Policy outlines our practices regarding data collection, storage, processing, and protection in compliance with the Information Technology Act (2000) and the Digital Personal Data Protection Act (DPDP Act, 2023).
+              GINIE (&quot;we&quot;, &quot;us&quot;, or &quot;our&quot;) is committed to protecting the privacy, confidentiality, and data sovereignty of our business users, retail merchants, clinics, manufacturers, and their end-customers across India. This Privacy Policy outlines our practices regarding data collection, storage, processing, and protection in compliance with the Information Technology Act (2000) and the Digital Personal Data Protection Act (DPDP Act, 2023).
             </Paragraph>
           </section>
 
@@ -119,7 +108,7 @@ export default function PrivacyPolicyPage() {
               4. WhatsApp Integration & Third-Party APIs
             </Title>
             <Paragraph style={{ fontSize: 15, lineHeight: 1.8, color: '#475569' }}>
-              GINIE provides direct WhatsApp Web click-to-chat links and multi-device connection bridges. We do not store raw end-to-end encrypted chat histories of your private WhatsApp personal conversations. When utilizing the Google Maps Lead Discovery module, public business metadata is retrieved directly via Google Places APIs solely for your designated prospecting search.
+              GINIE provides direct WhatsApp Web click-to-chat links and multi-device connection bridges. We do not store raw end-to-end encrypted chat histories of your private WhatsApp personal conversations. When utilizing the GINIE Maps Lead Discovery module, public business metadata is retrieved directly via standard places data sources solely for your designated prospecting search.
             </Paragraph>
           </section>
 
@@ -140,7 +129,7 @@ export default function PrivacyPolicyPage() {
               In accordance with the Information Technology Act (2000) and DPDP Act (2023), for any privacy concerns, data deletion requests, or grievances, please reach our Grievance Officer:
             </Paragraph>
             <div style={{ background: '#f1f5f9', padding: '16px 20px', borderRadius: 8, fontSize: 14, color: '#334155' }}>
-              <div><strong>Grievance Officer:</strong> Compliance Team &bull; GINIE Space</div>
+              <div><strong>Grievance Officer:</strong> Compliance Team &bull; GINIE</div>
               <div><strong>Email:</strong> compliance@ginie.space / support@ginie.space</div>
               <div><strong>WhatsApp Support:</strong> +91 7870819862</div>
               <div><strong>Jurisdiction:</strong> Bihar / New Delhi, India</div>
@@ -151,7 +140,7 @@ export default function PrivacyPolicyPage() {
 
       {/* Footer */}
       <footer style={{ background: '#0B0F19', color: '#64748b', padding: '24px', textAlign: 'center', fontSize: 13, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-        &copy; {new Date().getFullYear()} GINIE Space. All rights reserved. Built with pride for Indian Businesses.
+        &copy; {new Date().getFullYear()} GINIE. All rights reserved. Built with pride for Indian Businesses.
       </footer>
     </div>
   );
