@@ -47,6 +47,12 @@ html {
   width: 100%;
 }
 
+
+/* Universal Link Reset: Prevent browser default text underlines across entire app */
+a, a:hover, a:focus, a:visited {
+  text-decoration: none !important;
+}
+
 body {
   margin: 0;
   padding: 0;

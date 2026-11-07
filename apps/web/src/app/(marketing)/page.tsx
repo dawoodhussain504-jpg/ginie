@@ -209,7 +209,7 @@ export default function MarketingLandingPage() {
         </span>
         <Link
           href={isLoggedIn ? '/dashboard' : '/register'}
-          className="underline font-semibold text-yellow-200 hover:text-white ml-2 inline-flex items-center gap-1 shrink-0"
+          className="ml-2 bg-yellow-400/20 hover:bg-yellow-400/30 text-yellow-200 hover:text-white px-2.5 py-0.5 rounded-full text-xs font-semibold inline-flex items-center gap-1 shrink-0 no-underline transition-colors"
         >
           Launch Free Cockpit <ArrowRight className="w-3 h-3" />
         </Link>
@@ -219,7 +219,7 @@ export default function MarketingLandingPage() {
       <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200/80 transition-all">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           {/* Brand Logo */}
-          <Link href="/" className="flex items-center gap-3 group">
+          <Link href="/" className="flex items-center gap-2.5 group no-underline">
             <div className="w-9 h-9 relative flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
               <Image
                 src="/logo.png"
@@ -230,37 +230,29 @@ export default function MarketingLandingPage() {
                 className="w-full h-full object-contain"
               />
             </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span className="font-bold text-xl tracking-tight text-slate-900">GINIE</span>
-                <Badge variant="outline" className="text-[10px] font-semibold px-1.5 py-0 border-blue-200 bg-blue-50 text-blue-700">
-                  CRM & Maps
-                </Badge>
-              </div>
-              <p className="text-[11px] text-slate-500 -mt-0.5 font-normal hidden sm:block">
-                B2B Growth OS for Bharat
-              </p>
-            </div>
+            <span className="font-bold text-2xl tracking-tight text-slate-900 group-hover:text-blue-600 transition-colors">
+              GINIE
+            </span>
           </Link>
 
           {/* Desktop Navigation Links */}
-          <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-slate-600">
-            <a href="#radar" className="hover:text-blue-600 transition-colors">
+          <nav className="hidden md:flex items-center gap-8 text-[14px] font-medium text-slate-700">
+            <a href="#radar" className="text-slate-700 hover:text-blue-600 no-underline transition-colors py-1">
               Lead Discovery
             </a>
-            <a href="#whatsapp" className="hover:text-blue-600 transition-colors">
+            <a href="#whatsapp" className="text-slate-700 hover:text-blue-600 no-underline transition-colors py-1">
               WhatsApp CRM
             </a>
-            <a href="#pipeline" className="hover:text-blue-600 transition-colors">
+            <a href="#pipeline" className="text-slate-700 hover:text-blue-600 no-underline transition-colors py-1">
               Sales Pipeline
             </a>
-            <a href="#invoicing" className="hover:text-blue-600 transition-colors">
+            <a href="#invoicing" className="text-slate-700 hover:text-blue-600 no-underline transition-colors py-1">
               UPI Invoicing
             </a>
-            <a href="#pricing" className="hover:text-blue-600 transition-colors">
+            <a href="#pricing" className="text-slate-700 hover:text-blue-600 no-underline transition-colors py-1">
               Pricing (₹0 / ₹599)
             </a>
-            <a href="#faq" className="hover:text-blue-600 transition-colors">
+            <a href="#faq" className="text-slate-700 hover:text-blue-600 no-underline transition-colors py-1">
               FAQ
             </a>
           </nav>
@@ -314,42 +306,42 @@ export default function MarketingLandingPage() {
             <a
               href="#radar"
               onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 text-base font-medium text-slate-700 hover:text-blue-600 border-b border-slate-100"
+              className="block py-2.5 text-base font-medium text-slate-800 hover:text-blue-600 border-b border-slate-100 no-underline transition-colors"
             >
               GINIE Maps Lead Radar
             </a>
             <a
               href="#whatsapp"
               onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 text-base font-medium text-slate-700 hover:text-blue-600 border-b border-slate-100"
+              className="block py-2.5 text-base font-medium text-slate-800 hover:text-blue-600 border-b border-slate-100 no-underline transition-colors"
             >
               Direct WhatsApp CRM
             </a>
             <a
               href="#pipeline"
               onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 text-base font-medium text-slate-700 hover:text-blue-600 border-b border-slate-100"
+              className="block py-2.5 text-base font-medium text-slate-800 hover:text-blue-600 border-b border-slate-100 no-underline transition-colors"
             >
               Sales Pipeline & Tasks
             </a>
             <a
               href="#invoicing"
               onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 text-base font-medium text-slate-700 hover:text-blue-600 border-b border-slate-100"
+              className="block py-2.5 text-base font-medium text-slate-800 hover:text-blue-600 border-b border-slate-100 no-underline transition-colors"
             >
               Dynamic UPI Invoicing
             </a>
             <a
               href="#pricing"
               onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 text-base font-medium text-slate-700 hover:text-blue-600 border-b border-slate-100"
+              className="block py-2.5 text-base font-medium text-slate-800 hover:text-blue-600 border-b border-slate-100 no-underline transition-colors"
             >
               Pricing (₹0 / ₹599)
             </a>
             <a
               href="#faq"
               onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 text-base font-medium text-slate-700 hover:text-blue-600"
+              className="block py-2.5 text-base font-medium text-slate-800 hover:text-blue-600 no-underline transition-colors"
             >
               FAQ
             </a>
