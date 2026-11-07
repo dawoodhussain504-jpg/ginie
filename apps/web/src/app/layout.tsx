@@ -11,14 +11,14 @@ export const metadata: Metadata = {
     default: 'GINIE — All-in-One CRM, Multi-Trade ERP & Digital Storefront',
     template: '%s | GINIE',
   },
-  description: '100% Free Core Sales CRM, Multi-Trade Barcode POS ERP for 11 Indian trades, Commission-Free Digital Storefront & ₹599 On-Demand GINIE Maps Lead Discovery with Zero Auto-Debit.',
+  description: '100% Free Core Sales CRM, Multi-Trade Barcode POS ERP for 11 Indian trades, Commission-Free Digital Storefront & ₹599 On-Demand Google Maps Customer Discovery with Zero Auto-Debit.',
   keywords: [
     'GINIE',
     'CRM for Indian Business',
     'Multi-Trade ERP',
     'Barcode POS Counter',
     'Free Digital Storefront India',
-    'GINIE Maps Lead Discovery',
+    'Google Maps Customer Discovery',
     'GST Invoicing with UPI QR',
     'Kirana Billing Software',
     'Restaurant KOT POS',
@@ -41,7 +41,7 @@ export const metadata: Metadata = {
     url: 'https://ginie.space',
     siteName: 'GINIE',
     title: 'GINIE — All-in-One CRM, Multi-Trade ERP & Digital Storefront',
-    description: 'Empower your Indian business with 100% Free Core CRM, 11-Trade ERP, POS Counter, Digital Storefront and On-Demand GINIE Maps Leads via UPI.',
+    description: 'Empower your Indian business with 100% Free Core CRM, 11-Trade ERP, POS Counter, Digital Storefront and On-Demand Google Maps Customer Discovery via UPI.',
     images: [
       {
         url: '/logo.png',
