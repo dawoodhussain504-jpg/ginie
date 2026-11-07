@@ -48,6 +48,7 @@ import {
 } from '@ant-design/icons';
 import { useApp } from '@/context/AppContext';
 import { api } from '@/lib/api';
+import { AppButton, AppEmpty } from '@/components/common';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -174,7 +175,7 @@ export default function FindCustomersPage() {
   const onSearch = async (values: any) => {
     if (planStatus && !planStatus.active) {
       setPaywallModalOpen(true);
-      message.warning('GINIE Maps Lead Discovery ke liye ₹599/mo plan active hona zaroori hai.');
+      message.warning('Google Maps Customer Discovery ke liye ₹599/mo plan active hona zaroori hai.');
       return;
     }
 
@@ -227,7 +228,7 @@ export default function FindCustomersPage() {
       const res = await api.post(`/api/discovery/${currentSearchId}/import`, {
         resultIds: [record.id],
         createDeal: true,
-        tags: ['GINIE Maps', 'Quick Add'],
+        tags: ['Google Maps', 'Quick Add'],
       });
       message.success(res.message);
       // Refresh
@@ -246,7 +247,7 @@ export default function FindCustomersPage() {
         resultIds: selectedRowKeys,
         statusId: values.statusId,
         createDeal: createDealInPipeline,
-        tags: values.tags || ['GINIE Maps'],
+        tags: values.tags || ['Google Maps'],
       });
       message.success(res.message);
       setImportModalVisible(false);
@@ -297,7 +298,7 @@ export default function FindCustomersPage() {
     setWaRecipient(record);
     const businessName = record.name || 'Sir/Ma\'am';
     setWaMessageText(
-      `Namaste! I came across ${businessName} on GINIE Maps and wanted to reach out regarding our operational software and business solutions. Would you be open to a quick 2-minute overview?`
+      `Namaste! I came across ${businessName} on Google Maps and wanted to reach out regarding our operational software and business solutions. Would you be open to a quick 2-minute overview?`
     );
     setWaModalVisible(true);
   };
@@ -306,7 +307,7 @@ export default function FindCustomersPage() {
     if (!waRecipient) return;
     const businessName = waRecipient.name || 'Sir/Ma\'am';
     if (templateKey === 'intro') {
-      setWaMessageText(`Namaste! I came across ${businessName} on GINIE Maps and wanted to reach out regarding our operational software and business solutions. Would you be open to a quick 2-minute overview?`);
+      setWaMessageText(`Namaste! I came across ${businessName} on Google Maps and wanted to reach out regarding our operational software and business solutions. Would you be open to a quick 2-minute overview?`);
     } else if (templateKey === 'offer') {
       setWaMessageText(`Hello ${businessName}, we are currently offering an exclusive free consultation and 15% discount for local businesses in your area. Can I share our service details with you?`);
     } else if (templateKey === 'quick') {
@@ -456,7 +457,7 @@ export default function FindCustomersPage() {
               icon={<PlusOutlined />}
               onClick={() => handleSingleAddToSales(record)}
             >
-              Add to Sales
+              Customer Jodein
             </Button>
           )}
 
@@ -467,7 +468,7 @@ export default function FindCustomersPage() {
               style={{ backgroundColor: '#25D366', borderColor: '#25D366', color: '#fff', fontWeight: 600 }}
               onClick={() => handleOpenWhatsAppModal(record)}
             >
-              Pitch
+              WhatsApp
             </Button>
           )}
         </Space>
@@ -517,11 +518,11 @@ export default function FindCustomersPage() {
                 <CheckCircleFilled style={{ color: '#52c41a', fontSize: 20 }} />
                 <div>
                   <Text strong style={{ fontSize: 14, color: '#237804' }}>
-                    ⚡ GINIE Maps Lead Discovery Active
+                    ⚡ Google Maps Customer Discovery Active
                   </Text>
                   <Text style={{ marginLeft: 8, fontSize: 13, color: '#389e0d' }}>
                     {planStatus.isSuperAdmin
-                      ? 'SuperAdmin Platform Access (Unlimited GINIE Maps Search)'
+                      ? 'SuperAdmin Platform Access (Unlimited Google Maps Search)'
                       : `${planStatus.remainingDays} days remaining (Expires on ${
                           planStatus.expiresAt
                             ? new Date(planStatus.expiresAt).toLocaleDateString('en-IN')
@@ -597,7 +598,7 @@ export default function FindCustomersPage() {
               <Space align="center" style={{ marginBottom: 4 }}>
                 <LockOutlined style={{ fontSize: 20, color: '#2563eb' }} />
                 <Title level={5} style={{ margin: 0, color: '#1e3a8a' }}>
-                  🔒 Unlock GINIE Maps B2B Lead Discovery (₹599 / month)
+                  🔒 Unlock Google Maps B2B Customer Discovery (₹599 / month)
                 </Title>
               </Space>
               <Paragraph type="secondary" style={{ margin: 0, fontSize: 13, maxWidth: 680 }}>
@@ -651,7 +652,7 @@ export default function FindCustomersPage() {
                 icon={<LockOutlined />}
                 style={{ fontSize: 13, padding: '4px 12px', borderRadius: 12, fontWeight: 600 }}
               >
-                GINIE Maps Lead Discovery Locked (Requires ₹599 Plan)
+                Google Maps Customer Discovery Locked (Requires ₹599 Plan)
               </Tag>
             )}
           </div>
@@ -661,6 +662,33 @@ export default function FindCustomersPage() {
             </Text>
           </div>
         </div>
+
+        {/* Quick Industry Presets for Bharat */}
+        <div style={{ marginBottom: 16 }}>
+          <Text type="secondary" style={{ fontSize: 12, marginRight: 8, fontWeight: 600 }}>
+            Quick Searches:
+          </Text>
+          <Space wrap size={[6, 6]}>
+            {[
+              { label: 'Car Garages', cat: 'Car Repair & Service Center' },
+              { label: 'Dental Clinics', cat: 'Dental Clinic' },
+              { label: 'Hardware Wholesalers', cat: 'Hardware & Electricals Wholesale' },
+              { label: 'Kirana & Retail', cat: 'Grocery & Supermarket' },
+            ].map((preset) => (
+              <Tag
+                key={preset.label}
+                style={{ cursor: 'pointer', padding: '2px 10px', borderRadius: 12, fontSize: 12 }}
+                onClick={() => {
+                  form.setFieldValue('category', preset.cat);
+                  if (!form.getFieldValue('city')) form.setFieldValue('city', 'Mumbai');
+                }}
+              >
+                + {preset.label}
+              </Tag>
+            ))}
+          </Space>
+        </div>
+
 
         <Form
           form={form}
@@ -782,7 +810,7 @@ export default function FindCustomersPage() {
           rowKey="id"
           loading={loading}
           scroll={{ x: 800 }}
-          locale={{ emptyText: t.discovery.empty }}
+          locale={{ emptyText: <AppEmpty description="Koi business nahi mila. Naya shehar ya category search karein." actionLabel="Naye Customer Dhundhein" onAction={() => form.submit()} /> }}
           pagination={{ pageSize: 10 }}
         />
       </Card>
@@ -961,7 +989,7 @@ export default function FindCustomersPage() {
           <Space>
             <QrcodeOutlined style={{ color: '#2563eb', fontSize: 22 }} />
             <span style={{ fontWeight: 700, fontSize: 16 }}>
-              Unlock GINIE Maps Lead Discovery — ₹599 / Month
+              Unlock Google Maps Customer Discovery — ₹599 / Month
             </span>
           </Space>
         }
@@ -976,7 +1004,7 @@ export default function FindCustomersPage() {
             Impulse Add-on • Core CRM Remains 100% Free
           </Tag>
           <Paragraph type="secondary" style={{ fontSize: 13, margin: '4px 0 16px' }}>
-            Apne local city & pin code me kisi bhi category ke B2B clients, phone numbers aur GINIE Maps listing data search karein.
+            Apne local city & pin code me kisi bhi category ke B2B clients, phone numbers aur Google Maps listing data search karein.
           </Paragraph>
 
           {/* QR Code Section */}

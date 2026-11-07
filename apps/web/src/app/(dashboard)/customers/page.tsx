@@ -36,6 +36,7 @@ import CustomerImportModal from '@/components/CustomerImportModal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { AppButton, AppEmpty } from '@/components/common';
 
 interface LoyaltyData {
   points: number;
@@ -454,7 +455,7 @@ function CustomersContent() {
             <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold shadow-sm">
               <Users className="w-5 h-5" />
             </div>
-            <span>Customers, Accounts & Loyalty</span>
+            <span>Customers</span>
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1 font-medium">
             Manage all client contacts, customer cashback wallets, and 360° chronological activity timelines.
@@ -475,7 +476,7 @@ function CustomersContent() {
             onClick={() => setAddCustomerOpen(true)}
             className="gap-2 font-semibold shadow-md shadow-blue-500/20"
           >
-            <Plus className="w-4 h-4" /> Add Customer
+            <Plus className="w-4 h-4" /> + Customer Jodein
           </Button>
         </div>
       </div>
@@ -605,8 +606,10 @@ function CustomersContent() {
         </div>
 
         {/* Table Content */}
-        <div className="p-2 sm:p-4 overflow-x-auto">
+        <div className="p-2 sm:p-4">
           {activeTab === 'people' ? (
+            <>
+              <div className="hidden md:block overflow-x-auto">
             <Table
               dataSource={filteredContacts}
               columns={contactColumns}
@@ -614,8 +617,104 @@ function CustomersContent() {
               loading={loading}
               pagination={{ pageSize: 10 }}
               scroll={{ x: 750 }}
+              locale={{
+                emptyText: (
+                  <AppEmpty
+                    description="Koi customer nahi mila. Pehla customer jodein!"
+                    actionLabel="+ Customer Jodein"
+                    onAction={() => setAddCustomerOpen(true)}
+                  />
+                ),
+              }}
               className="ginie-modern-table"
             />
+          </div>
+
+          {/* Mobile Card Stack */}
+          <div className="block md:hidden space-y-3">
+            {filteredContacts.length === 0 && !loading ? (
+              <AppEmpty
+                description="Koi customer nahi mila. Pehla customer jodein!"
+                actionLabel="+ Customer Jodein"
+                onAction={() => setAddCustomerOpen(true)}
+              />
+            ) : (
+              filteredContacts.map((c) => {
+                const pts = Number(c.loyaltyPoints) || 0;
+                const tier = pts >= 500 ? 'Platinum' : pts >= 200 ? 'Gold' : 'Silver';
+                const data = loyaltyMap[c.id] || { points: pts, cashback: Math.round(pts * 0.5), tier };
+                const tierBadgeVariant = data.tier === 'Platinum' ? 'purple' : data.tier === 'Gold' ? 'warning' : 'secondary';
+
+                return (
+                  <div
+                    key={c.id}
+                    className="bg-white rounded-xl border border-slate-200/90 p-3.5 shadow-xs space-y-2.5"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div
+                        className="flex items-center gap-2.5 cursor-pointer flex-1 min-w-0"
+                        onClick={() => {
+                          setSelectedCustomerId(c.id);
+                          setTimelineDrawerOpen(true);
+                        }}
+                      >
+                        <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-extrabold flex items-center justify-center text-xs shrink-0">
+                          {(c.name || 'C').slice(0, 2).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-bold text-sm text-slate-900 truncate">{c.name}</div>
+                          {c.company?.name && (
+                            <div className="text-xs text-slate-500 font-medium truncate">{c.company.name}</div>
+                          )}
+                        </div>
+                      </div>
+
+                      <Badge variant={tierBadgeVariant as any} className="text-[10px] font-bold shrink-0">
+                        {data.tier} • {data.points} pts
+                      </Badge>
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs text-slate-600 pt-1 border-t border-slate-100">
+                      <div className="flex items-center gap-2">
+                        {c.phone ? (
+                          <>
+                            <span className="font-medium text-slate-700">{c.phone}</span>
+                            <a
+                              href={`tel:${c.phone}`}
+                              className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white flex items-center justify-center transition-colors"
+                              title="Call"
+                            >
+                              <Phone className="w-3.5 h-3.5" />
+                            </a>
+                            <button
+                              onClick={() => handleOpenQuickWhatsApp(c)}
+                              className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white flex items-center justify-center transition-colors"
+                              title="WhatsApp"
+                            >
+                              <MessageCircle className="w-3.5 h-3.5" />
+                            </button>
+                          </>
+                        ) : (
+                          <span className="text-slate-400">No phone</span>
+                        )}
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          setSelectedCustomerId(c.id);
+                          setTimelineDrawerOpen(true);
+                        }}
+                        className="text-xs font-semibold text-blue-600 hover:underline flex items-center gap-1"
+                      >
+                        <Clock className="w-3.5 h-3.5" /> Timeline
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </>
           ) : (
             <Table
               dataSource={filteredCompanies}
@@ -797,12 +896,12 @@ function CustomersContent() {
 
       {/* Add Customer Modal */}
       <Modal
-        title="Add New Customer"
+        title="Naya Customer Jodein"
         open={addCustomerOpen}
         onCancel={() => setAddCustomerOpen(false)}
         onOk={handleCreateCustomer}
         confirmLoading={submittingAdd}
-        okText="Save Customer"
+        okText="Save Karein"
       >
         <Form form={addForm} layout="vertical">
           <Form.Item
