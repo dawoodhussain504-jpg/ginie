@@ -118,14 +118,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             colorBgLayout: isDark ? '#0b0f17' : '#f8fafc',
             colorBorder: isDark ? '#263042' : '#e2e8f0',
             colorBorderSecondary: isDark ? '#1e2638' : '#f1f5f9',
+            colorText: isDark ? '#f8fafc' : '#0f172a',
+            colorTextSecondary: isDark ? '#94a3b8' : '#475569',
             fontSize: 14,
             lineHeight: 1.5714,
           },
           components: {
             Button: {
-              controlHeight: 38,
+              controlHeight: 40,
               borderRadius: 8,
               fontWeight: 600,
+            },
+            Input: {
+              controlHeight: 40,
+              borderRadius: 8,
+            },
+            Select: {
+              controlHeight: 40,
+              borderRadius: 8,
             },
             Card: {
               borderRadiusLG: 12,
@@ -133,10 +143,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             },
             Table: {
               borderRadius: 8,
+              headerBg: isDark ? '#1e293b' : '#f8fafc',
+              headerColor: isDark ? '#f8fafc' : '#1e293b',
+              rowHoverBg: isDark ? 'rgba(255, 255, 255, 0.04)' : '#f8fafc',
+            },
+            Tabs: {
+              itemSelectedColor: '#2563eb',
+              itemHoverColor: '#1d4ed8',
+              horizontalItemPadding: '10px 16px',
+            },
+            Modal: {
+              borderRadiusLG: 12,
+            },
+            Drawer: {
+              borderRadiusSM: 12,
             },
             Menu: {
               itemBorderRadius: 8,
               itemMarginInline: 8,
+            },
+            Form: {
+              verticalLabelPadding: '0 0 6px',
             },
           },
           algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
