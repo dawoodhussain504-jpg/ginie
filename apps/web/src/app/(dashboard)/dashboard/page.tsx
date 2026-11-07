@@ -38,6 +38,7 @@ import { api } from '@/lib/api';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { formatIndianCurrency, formatDateIndian } from '@ginie/i18n';
+import { AppButton } from '@/components/common';
 import {
   BarChart,
   Bar,
@@ -211,25 +212,25 @@ export default function HomePage() {
             {t.dashboard.title}
           </Title>
           <Text type="secondary">
-            Namaste {user?.name || 'there'}! Aapka business cockpit taiyaar hai.
+            Namaste {user?.name || 'Vyapari'} ji! Aapka business ek nazar mein.
           </Text>
         </div>
 
         <Space wrap>
           <Link href="/customers">
-            <Button icon={<UsergroupAddOutlined />}>
-              + New Lead
-            </Button>
+            <AppButton icon={<UsergroupAddOutlined />}>
+              + Customer
+            </AppButton>
           </Link>
           <Link href="/billing">
-            <Button icon={<DollarCircleOutlined />}>
-              + GST Invoice
-            </Button>
+            <AppButton icon={<span style={{ fontWeight: 700, fontSize: 14 }}>₹</span>}>
+              Invoice Banayein
+            </AppButton>
           </Link>
           <Link href="/find-customers">
-            <Button type="primary" icon={<CompassOutlined />}>
-              {t.discovery.title}
-            </Button>
+            <AppButton type="primary" icon={<CompassOutlined />}>
+              Naye Customer Dhundhein
+            </AppButton>
           </Link>
         </Space>
       </div>

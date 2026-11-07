@@ -332,7 +332,7 @@ export default function DashboardLayout({
       children: [
         {
           key: '/whatsapp',
-          icon: <WhatsAppOutlined style={{ color: '#25D366' }} />,
+          icon: <WhatsAppOutlined />,
           label: <Link href="/whatsapp">WhatsApp Inbox</Link>,
         },
         {
@@ -359,7 +359,7 @@ export default function DashboardLayout({
             children: [
               {
                 key: '/admin',
-                icon: <SafetyCertificateOutlined style={{ color: '#faad14' }} />,
+                icon: <SafetyCertificateOutlined />,
                 label: isImpersonatingActive ? (
                   <span onClick={handleExitImpersonation} style={{ cursor: 'pointer', color: '#d48806', fontWeight: 600 }}>
                     Exit to Master Console
@@ -385,7 +385,7 @@ export default function DashboardLayout({
             <Text strong style={{ fontSize: 14 }}>{user?.name || 'User'}</Text>
             <br />
             <Text type="secondary" style={{ fontSize: 12 }}>
-              {user?.companyName || 'Business Cockpit'}
+              {user?.companyName || 'GINIE Business'}
             </Text>
             <div style={{ marginTop: 6 }}>
               <span
@@ -423,7 +423,7 @@ export default function DashboardLayout({
       { type: 'divider' as const },
       {
         key: 'digital-store',
-        icon: <ShopOutlined style={{ color: '#2563eb' }} />,
+        icon: <ShopOutlined />,
         label: (
           <Link href="/digital-store">
             <span style={{ fontWeight: 600 }}>Digital Storefront</span>
@@ -434,7 +434,7 @@ export default function DashboardLayout({
         ? [
             {
               key: 'install-app',
-              icon: <MobileOutlined style={{ color: '#10b981' }} />,
+              icon: <MobileOutlined />,
               label: <a onClick={handleInstallApp}>Install GINIE Mobile App</a>,
             },
           ]
@@ -468,7 +468,7 @@ export default function DashboardLayout({
       },
       {
         key: 'switch-language',
-        icon: <GlobalOutlined style={{ color: '#2563eb' }} />,
+        icon: <GlobalOutlined />,
         label: (
           <span onClick={() => setLocale(locale === 'hi' ? 'en' : 'hi')}>
             {locale === 'hi' ? 'Switch to English' : 'हिंदी में बदलें (Switch to HI)'}
@@ -547,7 +547,7 @@ export default function DashboardLayout({
                 </Text>
               </div>
               <Text type="secondary" style={{ fontSize: 11, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {user?.companyName || 'Business Cockpit'}
+                {user?.companyName || 'GINIE Business'}
               </Text>
             </div>
           )}
@@ -641,7 +641,7 @@ export default function DashboardLayout({
 
             <Tag
               className="hide-on-mobile hide-on-tablet"
-              title={user?.companyName || 'Business Cockpit'}
+              title={user?.companyName || 'GINIE Business'}
               style={{
                 borderRadius: 999,
                 margin: 0,
@@ -657,7 +657,7 @@ export default function DashboardLayout({
                 whiteSpace: 'nowrap',
               }}
             >
-              {user?.companyName || 'Business Cockpit'}
+              {user?.companyName || 'GINIE Business'}
             </Tag>
           </div>
 
