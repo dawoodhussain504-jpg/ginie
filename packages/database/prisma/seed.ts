@@ -313,7 +313,8 @@ async function main() {
     },
   });
 
-  // 9. Seed Sample Tasks
+  // 9. Seed Sample Tasks (clean up old tasks to prevent duplicate rows on re-seed)
+  await prisma.task.deleteMany({ where: { tenantId: tenant.id } });
   await prisma.task.create({
     data: {
       tenantId: tenant.id,
@@ -322,16 +323,40 @@ async function main() {
       priority: 'high',
       status: 'pending',
       assigneeId: adminUser.id,
-      dueAt: new Date(),
+      dueAt: new Date(Date.now() + 2 * 3600000),
     },
   });
 
   await prisma.task.create({
     data: {
       tenantId: tenant.id,
-      title: 'Prepare revised quote for Metro Infra',
+      title: 'Send GST revised quote to Metro Infra',
       description: 'Send revised tax breakdown including GST to finance team.',
+      priority: 'high',
+      status: 'pending',
+      assigneeId: adminUser.id,
+      dueAt: new Date(Date.now() + 86400000), // Tomorrow
+    },
+  });
+
+  await prisma.task.create({
+    data: {
+      tenantId: tenant.id,
+      title: 'Payment reminder for Shree Ganesh Textiles',
+      description: 'Follow up on pending ₹42,500 invoice via WhatsApp.',
       priority: 'medium',
+      status: 'pending',
+      assigneeId: adminUser.id,
+      dueAt: new Date(Date.now() + 6 * 3600000), // Today in 6 hours
+    },
+  });
+
+  await prisma.task.create({
+    data: {
+      tenantId: tenant.id,
+      title: 'Sample catalog delivery for Craft Coffee Roasters',
+      description: 'Share digital storefront link and verify delivery address.',
+      priority: 'low',
       status: 'pending',
       assigneeId: adminUser.id,
       dueAt: new Date(Date.now() + 86400000), // Tomorrow

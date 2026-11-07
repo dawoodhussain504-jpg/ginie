@@ -5,9 +5,9 @@
   },
   "nav": {
     "home": "Home",
-    "customers": "Potential customers",
-    "findCustomers": "Find new customers",
-    "sales": "Sales in progress",
+    "customers": "Customers",
+    "findCustomers": "Find New Customers",
+    "sales": "Deals",
     "people": "People",
     "companies": "Companies",
     "tasks": "Tasks & Follow-ups",
@@ -42,15 +42,15 @@
   "dashboard": {
     "title": "Home",
     "welcome": "Welcome back, {name}",
-    "newCustomersCard": "New potential customers",
-    "activeSalesCard": "Sales in progress",
-    "wonSalesCard": "Sales won this month",
+    "newCustomersCard": "New Customers",
+    "activeSalesCard": "Open Deals",
+    "wonSalesCard": "Deals Won",
     "tasksDueCard": "Tasks due today",
-    "recentCustomersTitle": "Recent potential customers",
-    "salesFunnelTitle": "Sales steps overview"
+    "recentCustomersTitle": "Recent Customers",
+    "salesFunnelTitle": "Deals Overview"
   },
   "customers": {
-    "title": "Potential customers",
+    "title": "Customers",
     "subtitle": "Track, contact, and manage your new and existing customers.",
     "addButton": "Add customer",
     "uploadExcel": "Upload from Excel",
